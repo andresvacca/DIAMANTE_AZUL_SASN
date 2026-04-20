@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Pago — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}" class="active">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:540px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'empenos:detalle' cuota.id_empeno.id_empeno %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver al Empeño</a>
+                <h2 style="margin:0.5rem 0 0;">💵 Registrar Pago</h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Resumen de la cuota -->
+            <div style="background:rgba(74,122,181,0.06);border:1px solid rgba(74,122,181,0.2);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Detalle de la Cuota</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;font-size:0.9rem;">
+                    <div>
+                        <span style="color:#888;">Cliente</span>
+                        <p style="margin:0.2rem 0 0;font-weight:600;">{{ cuota.id_empeno.id_cliente.nombre }}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;">Artículo</span>
+                        <p style="margin:0.2rem 0 0;font-weight:600;">{{ cuota.id_empeno.id_articulo.nombre }}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;">Fecha Vencimiento</span>
+                        <p style="margin:0.2rem 0 0;font-weight:600;">{{ cuota.fecha_programada|date:"d/m/Y" }}</p>
+                    </div>
+                    <div>
+                        <span style="color:#888;">Estado</span>
+                        <p style="margin:0.2rem 0 0;">
+                            {% if cuota.estado == 'Pendiente' %}
+                            <span style="background:#fef3c7;color:#92400e;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.78rem;font-weight:600;">⏳ Pendiente</span>
+                            {% elif cuota.estado == 'Vencida' %}
+                            <span style="background:#fee2e2;color:#991b1b;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.78rem;font-weight:600;">🔴 Vencida</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:2rem;margin-top:1rem;padding-top:0.75rem;border-top:1px solid rgba(74,122,181,0.15);">
+                    <div>
+                        <span style="font-size:0.78rem;color:#888;">Capital</span>
+                        <p style="margin:0.2rem 0 0;font-family:monospace;font-weight:600;">${{ cuota.capital }}</p>
+                    </div>
+                    <div>
+                        <span style="font-size:0.78rem;color:#888;">Interés</span>
+                        <p style="margin:0.2rem 0 0;font-family:monospace;font-weight:600;">${{ cuota.interes }}</p>
+                    </div>
+                    <div>
+                        <span style="font-size:0.78rem;color:#888;">Total a Pagar</span>
+                        <p style="margin:0.2rem 0 0;font-family:monospace;font-weight:700;font-size:1.1rem;color:#4a7ab5;">
+                            ${{ cuota.capital|add:cuota.interes }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de pago -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="auth-field" style="margin-bottom:1.2rem;">
+                        <label class="auth-label">{{ form.monto.label }} *</label>
+                        {{ form.monto }}
+                        {% if form.monto.errors %}<span class="auth-error">{{ form.monto.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field" style="margin-bottom:1.5rem;">
+                        <label class="auth-label">{{ form.metodo_pago.label }} *</label>
+                        {{ form.metodo_pago }}
+                        {% if form.metodo_pago.errors %}<span class="auth-error">{{ form.metodo_pago.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:flex;gap:1rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.75rem;">Confirmar Pago</button>
+                        <a href="{% url 'empenos:detalle' cuota.id_empeno.id_empeno %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.75rem;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

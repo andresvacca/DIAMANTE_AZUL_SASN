@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Factura — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:700px;margin:0 auto;">
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">🧾 Factura #{{ factura.id_factura }}</h2>
+                <span style="background:rgba(74,122,181,0.12);color:#4a7ab5;padding:0.3rem 0.9rem;border-radius:20px;font-size:0.85rem;font-weight:600;">
+                    {{ factura.metodo_pago }}
+                </span>
+            </div>
+
+            <!-- Datos generales -->
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.2rem;">
+                <h3 style="margin:0 0 1rem;font-size:1rem;color:#4a7ab5;border-bottom:1px solid rgba(74,122,181,0.15);padding-bottom:0.5rem;">📋 Información General</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Cliente</p>
+                        <p style="margin:0;font-weight:600;">{{ factura.id_cliente }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Atendido por</p>
+                        <p style="margin:0;">{{ factura.id_usuario }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Fecha</p>
+                        <p style="margin:0;">{{ factura.fecha_venta|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Método de Pago</p>
+                        <p style="margin:0;">{{ factura.metodo_pago }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Total Neto</p>
+                        <p style="margin:0;font-family:monospace;font-size:1.2rem;font-weight:700;color:#4a7ab5;">
+                            {% if factura.total_neto %}${{ factura.total_neto }}{% else %}—{% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Monto Pagado</p>
+                        <p style="margin:0;font-family:monospace;font-size:1.2rem;font-weight:700;color:#065f46;">${{ factura.monto_pagado }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalle de artículos -->
+            {% if factura.detallefactura_set.all %}
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.2rem;">
+                <h3 style="margin:0 0 1rem;font-size:1rem;color:#4a7ab5;border-bottom:1px solid rgba(74,122,181,0.15);padding-bottom:0.5rem;">📦 Artículos</h3>
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.06);">
+                            <th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Artículo</th>
+                            <th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Precio Venta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detalle in factura.detallefactura_set.all %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.08);">
+                            <td style="padding:0.7rem 0.8rem;">{{ detalle.id_articulo }}</td>
+                            <td style="padding:0.7rem 0.8rem;text-align:right;font-family:monospace;font-weight:600;">${{ detalle.precio_venta }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+                <a href="{% url 'factura:listar' %}" class="btn-hero-secundario">← Volver a Facturas</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

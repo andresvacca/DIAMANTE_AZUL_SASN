@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Empeño — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}" class="active">Empeños</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:1000px;margin:0 auto;">
+
+            {# Encabezado #}
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <div>
+                    <a href="{% url 'empenos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Empeños</a>
+                    <h2 style="margin:0.5rem 0 0;">💎 Empeño <span style="color:#aaa;font-size:0.85em;">#{{ empeno.id_empeno }}</span></h2>
+                </div>
+                <div style="display:flex;gap:0.75rem;">
+                    <a href="{% url 'empenos:editar' empeno.id_empeno %}" class="btn-hero-secundario" style="padding:0.5rem 1rem;">✏️ Editar</a>
+                    <a href="{% url 'empenos:eliminar' empeno.id_empeno %}" style="padding:0.5rem 1rem;background:#fee2e2;color:#991b1b;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;">🗑️ Eliminar</a>
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages" style="margin-bottom:1.5rem;">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# Tarjeta de info general #}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Información del Empeño</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Cliente:</strong> {{ empeno.id_cliente }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Artículo:</strong> {{ empeno.id_articulo }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Fecha inicio:</strong> {{ empeno.fecha_inicio|date:"d/m/Y" }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Fecha vencimiento:</strong> {{ empeno.fecha_vencimiento|date:"d/m/Y" }}</p>
+                    <p style="margin:0;">
+                        <strong>Estado:</strong>
+                        <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
+                            {% if empeno.estado == 'Activo' %}background:#d1fae5;color:#065f46;
+                            {% elif empeno.estado == 'Vencido' %}background:#fee2e2;color:#991b1b;
+                            {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+                            {{ empeno.estado }}
+                        </span>
+                    </p>
+                </div>
+
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Montos</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Monto prestado:</strong> ${{ empeno.monto_prestado }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Monto entregado:</strong> ${{ empeno.monto_entregado }}</p>
+                    <p style="margin:0;"><strong>Tasa de interés:</strong> {{ empeno.tasa_interes }}%</p>
+                </div>
+            </div>
+
+            {# Tabla de cuotas #}
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.5rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">📅 Cuotas</h3>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:rgba(74,122,181,0.08);">
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Cuota</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Fecha Programada</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Capital</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Interés</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Mora</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cuota in cuotas %}
+                            <tr style="border-top:1px solid rgba(74,122,181,0.1);">
+                                <td style="padding:0.7rem 1rem;">{{ cuota.numero_cuota }}</td>
+                                <td style="padding:0.7rem 1rem;">{{ cuota.fecha_programada|date:"d/m/Y" }}</td>
+                                <td style="padding:0.7rem 1rem;">${{ cuota.capital }}</td>
+                                <td style="padding:0.7rem 1rem;">${{ cuota.interes }}</td>
+                                <td style="padding:0.7rem 1rem;">${{ cuota.mora }}</td>
+                                <td style="padding:0.7rem 1rem;">
+                                    <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;
+                                        {% if cuota.estado == 'Pagada' %}background:#d1fae5;color:#065f46;
+                                        {% elif cuota.estado == 'Vencida' %}background:#fee2e2;color:#991b1b;
+                                        {% else %}background:#fef3c7;color:#92400e;{% endif %}">
+                                        {{ cuota.estado }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="padding:1.5rem;text-align:center;color:#aaa;">No hay cuotas registradas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Tabla de pagos #}
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.5rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">💳 Pagos Realizados</h3>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:rgba(74,122,181,0.08);">
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">#</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Fecha</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Monto</th>
+                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Método</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pago in pagos %}
+                            <tr style="border-top:1px solid rgba(74,122,181,0.1);">
+                                <td style="padding:0.7rem 1rem;color:#888;">{{ pago.id_pago }}</td>
+                                <td style="padding:0.7rem 1rem;">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                <td style="padding:0.7rem 1rem;font-weight:600;">${{ pago.monto }}</td>
+                                <td style="padding:0.7rem 1rem;">{{ pago.metodo_pago }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="padding:1.5rem;text-align:center;color:#aaa;">No hay pagos registrados.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

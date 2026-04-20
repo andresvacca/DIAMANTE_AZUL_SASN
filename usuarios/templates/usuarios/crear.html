@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Usuario — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}" class="active">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:580px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'usuarios:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Usuarios</a>
+                <h2 style="margin:0.5rem 0 0;">🛡️ Nuevo Usuario</h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.nombre.label }} *</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}<span class="auth-error">{{ form.nombre.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.email.label }} *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<span class="auth-error">{{ form.email.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.id_rol.label }} *</label>
+                        {{ form.id_rol }}
+                        {% if form.id_rol.errors %}<span class="auth-error">{{ form.id_rol.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.help_text %}
+                        <small style="color:#aaa;font-size:0.8rem;">{{ form.password.help_text }}</small>
+                        {% endif %}
+                        {% if form.password.errors %}<span class="auth-error">{{ form.password.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Usuario</button>
+                        <a href="{% url 'usuarios:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

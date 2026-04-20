@@ -1,0 +1,345 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Empeño — Diamante Azul{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.activo { display: flex; }
+    .modal-box {
+        background: var(--card-bg, #fff);
+        border-radius: 16px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+        position: relative;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .modal-cerrar {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        cursor: pointer;
+        color: #aaa;
+        line-height: 1;
+    }
+    .modal-cerrar:hover { color: #e74c3c; }
+
+    select.auth-input {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a7ab5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.2em;
+        padding-right: 2.5rem;
+        cursor: pointer;
+    }
+            /* Esto asegura que tanto inputs como selects se vean igual */
+        .auth-field input,
+        .auth-field select,
+        .auth-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #fff;
+            font-size: 1rem;
+            /* Muy importante para que el select no se vea pequeño */
+            height: 3rem;
+            display: block;
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:680px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'empenos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Empeños</a>
+                <h2 style="margin:0.5rem 0 0;">💎 Nuevo Empeño</h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <form method="POST" id="form-empeno">
+                    {% csrf_token %}
+
+                    <div class="auth-field">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <label class="auth-label">{{ form.id_cliente.label }} *</label>
+                            <button type="button" onclick="abrirModal('modal-cliente')" style="background:none;border:none;color:#4a7ab5;font-size:0.82rem;cursor:pointer;font-weight:600;">+ Nuevo Cliente</button>
+                        </div>
+                        {{ form.id_cliente }}
+                        {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <label class="auth-label">{{ form.id_articulo.label }} *</label>
+                            <button type="button" onclick="abrirModal('modal-articulo')" style="background:none;border:none;color:#4a7ab5;font-size:0.82rem;cursor:pointer;font-weight:600;">+ Nuevo Artículo</button>
+                        </div>
+                        {{ form.id_articulo }}
+                        {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.monto_prestado.label }} *</label>
+                            {{ form.monto_prestado }}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.monto_entregado.label }} *</label>
+                            {{ form.monto_entregado }}
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.tasa_interes.label }} *</label>
+                            {{ form.tasa_interes }}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.fecha_vencimiento.label }} *</label>
+                            {{ form.fecha_vencimiento }}
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.tipo_contrato.label }} *</label>
+                        {{ form.tipo_contrato }}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.estado.label }}</label>
+                        {{ form.estado }}
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Registrar Empeño</button>
+                        <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Modal Nuevo Cliente (Original Completo) ── #}
+<div class="modal-overlay" id="modal-cliente">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0;">👥 Nuevo Cliente</h3>
+            <button class="modal-cerrar" onclick="cerrarModal('modal-cliente')">✕</button>
+        </div>
+        <div id="modal-cliente-mensaje"></div>
+
+        <div class="auth-field">
+            <label class="auth-label">Número de Documento *</label>
+            <input type="text" id="mc-documento" class="auth-input" placeholder="Ej: 1234567890">
+        </div>
+        <div class="auth-field">
+            <label class="auth-label">Nombre Completo *</label>
+            <input type="text" id="mc-nombre" class="auth-input" placeholder="Nombre completo">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Teléfono</label>
+                <input type="text" id="mc-telefono" class="auth-input" placeholder="Opcional">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Dirección</label>
+                <input type="text" id="mc-direccion" class="auth-input" placeholder="Opcional">
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(74,122,181,0.15);margin:1rem 0;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Correo</label>
+                <input type="email" id="mc-email" class="auth-input">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Contraseña</label>
+                <input type="password" id="mc-password" class="auth-input">
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <button type="button" onclick="guardarCliente()" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cliente</button>
+            <button type="button" onclick="cerrarModal('modal-cliente')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+{# ── Modal Nuevo Artículo (Original Completo) ── #}
+<div class="modal-overlay" id="modal-articulo">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0;">📦 Nuevo Artículo</h3>
+            <button class="modal-cerrar" onclick="cerrarModal('modal-articulo')">✕</button>
+        </div>
+        <div id="modal-articulo-mensaje"></div>
+
+        <div class="auth-field">
+            <label class="auth-label">Nombre *</label>
+            <input type="text" id="ma-nombre" class="auth-input">
+        </div>
+        <div class="auth-field">
+            <label class="auth-label">Descripción</label>
+            <textarea id="ma-descripcion" class="auth-input" rows="2"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Categoría *</label>
+                <select id="ma-categoria" class="auth-input">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Bicicletas">Bicicletas</option>
+                    <option value="Neveras">Neveras</option>
+                    <option value="Oro">Oro</option>
+                    <option value="Plata">Plata</option>
+                    <option value="VideoJuegos">Videojuegos</option>
+                    <option value="Relojes">Relojes</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Número de Serie</label>
+                <input type="text" id="ma-serie" class="auth-input">
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Precio Sugerido *</label>
+                <input type="number" id="ma-precio" class="auth-input" step="0.01">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Quilataje</label>
+                <select id="ma-quilataje" class="auth-input">
+                    <option value="">— N/A —</option>
+                    <option value="10">10k</option>
+                    <option value="14">14k</option>
+                    <option value="18">18k</option>
+                    <option value="24">24k</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <button type="button" onclick="guardarArticulo()" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Artículo</button>
+            <button type="button" onclick="cerrarModal('modal-articulo')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;">Cancelar</button>
+        </div>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+    // --- FUNCIONES DE MODAL ---
+    function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
+    function cerrarModal(id) { document.getElementById(id).classList.remove('activo'); }
+
+    // --- AUTOMATIZACIÓN (Espejo y Defectos) ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const montoPrestado = document.getElementById('id_monto_prestado');
+        const montoEntregado = document.getElementById('id_monto_entregado');
+        const tasaInput = document.getElementById('id_tasa_interes');
+        const fechaInput = document.getElementById('id_fecha_vencimiento');
+
+        // Efecto Espejo
+        if (montoPrestado && montoEntregado) {
+            montoPrestado.addEventListener('input', () => {
+                montoEntregado.value = montoPrestado.value;
+            });
+        }
+
+        // Tasa 10% por defecto
+        if (tasaInput && !tasaInput.value) tasaInput.value = "10";
+
+        // Fecha +1 mes
+        if (fechaInput && !fechaInput.value) {
+            const hoy = new Date();
+            hoy.setMonth(hoy.getMonth() + 1);
+            fechaInput.value = hoy.toISOString().split('T')[0];
+        }
+    });
+
+    // --- AJAX PARA CLIENTES ---
+    function guardarCliente() {
+        const documento = document.getElementById('mc-documento').value;
+        const nombre = document.getElementById('mc-nombre').value;
+        const telefono = document.getElementById('mc-telefono').value;
+        const direccion = document.getElementById('mc-direccion').value;
+        const email = document.getElementById('mc-email').value;
+        const password = document.getElementById('mc-password').value;
+
+        if(!documento || !nombre) return alert("Documento y nombre son requeridos.");
+
+        fetch('{% url "clientes:crear_ajax" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ documento_id: documento, nombre, telefono, direccion, email, password })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.ok) {
+                const select = document.getElementById('id_id_cliente');
+                const opt = new Option(data.nombre, data.id, true, true);
+                select.add(opt);
+                cerrarModal('modal-cliente');
+            } else { alert("Error: " + JSON.stringify(data.error)); }
+        });
+    }
+
+    // --- AJAX PARA ARTÍCULOS ---
+    function guardarArticulo() {
+        const nombre = document.getElementById('ma-nombre').value;
+        const categoria = document.getElementById('ma-categoria').value;
+        const precio = document.getElementById('ma-precio').value;
+        const descripcion = document.getElementById('ma-descripcion').value;
+        const serie = document.getElementById('ma-serie').value;
+        const quilataje = document.getElementById('ma-quilataje').value;
+
+        if(!nombre || !categoria || !precio) return alert("Nombre, categoría y precio son requeridos.");
+
+        fetch('{% url "articulos:crear_ajax" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ nombre, categoria, precio_sugerido_venta: precio, descripcion, numero_serie: serie, quilataje })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.ok) {
+                const select = document.getElementById('id_id_articulo');
+                const opt = new Option(data.nombre, data.id, true, true);
+                select.add(opt);
+                cerrarModal('modal-articulo');
+            } else { alert("Error: " + JSON.stringify(data.error)); }
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}
+

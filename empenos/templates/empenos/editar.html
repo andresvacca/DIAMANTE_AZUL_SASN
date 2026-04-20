@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Empeño — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <style>
+                /* Esto asegura que tanto inputs como selects se vean igual */
+        .auth-field input,
+        .auth-field select,
+        .auth-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #fff;
+            font-size: 1rem;
+            /* Muy importante para que el select no se vea pequeño */
+            height: 3rem;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}" class="active">Empeños</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        {{ form.errors }}
+        <div style="max-width:680px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'empenos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Empeños</a>
+                <h2 style="margin:0.5rem 0 0;">✏️ Editar Empeño <span style="color:#aaa;font-size:0.85em;">#{{ empeno.id_empeno }}</span></h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.id_cliente.label }} *</label>
+                        {{ form.id_cliente }}
+                        {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.id_articulo.label }} *</label>
+                        {{ form.id_articulo }}
+                        {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.monto_prestado.label }} *</label>
+                            {{ form.monto_prestado }}
+                            {% if form.monto_prestado.errors %}<span class="auth-error">{{ form.monto_prestado.errors|join:", " }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.monto_entregado.label }} *</label>
+                            {{ form.monto_entregado }}
+                            {% if form.monto_entregado.errors %}<span class="auth-error">{{ form.monto_entregado.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.tasa_interes.label }} *</label>
+                            {{ form.tasa_interes }}
+                            {% if form.tasa_interes.errors %}<span class="auth-error">{{ form.tasa_interes.errors|join:", " }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.fecha_vencimiento.label }} *</label>
+                            {{ form.fecha_vencimiento }}
+                            {% if form.fecha_vencimiento.errors %}<span class="auth-error">{{ form.fecha_vencimiento.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.tipo_contrato.label }} *</label>
+                            {{ form.tipo_contrato }}
+                            {% if form.tipo_contrato.errors %}<span class="auth-error">{{ form.tipo_contrato.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+
+                    <div class="auth-field">
+                        <label class="auth-label">Estado</label>
+                        <select name="estado" class="auth-input">
+                            {% for value, label in form.fields.estado.choices %}
+                            <option value="{{ value }}" {% if empeno.estado == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cambios</button>
+                        <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

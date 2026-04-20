@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Cliente — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}" class="active">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:680px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'clientes:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Clientes</a>
+                <h2 style="margin:0.5rem 0 0;">👥 Nuevo Cliente</h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <form method="POST" id="form-cliente">
+                    {% csrf_token %}
+
+                    {{ form.departamento_expedicion }}
+                    {{ form.lugar_expedicion }}
+
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Datos del Cliente</h3>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.documento_id.label }} *</label>
+                        {{ form.documento_id }}
+                        {% if form.documento_id.errors %}<span class="auth-error">{{ form.documento_id.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.nombre.label }} *</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}<span class="auth-error">{{ form.nombre.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.telefono.label }}</label>
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}<span class="auth-error">{{ form.telefono.errors|join:", " }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.direccion.label }}</label>
+                            {{ form.direccion }}
+                            {% if form.direccion.errors %}<span class="auth-error">{{ form.direccion.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Lugar de expedición -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">Departamento de Expedición</label>
+                            <select id="sel-departamento" class="auth-input" onchange="cargarMunicipios()">
+                                <option value="">— Seleccionar —</option>
+                                <option>AMAZONAS</option><option>ANTIOQUIA</option><option>ARAUCA</option>
+                                <option>ATLÁNTICO</option><option>BOLÍVAR</option><option>BOYACÁ</option>
+                                <option>CALDAS</option><option>CAQUETÁ</option><option>CASANARE</option>
+                                <option>CAUCA</option><option>CESAR</option><option>CHOCÓ</option>
+                                <option>CÓRDOBA</option><option>CUNDINAMARCA</option><option>GUAINÍA</option>
+                                <option>GUAVIARE</option><option>HUILA</option><option>LA GUAJIRA</option>
+                                <option>MAGDALENA</option><option>META</option><option>NARIÑO</option>
+                                <option>NORTE DE SANTANDER</option><option>PUTUMAYO</option><option>QUINDÍO</option>
+                                <option>RISARALDA</option><option>SAN ANDRÉS</option><option>SANTANDER</option>
+                                <option>SUCRE</option><option>TOLIMA</option><option>VALLE DEL CAUCA</option>
+                                <option>VAUPÉS</option><option>VICHADA</option>
+                            </select>
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">Municipio de Expedición</label>
+                            <select id="sel-municipio" class="auth-input">
+                                <option value="">— Selecciona departamento primero —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3 style="margin:1.5rem 0 0.5rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Acceso al Sistema <span style="color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</span></h3>
+                    <p style="font-size:0.82rem;color:#aaa;margin:0 0 1rem;">Si completas estos campos, el cliente podrá iniciar sesión en el sistema.</p>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.email.label }}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<span class="auth-error">{{ form.email.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.help_text %}<small style="color:#aaa;font-size:0.8rem;">{{ form.password.help_text }}</small>{% endif %}
+                        {% if form.password.errors %}<span class="auth-error">{{ form.password.errors|join:", " }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cliente</button>
+                        <a href="{% url 'clientes:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+function cargarMunicipios() {
+    const dep = document.getElementById('sel-departamento').value;
+    const sel = document.getElementById('sel-municipio');
+
+    // Guardar en los hidden inputs
+    document.getElementById('id_departamento_expedicion').value = dep;
+    document.getElementById('id_lugar_expedicion').value = '';
+
+    if (!dep) {
+        sel.innerHTML = '<option value="">— Selecciona departamento primero —</option>';
+        return;
+    }
+
+    sel.innerHTML = '<option>Cargando...</option>';
+    sel.disabled = true;
+
+    fetch(`/clientes/municipios/?dep=${encodeURIComponent(dep)}`)
+        .then(r => r.json())
+        .then(data => {
+            sel.disabled = false;
+            sel.innerHTML = '<option value="">— Seleccionar municipio —</option>';
+            data.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(() => {
+            sel.disabled = false;
+            sel.innerHTML = '<option value="">Error cargando municipios</option>';
+        });
+}
+
+// Sincronizar el select de municipio con el hidden input al cambiar
+document.getElementById('sel-municipio').addEventListener('change', function() {
+    document.getElementById('id_lugar_expedicion').value = this.value;
+});
+
+
+</script>
+</body>
+</html>

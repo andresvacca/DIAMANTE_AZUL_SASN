@@ -1,0 +1,107 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Cuotas — Diamante Azul{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:1200px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">📅 Gestión de Cuotas</h2>
+            </div>
+
+            <div style="overflow-x:auto; border-radius:12px; box-shadow:0 4px 20px var(--sombra);">
+                <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.12);">
+                            <th style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--azul-claro);"># EMPEÑO</th>
+                            <th style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--azul-claro);">CLIENTE / ARTÍCULO</th>
+                            <th style="padding:1rem;text-align:right;font-size:0.8rem;color:var(--azul-claro);">TOTAL CUOTA</th>
+                            <th style="padding:1rem;text-align:center;font-size:0.8rem;color:var(--azul-claro);">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cuota in cuotas %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);">
+                            <td style="padding:1rem;font-family:monospace;font-weight:700;">#{{ cuota.id_empeno.id_empeno }}</td>
+                            <td style="padding:1rem;">
+                                <div style="font-weight:600;">{{ cuota.id_empeno.id_cliente.nombre }}</div>
+                                <div style="font-size:0.75rem;color:var(--texto-gris);">{{ cuota.id_empeno.id_articulo.nombre }}</div>
+                            </td>
+                            <td style="padding:1rem;text-align:right;font-weight:700;">
+                                ${{ cuota.capital|add:cuota.interes }}
+                            </td>
+                            <td style="padding:1rem;text-align:center;">
+                                {% if cuota.estado == 'Pendiente' or cuota.estado == 'Vencida' %}
+                                <button onclick="abrirModalCobro('{{ cuota.id_cuota }}', '{{ cuota.id_empeno.id_cliente.nombre|escapejs }}', '{{ cuota.id_empeno.id_articulo.nombre|escapejs }}', '{{ cuota.capital|add:cuota.interes }}')"
+                                        class="btn-login" style="padding:0.3rem 0.8rem;font-size:0.75rem;">💵 PAGAR</button>
+                                {% else %}
+                                <span style="color:#10b981; font-weight:700; font-size:0.75rem;">PAGADA</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal-contenedor-cobro" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2.5rem;max-width:420px;width:90%;box-shadow:0 20px 50px rgba(0,0,0,0.3);text-align:center; border: 1px solid rgba(74,122,181,0.2);">
+
+        <div style="background:rgba(74,122,181,0.1); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 1rem;">
+            <span style="font-size:2rem;">💰</span>
+        </div>
+
+        <h3 style="margin-bottom:0.5rem; color:var(--azul-oscuro);">Confirmar Pago</h3>
+        <p style="color:var(--texto-gris); font-size:0.9rem; margin-bottom:1.5rem;">Verifica los datos antes de procesar el recaudo.</p>
+
+        <div style="background:rgba(74,122,181,0.05); border-radius:12px; padding:1.2rem; margin-bottom:1.5rem; text-align:left; border: 1px dashed var(--azul-claro);">
+            <p style="margin:0 0 0.6rem; font-size:0.9rem;"><strong>Cliente:</strong> <span id="span-cliente-final"></span></p>
+            <p style="margin:0 0 0.6rem; font-size:0.9rem;"><strong>Artículo:</strong> <span id="span-articulo-final"></span></p>
+            <p style="margin:0; font-size:1.1rem;"><strong>Total:</strong> <span id="span-total-final" style="font-weight:800; color:var(--azul-claro);"></span></p>
+        </div>
+
+        <form id="form-pago-definitivo" method="POST">
+            {% csrf_token %}
+            <div style="display:flex; gap:1rem;">
+                <button type="submit" class="btn-login" style="flex:2; padding:0.8rem; font-weight:600;">✅ Confirmar</button>
+                <button type="button" onclick="cerrarModalCobro()" class="btn-hero-secundario" style="flex:1;">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+    function abrirModalCobro(cuotaId, cliente, articulo, total) {
+        // Usamos IDs totalmente distintos a cualquier otro modal del sistema
+        document.getElementById('span-cliente-final').innerText = cliente;
+        document.getElementById('span-articulo-final').innerText = articulo;
+        document.getElementById('span-total-final').innerText = '$' + total;
+
+        // El Action con la ruta absoluta
+        document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
+
+        // Activamos con Flex para que los estilos del base.html no lo rompan
+        const modal = document.getElementById('modal-contenedor-cobro');
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalCobro() {
+        document.getElementById('modal-contenedor-cobro').style.display = 'none';
+    }
+
+    // Seguridad: Cerrar si el usuario hace clic fuera del cuadro
+    window.onclick = function(event) {
+        const modal = document.getElementById('modal-contenedor-cobro');
+        if (event.target == modal) {
+            cerrarModalCobro();
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}
+

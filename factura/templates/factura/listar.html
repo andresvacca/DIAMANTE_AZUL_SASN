@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturas — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        {% if messages %}
+        <div class="auth-messages" style="max-width:1100px;margin:0 auto 1.5rem;">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="max-width:1100px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">🧾 Facturas</h2>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.12);">
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">#</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Cliente</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Usuario</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Fecha</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Total Neto</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Monto Pagado</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Método Pago</th>
+                            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for factura in facturas %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);transition:background 0.15s;" onmouseover="this.style.background='rgba(74,122,181,0.04)'" onmouseout="this.style.background=''">
+                            <td style="padding:0.85rem 1rem;font-size:0.85rem;color:#888;">{{ factura.id_factura }}</td>
+                            <td style="padding:0.85rem 1rem;font-weight:600;">{{ factura.id_cliente }}</td>
+                            <td style="padding:0.85rem 1rem;">{{ factura.id_usuario }}</td>
+                            <td style="padding:0.85rem 1rem;font-size:0.9rem;">{{ factura.fecha_venta|date:"d/m/Y H:i" }}</td>
+                            <td style="padding:0.85rem 1rem;font-family:monospace;font-weight:600;">
+                                {% if factura.total_neto %}${{ factura.total_neto }}{% else %}—{% endif %}
+                            </td>
+                            <td style="padding:0.85rem 1rem;font-family:monospace;">${{ factura.monto_pagado }}</td>
+                            <td style="padding:0.85rem 1rem;">
+                                <span style="background:rgba(74,122,181,0.12);color:#4a7ab5;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;">
+                                    {{ factura.metodo_pago }}
+                                </span>
+                            </td>
+                            <td style="padding:0.85rem 1rem;text-align:center;white-space:nowrap;">
+                                <a href="{% url 'factura:detalle' factura.id_factura %}" style="color:#4a7ab5;font-size:0.85rem;text-decoration:none;font-weight:600;">🔍 Ver</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" style="padding:2.5rem;text-align:center;color:#aaa;">
+                                No hay facturas registradas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

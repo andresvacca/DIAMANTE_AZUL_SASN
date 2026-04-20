@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diamante Azul{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+            <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+            <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+            <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+            <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+            <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+            <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+            <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+            <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+            <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+                <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+            </a>
+            <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+<div id="toast-container" 
+     style="position: fixed; 
+            top: 100px; /* Bajamos la notificación para que no la tape la navbar */
+            right: 20px; 
+            z-index: 100000; /* Un número mayor al de la navbar */
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px;">
+</div>
+
+{% block content %}
+{% endblock %}
+
+<script src="{% static 'js/landing.js' %}"></script>
+
+{% if messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for message in messages %}
+            // Esta función la definimos aquí mismo por si landing.js falla
+            const mensaje = "{{ message|escapejs }}";
+            const tipo = "{{ message.tags }}".includes('success') ? 'success' : 'error';
+            
+            const container = document.getElementById('toast-container');
+            if (container) {
+                const toast = document.createElement('div');
+                // Usamos las clases de tu auth.css
+                toast.className = `auth-alert auth-alert-${tipo}`;
+                toast.style.margin = "0";
+                toast.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
+                toast.style.zIndex = "10000";
+                toast.textContent = mensaje;
+                
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 500);
+                }, 4000);
+            }
+        {% endfor %}
+    });
+</script>
+{% endif %}
+</body>
+</html>

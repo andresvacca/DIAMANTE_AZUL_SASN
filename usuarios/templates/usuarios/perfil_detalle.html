@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil — {{ usuario.nombre }} — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:800px;margin:0 auto;">
+
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'usuarios:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Usuarios</a>
+                <h2 style="margin:0.5rem 0 0;">👤 Perfil de Usuario</h2>
+            </div>
+
+            <!-- Tarjeta principal -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(74,122,181,0.12);">
+                    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#2d6eaa,#4a7ab5);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;font-weight:700;flex-shrink:0;">
+                        {{ usuario.nombre|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h3 style="margin:0 0 0.3rem;font-family:'Playfair Display',serif;font-size:1.3rem;">{{ usuario.nombre }}</h3>
+                        <span style="padding:0.2rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:600;
+                            {% if usuario.id_rol.id_rol == 1 %}background:#dbeafe;color:#1e40af;
+                            {% elif usuario.id_rol.id_rol == 2 %}background:#d1fae5;color:#065f46;
+                            {% else %}background:#fef3c7;color:#92400e;{% endif %}">
+                            {% if usuario.id_rol.id_rol == 1 %}🛡️{% elif usuario.id_rol.id_rol == 2 %}👔{% else %}👤{% endif %}
+                            {{ usuario.id_rol.nombre }}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Nombre</p>
+                        <p style="margin:0;font-weight:600;">{{ usuario.nombre }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Correo</p>
+                        <p style="margin:0;font-weight:600;">{{ usuario.email|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">ID</p>
+                        <p style="margin:0;font-family:monospace;color:#888;">#{{ usuario.id_usuario }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Rol</p>
+                        <p style="margin:0;font-weight:600;">{{ usuario.id_rol.nombre|default:"Sin rol" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if cliente %}
+            <!-- Datos del cliente -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <h4 style="margin:0 0 1rem;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Datos de Cliente</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Documento</p>
+                        <p style="margin:0;font-weight:600;font-family:monospace;">{{ cliente.documento_id }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Teléfono</p>
+                        <p style="margin:0;font-weight:600;">{{ cliente.telefono|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Dirección</p>
+                        <p style="margin:0;font-weight:600;">{{ cliente.direccion|default:"—" }}</p>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#aaa;">Lugar de Expedición</p>
+                        <p style="margin:0;font-weight:600;">
+                            {% if cliente.lugar_expedicion %}{{ cliente.departamento_expedicion }} — {{ cliente.lugar_expedicion }}{% else %}—{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            {% if stats %}
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;">
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #4a7ab5;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Total Empeños</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;">{{ stats.total_empenos }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #10b981;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Activos</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;color:#065f46;">{{ stats.empenos_activos }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #ef4444;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Vencidos</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;color:#991b1b;">{{ stats.empenos_vencidos }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #f59e0b;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Vendidos</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;color:#92400e;">{{ stats.empenos_vendidos }}</p>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;">
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #4a7ab5;grid-column:span 2;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Monto Total Empeñado</p>
+                    <p style="margin:0;font-size:1.4rem;font-weight:700;font-family:monospace;">${{ stats.monto_total|floatformat:0 }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #10b981;grid-column:span 2;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Total Pagado</p>
+                    <p style="margin:0;font-size:1.4rem;font-weight:700;font-family:monospace;color:#065f46;">${{ stats.total_pagado|floatformat:0 }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #10b981;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Cuotas Pagadas</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;color:#065f46;">{{ stats.cuotas_pagadas }}</p>
+                </div>
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #f59e0b;">
+                    <p style="margin:0 0 0.2rem;font-size:0.75rem;text-transform:uppercase;color:#4a7ab5;">Cuotas Pendientes</p>
+                    <p style="margin:0;font-size:1.6rem;font-weight:700;color:#92400e;">{{ stats.cuotas_pendientes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de empeños -->
+            {% if empenos %}
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <h4 style="margin:0 0 1rem;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Historial de Empeños</h4>
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.08);">
+                            <th style="padding:0.6rem 0.9rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">#</th>
+                            <th style="padding:0.6rem 0.9rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Artículo</th>
+                            <th style="padding:0.6rem 0.9rem;text-align:right;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Monto</th>
+                            <th style="padding:0.6rem 0.9rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Vencimiento</th>
+                            <th style="padding:0.6rem 0.9rem;text-align:center;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empeno in empenos %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);">
+                            <td style="padding:0.65rem 0.9rem;font-size:0.85rem;color:#888;font-family:monospace;">#{{ empeno.id_empeno }}</td>
+                            <td style="padding:0.65rem 0.9rem;font-weight:600;">{{ empeno.id_articulo.nombre }}</td>
+                            <td style="padding:0.65rem 0.9rem;text-align:right;font-family:monospace;">${{ empeno.monto_prestado }}</td>
+                            <td style="padding:0.65rem 0.9rem;font-size:0.88rem;">{{ empeno.fecha_vencimiento|date:"d/m/Y" }}</td>
+                            <td style="padding:0.65rem 0.9rem;text-align:center;">
+                                {% if empeno.estado == 'Activo' %}
+                                <span style="background:#d1fae5;color:#065f46;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Activo</span>
+                                {% elif empeno.estado == 'Vencido' %}
+                                <span style="background:#fee2e2;color:#991b1b;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Vencido</span>
+                                {% elif empeno.estado == 'Vendido' %}
+                                <span style="background:#d1fae5;color:#065f46;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Vendido</span>
+                                {% else %}
+                                <span style="background:#f3f4f6;color:#6b7280;padding:0.15rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">{{ empeno.estado }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% else %}
+            <div style="background:rgba(74,122,181,0.05);border:1px solid rgba(74,122,181,0.15);border-radius:12px;padding:1.5rem;text-align:center;color:#888;margin-bottom:1.25rem;">
+                Este usuario no tiene datos de cliente asociados.
+            </div>
+            {% endif %}
+
+            <div style="display:flex;gap:1rem;">
+                <a href="{% url 'usuarios:listar' %}" class="btn-hero-secundario" style="padding:0.65rem 1.5rem;">← Volver a Usuarios</a>
+                <a href="{% url 'usuarios:editar' usuario.id_usuario %}" class="btn-login" style="padding:0.65rem 1.5rem;">✏️ Editar Usuario</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

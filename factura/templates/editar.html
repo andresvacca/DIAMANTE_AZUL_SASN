@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Factura #{{ factura.id_factura }} — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'factura:listar' %}" class="active">Facturas</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:780px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'factura:detalle' factura.id_factura %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver al Detalle</a>
+                <h2 style="margin:0.5rem 0 0;">✏️ Editar Factura <span style="color:#aaa;font-size:0.85em;">#{{ factura.id_factura }}</span></h2>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Formulario de encabezado -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <h3 style="margin:0 0 1.25rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Datos de la Venta</h3>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.id_cliente.label }}</label>
+                            {{ form.id_cliente }}
+                            {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.id_usuario.label }}</label>
+                            {{ form.id_usuario }}
+                            {% if form.id_usuario.errors %}<span class="auth-error">{{ form.id_usuario.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.metodo_pago.label }}</label>
+                            {{ form.metodo_pago }}
+                            {% if form.metodo_pago.errors %}<span class="auth-error">{{ form.metodo_pago.errors|join:", " }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.monto_pagado.label }}</label>
+                            {{ form.monto_pagado }}
+                            {% if form.monto_pagado.errors %}<span class="auth-error">{{ form.monto_pagado.errors|join:", " }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cambios</button>
+                        <a href="{% url 'factura:detalle' factura.id_factura %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Artículos actuales -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <h3 style="margin:0 0 1.25rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Artículos en la Factura</h3>
+
+                {% if detalles %}
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.08);">
+                            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Artículo</th>
+                            <th style="padding:0.75rem 1rem;text-align:right;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Precio Venta</th>
+                            <th style="padding:0.75rem 1rem;width:90px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for det in detalles %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);">
+                            <td style="padding:0.85rem 1rem;font-weight:500;">{{ det.id_articulo }}</td>
+                            <td style="padding:0.85rem 1rem;text-align:right;font-family:monospace;font-weight:600;">${{ det.precio_venta }}</td>
+                            <td style="padding:0.85rem 1rem;text-align:center;">
+                                <form method="POST" action="{% url 'factura:eliminar_detalle' det.id_detalle %}" onsubmit="return confirm('¿Eliminar este artículo de la factura?');">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:0.85rem;font-weight:600;">✕ Quitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.75rem;border-top:2px solid rgba(74,122,181,0.15);">
+                    <div style="text-align:right;">
+                        <span style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Total Neto</span>
+                        <div style="font-size:1.4rem;font-weight:700;font-family:monospace;">${{ factura.total_neto|default:"0.00" }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <p style="text-align:center;color:#aaa;padding:2rem 0;">Esta factura no tiene artículos registrados.</p>
+                {% endif %}
+
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(74,122,181,0.1);">
+                    <p style="font-size:0.82rem;color:#aaa;margin:0;">
+                        💡 Para agregar nuevos artículos, elimina esta factura y crea una nueva.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

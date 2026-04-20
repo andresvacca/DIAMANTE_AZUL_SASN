@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Contrato — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:900px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <div>
+                    <a href="{% url 'contratos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Contratos</a>
+                    <h2 style="margin:0.5rem 0 0;">📋 Contrato <span style="color:#aaa;font-size:0.85em;">#{{ contrato.id_contrato }}</span></h2>
+                </div>
+                <a href="{% url 'contratos:descargar_pdf' contrato.id_contrato %}" class="btn-login" style="padding:0.5rem 1.2rem;">
+                    📄 Descargar PDF
+                </a>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Información General</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Fecha:</strong> {{ contrato.fecha_contrato }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Tipo:</strong> {{ contrato.tipo_contrato|default:"—" }}</p>
+                    <p style="margin:0;">
+                        <strong>Estado:</strong>
+                        <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
+                            {% if contrato.estado_contrato == 'Disponible' %}background:#d1fae5;color:#065f46;
+                            {% elif contrato.estado_contrato == 'Vencido' %}background:#fee2e2;color:#991b1b;
+                            {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+                            {{ contrato.estado_contrato|default:"—" }}
+                        </span>
+                    </p>
+                </div>
+
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Partes</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Cliente:</strong> {{ contrato.id_cliente }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Documento:</strong> {{ contrato.id_cliente.documento_id }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Teléfono:</strong> {{ contrato.id_cliente.telefono|default:"—" }}</p>
+                    <p style="margin:0;"><strong>Dirección:</strong> {{ contrato.id_cliente.direccion|default:"—" }}</p>
+                </div>
+
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Artículo</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Nombre:</strong> {{ contrato.id_articulo }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Categoría:</strong> {{ contrato.id_articulo.get_categoria_display }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Quilataje:</strong> {{ contrato.id_articulo.quilataje|default:"N/A" }}</p>
+                    <p style="margin:0;"><strong>Precio sugerido:</strong> ${{ contrato.id_articulo.precio_sugerido_venta }}</p>
+                </div>
+
+                {% if contrato.id_empeno %}
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Empeño Vinculado</h3>
+                    <p style="margin:0 0 0.5rem;"><strong>Empeño #:</strong> {{ contrato.id_empeno.id_empeno }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Monto prestado:</strong> ${{ contrato.id_empeno.monto_prestado }}</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Tasa interés:</strong> {{ contrato.id_empeno.tasa_interes }}%</p>
+                    <p style="margin:0 0 0.5rem;"><strong>Vencimiento:</strong> {{ contrato.id_empeno.fecha_vencimiento }}</p>
+                    <p style="margin:0;"><strong>Estado:</strong> {{ contrato.id_empeno.estado }}</p>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <div style="margin-top:1rem;display:flex;gap:1rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+                <a href="{% url 'contratos:eliminar' contrato.id_contrato %}" style="padding:0.6rem 1.2rem;background:#fee2e2;color:#991b1b;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;">🗑️ Eliminar</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

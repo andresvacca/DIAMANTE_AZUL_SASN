@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artículos — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}" class="active">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        {% if messages %}
+        <div class="auth-messages" style="max-width:1100px;margin:0 auto 1.5rem;">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="max-width:1100px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">📦 Artículos</h2>
+                <a href="{% url 'articulos:crear' %}" class="btn-login" style="padding:0.5rem 1.2rem;">+ Nuevo Artículo</a>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;background:var(--card-bg, #fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.12);">
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">#</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Nombre</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Descripción</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">No. Serie</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Categoría</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Estado</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Precio Sugerido</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Quilataje</th>
+                            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for articulo in articulos %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);transition:background 0.15s;" onmouseover="this.style.background='rgba(74,122,181,0.04)'" onmouseout="this.style.background=''">
+                            <td style="padding:0.85rem 1rem;font-size:0.85rem;color:#888;">{{ articulo.id_articulo }}</td>
+                            <td style="padding:0.85rem 1rem;font-weight:600;">{{ articulo.nombre }}</td>
+                            <td style="padding:0.85rem 1rem;font-size:0.9rem;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ articulo.descripcion }}">{{ articulo.descripcion }}</td>
+                            <td style="padding:0.85rem 1rem;font-size:0.85rem;font-family:monospace;">{{ articulo.numero_serie|default:"—" }}</td>
+                            <td style="padding:0.85rem 1rem;">
+                                <span style="background:rgba(74,122,181,0.12);color:#4a7ab5;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;">
+                                    {{ articulo.get_categoria_display }}
+                                </span>
+                            </td>
+                            <td style="padding:0.85rem 1rem;">
+                                <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
+                                    {% if articulo.estado == 'disponible' %}background:#d1fae5;color:#065f46;
+                                    {% elif articulo.estado == 'empenado' %}background:#fef3c7;color:#92400e;
+                                    {% elif articulo.estado == 'vendido' %}background:#fee2e2;color:#991b1b;
+                                    {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+                                    {{ articulo.get_estado_display }}
+                                </span>
+                            </td>
+                            <td style="padding:0.85rem 1rem;font-weight:600;">${{ articulo.precio_sugerido }}</td>
+                            <td style="padding:0.85rem 1rem;text-align:center;">
+                                {% if articulo.quilataje %}
+                                    <span style="background:rgba(74,122,181,0.08);color:#4a7ab5;padding:0.2rem 0.5rem;border-radius:8px;font-size:0.85rem;font-weight:700;">{{ articulo.quilataje }}k</span>
+                                {% else %}
+                                    <span style="color:#aaa;">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.85rem 1rem;text-align:center;white-space:nowrap;">
+                                <a href="{% url 'articulos:editar' articulo.id_articulo %}" style="color:#4a7ab5;font-size:0.85rem;margin-right:0.75rem;text-decoration:none;font-weight:600;">✏️ Editar</a>
+                                <a href="{% url 'articulos:eliminar' articulo.id_articulo %}" style="color:#e74c3c;font-size:0.85rem;text-decoration:none;font-weight:600;">🗑️ Eliminar</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" style="padding:2.5rem;text-align:center;color:#aaa;">
+                                No hay artículos registrados.
+                                <a href="{% url 'articulos:crear' %}" style="color:#4a7ab5;font-weight:600;margin-left:0.5rem;">Agregar uno →</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Artículos — Diamante Azul{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        
+        <div style="max-width:1100px; margin: 0 auto;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                <h2 style="margin:0;">📦 Inventario de Artículos</h2>
+                
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="exportar('excel')" class="btn-login" style="background:#27ae60; border:none; padding:0.5rem 1rem; display:flex; align-items:center; gap:5px;">
+                        Excel 📊
+                    </button>
+                    
+                    <button type="button" onclick="exportar('pdf')" class="btn-login" style="background:#e74c3c; border:none; padding:0.5rem 1rem; display:flex; align-items:center; gap:5px;">
+                        PDF 📄
+                    </button>
+
+                    <a href="{% url 'articulos:crear' %}" class="btn-login" style="padding:0.5rem 1.2rem;">+ Nuevo Artículo</a>
+                    <a href="{% url 'articulos:carga_masiva' %}" class="btn-hero-secundario" style="padding:0.5rem 1.2rem;">📂 Carga Masiva</a>
+                </div>
+            </div>
+
+            <form method="GET" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; background:rgba(74,122,181,0.05); padding:1.2rem; border-radius:12px;">
+                <div style="flex:2; min-width:200px;">
+                    <label style="font-size:0.8rem; color:var(--azul-claro); font-weight:700; display:block; margin-bottom:0.4rem;">BUSCAR POR NOMBRE/SERIE</label>
+                    {{ form.q }}
+                </div>
+                <div style="flex:1; min-width:150px;">
+                    <label style="font-size:0.8rem; color:var(--azul-claro); font-weight:700; display:block; margin-bottom:0.4rem;">ESTADO</label>
+                    {{ form.estado }}
+                </div>
+                {% if form.categoria %}
+                <div style="flex:1; min-width:150px;">
+                    <label style="font-size:0.8rem; color:var(--azul-claro); font-weight:700; display:block; margin-bottom:0.4rem;">CATEGORÍA</label>
+                    {{ form.categoria }}
+                </div>
+                {% endif %}
+                <div style="display:flex; align-items:flex-end; gap:0.5rem;">
+                    <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem; height:42px;">Filtrar</button>
+                    <a href="{% url 'articulos:listar' %}" class="btn-hero-secundario" style="padding:0.5rem 1.2rem; height:42px; display:flex; align-items:center; text-decoration:none;">Limpiar</a>
+                </div>
+            </form>
+
+            <div style="overflow-x:auto; border-radius:12px; box-shadow:0 4px 20px var(--sombra);">
+                <table style="width:100%; border-collapse:collapse; background:var(--blanco);">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.12);">
+                            <th style="padding:1rem; text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">ID</th>
+                            <th style="padding:1rem; text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">Artículo</th>
+                            <th style="padding:1rem; text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">Categoría</th>
+                            <th style="padding:1rem; text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">Estado</th>
+                            <th style="padding:1rem; text-align:left; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">Precio</th>
+                            <th style="padding:1rem; text-align:center; font-size:0.75rem; text-transform:uppercase; color:var(--azul-suave);">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for articulo in articulos %}
+                        <tr style="border-top:1px solid var(--gris-claro); transition:background 0.2s;" onmouseover="this.style.background='rgba(74,122,181,0.03)'" onmouseout="this.style.background=''">
+                            <td style="padding:1rem; font-size:0.85rem; color:var(--texto-gris);">#{{ articulo.id_articulo }}</td>
+                            <td style="padding:1rem;">
+                                <div style="font-weight:600; color:var(--azul-oscuro);">{{ articulo.nombre }}</div>
+                                <div style="font-size:0.75rem; color:var(--texto-gris);">S/N: {{ articulo.numero_serie|default:"N/A" }}</div>
+                            </td>
+                            <td style="padding:1rem;">
+                                <span style="background:var(--blanco-suave); padding:0.3rem 0.7rem; border-radius:6px; font-size:0.8rem;">
+                                    {{ articulo.get_categoria_display }}
+                                </span>
+                            </td>
+                            <td style="padding:1rem;">
+                                <span class="badge-estado" style="padding:0.3rem 0.7rem; border-radius:20px; font-size:0.75rem; font-weight:700;
+                                    {% if articulo.estado == 'disponible' %} background:#d1fae5; color:#065f46;
+                                    {% elif articulo.estado == 'empenado' %} background:#fef3c7; color:#92400e;
+                                    {% else %} background:#f3f4f6; color:#374151; {% endif %}">
+                                    {{ articulo.get_estado_display|upper }}
+                                </span>
+                            </td>
+                            <td style="padding:1rem; font-weight:700; color:var(--azul-suave);">${{ articulo.precio_sugerido_venta }}</td>
+                            <td style="padding:1rem; text-align:center; white-space:nowrap;">
+                                <a href="{% url 'articulos:detalle' articulo.id_articulo %}" title="Ver Detalles" style="text-decoration:none; margin-right:8px;">👁️</a>
+                                <a href="{% url 'articulos:editar' articulo.id_articulo %}" title="Editar" style="text-decoration:none; margin-right:8px;">✏️</a>
+                                <a href="{% url 'articulos:eliminar' articulo.id_articulo %}" title="Eliminar" style="text-decoration:none;">🗑️</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="padding:3rem; text-align:center; color:var(--texto-gris);">
+                                <p>No se encontraron artículos con los filtros aplicados.</p>
+                                <a href="{% url 'articulos:listar' %}" style="color:var(--azul-claro); font-weight:600;">Ver todo el inventario</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:2rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario" style="text-decoration:none;">← Volver al Inicio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function exportar(tipo) {
+        // 1. Intentar mostrar feedback visual (con seguridad)
+        try {
+            if (typeof Toast !== 'undefined') {
+                Toast.show(`Preparando reporte ${tipo.toUpperCase()}...`, 'info');
+            } else if (typeof lanzarToast !== 'undefined') {
+                lanzarToast(`Generando ${tipo.toUpperCase()}...`, 'info');
+            } else {
+                console.log("Generando reporte...");
+            }
+        } catch (e) {
+            console.error("Error en sistema de notificaciones:", e);
+        }
+
+        // 2. Construir la URL con los filtros actuales
+        const urlParams = new URLSearchParams(window.location.search);
+        let baseUrl = "";
+
+        if (tipo === 'excel') {
+            baseUrl = "{% url 'articulos:exportar_excel' %}";
+        } else if (tipo === 'pdf') {
+            baseUrl = "{% url 'articulos:exportar_pdf' %}";
+        }
+
+        // 3. EJECUTAR DESCARGA
+        if (baseUrl) {
+            window.location.href = baseUrl + "?" + urlParams.toString();
+        }
+
+        // 4. Feedback de éxito
+        setTimeout(() => {
+            try {
+                if (typeof Toast !== 'undefined') Toast.show("Descarga iniciada", "success");
+                else if (typeof lanzarToast !== 'undefined') lanzarToast("Descarga iniciada", "success");
+            } catch (e) {}
+        }, 1500);
+    }
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,220 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-hero">
+        <svg class="hero-figura" viewBox="0 0 360 360" fill="none" style="opacity:0.3">
+            <polygon points="180,10 350,100 350,260 180,350 10,260 10,100" fill="none" stroke="white" stroke-width="1"/>
+            <polygon points="180,50 310,120 310,240 180,310 50,240 50,120" fill="none" stroke="white" stroke-width="1"/>
+        </svg>
+        <div class="dashboard-bienvenida">
+            <p class="hero-etiqueta">Panel de control</p>
+            <h1>Hola, <em>{{ usuario.nombre }}</em></h1>
+            <div class="dashboard-rol-badge">
+                {% if usuario.id_rol %}
+                <span class="rol-icono">
+                    {% if usuario.id_rol.id_rol == 1 %}🛡️{% elif usuario.id_rol.id_rol == 2 %}👔{% else %}👤{% endif %}
+                </span>
+                <span>{{ usuario.id_rol.nombre }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-contenido">
+        {% if messages %}
+        <div class="auth-messages" style="max-width:900px;margin:0 auto 1.5rem;">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="dashboard-grid">
+            {% if usuario.id_rol.id_rol == 1 or usuario.id_rol.id_rol == 2 %}
+            <a href="{% url 'clientes:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">👥</div>
+                <h3>Clientes</h3>
+                <p>Gestionar clientes registrados</p>
+            </a>
+            <a href="{% url 'cuadre_caja:index' %}" class="dashboard-card dashboard-card-cliente">
+                <div class="dashboard-card-icono">📦</div>
+                <h3>Cuadre Caja</h3>
+                <p>hacer el cuadre de caja
+                </p>
+            </a>
+            <a href="{% url 'cuotas:listar' %}" class="dashboard-card dashboard-card-cliente">
+                <div class="dashboard-card-icono">👁️</div>
+                <h3>Mirar Cuotas</h3>
+                <p>Realizar Un seguimiento a las cuotas
+                </p>
+            </a>
+            <a href="{% url 'articulos:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">📦</div>
+                <h3>Artículos</h3>
+                <p>Inventario de artículos</p>
+            </a>
+            <a href="{% url 'empenos:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">💎</div>
+                <h3>Empeños</h3>
+                <p>Gestionar empeños activos</p>
+            </a>
+            <a href="{% url 'contratos:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">📋</div>
+                <h3>Contratos</h3>
+                <p>Ver y gestionar contratos</p>
+            </a>
+            <a href="{% url 'cuotas:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">💸</div>
+                <h3>Cuotas</h3>
+                <p>Gestionar cuotas y pagos de empeños</p>
+            </a>
+            <a href="{% url 'factura:listar' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">🧾</div>
+                <h3>Facturas</h3>
+                <p>Historial de facturas</p>
+            </a>
+            <a href="{% url 'empenos:pagina_reportes' %}" class="dashboard-card">
+                <div class="dashboard-card-icono">⚡</div>
+                <h3>Reportes</h3>
+                <p>Inventario de reportes</p>
+            </a>
+            {% endif %}
+            {% if usuario.id_rol.id_rol == 1 %}
+            <a href="{% url 'usuarios:listar' %}" class="dashboard-card dashboard-card-admin" style="text-decoration: none;">
+                <div class="dashboard-card-icono">🛡️</div>
+                <h3>Usuarios</h3>
+                <p>Gestionar usuarios del sistema</p>
+            </a>
+            <a href ="{% url 'compras:listar' %}">
+                <div class="dashboard-card dashboard-card-cliente">
+                <div class="dashboard-card-icono">🛍️</div>
+                <h3>Compras</h3>
+                <p>Realizar Compras Directas</p>
+                </div>
+            </a>
+            {% endif %}
+            {% if usuario.id_rol.id_rol == 3 %}
+            <div class="dashboard-card dashboard-card-cliente">
+                <a href="{% url 'usuarios:perfil' %}">
+                    <div class="dashboard-card-icono">👤</div>
+                    <h3>Mi Perfil</h3>
+                    <p>Información de tu cuenta</p>
+                </a>
+            </div>
+            
+            <div class="dashboard-card dashboard-card-cliente">
+                <a href="{% url 'empenos:listar' %}" class>
+                <div class="dashboard-card-icono">💎</div>
+                <h3>Mis Empeños</h3>
+                <p>Ver tus empeños activos</p>
+                </a>
+            </div>
+            
+            <a href= "{% url 'contratos:listar' %}">
+                <div class="dashboard-card dashboard-card-cliente">
+                <div class="dashboard-card-icono">📋</div>
+                <h3>Mis Contratos</h3>
+                <p>Historial de contratos</p>
+            </a>
+            </div>
+            <a href="{% url 'cuotas:listar' %}" class="dashboard-card dashboard-card-cliente">
+                <div class="dashboard-card-icono">👁️</div>
+                <h3>Mirar Cuotas</h3>
+                <p>Realizar Un seguimiento a las cuotas
+                </p>
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="dashboard-acciones">
+            <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+            <a href="{% url 'usuarios:logout' %}" class="btn-login" style="padding:0.6rem 1.5rem;">Cerrar Sesión</a>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

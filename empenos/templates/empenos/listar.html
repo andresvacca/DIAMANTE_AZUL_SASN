@@ -1,0 +1,97 @@
+{% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Empeños — Diamante Azul{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:1100px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">💎 Empeños</h2>
+                {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+                <a href="{% url 'empenos:crear' %}" class="btn-login" style="padding:0.5rem 1.2rem;">+ Nuevo Empeño</a>
+                {% endif %}
+            </div>
+
+            <form method="GET" style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+                <div style="flex:2;">
+                    {{ form.q }}
+                </div>
+                <div style="flex:1;">
+                    {{ form.estado }}
+                </div>
+                <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem;">Filtrar</button>
+                <a href="." class="btn-hero-secundario" style="padding:0.5rem 1.2rem; text-decoration: none; display: inline-flex; align-items: center;">Limpiar</a>
+            </form>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <thead>
+                        <tr style="background:rgba(74,122,181,0.12);">
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">#</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Cliente</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Artículo</th>
+                            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Cuotas</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Monto</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Tasa %</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Vencimiento</th>
+                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Estado</th>
+                            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;text-transform:uppercase;color:#4a7ab5;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for empeno in empenos %}
+                        <tr style="border-top:1px solid rgba(74,122,181,0.1);transition:background 0.15s;" onmouseover="this.style.background='rgba(74,122,181,0.04)'" onmouseout="this.style.background=''">
+                            <td style="padding:0.85rem 1rem;font-size:0.85rem;color:#888;">{{ empeno.id_empeno }}</td>
+                            <td style="padding:0.85rem 1rem;font-weight:600;">{{ empeno.id_cliente }}</td>
+                            <td style="padding:0.85rem 1rem;">{{ empeno.id_articulo }}</td>
+                            <td style="padding:0.85rem 1rem;text-align:center;font-weight:600;">{{ empeno.num_cuotas }}</td>
+                            <td style="padding:0.85rem 1rem;font-weight:600;">${{ empeno.monto_prestado }}</td>
+                            <td style="padding:0.85rem 1rem;">{{ empeno.tasa_interes }}%</td>
+                            <td style="padding:0.85rem 1rem;font-size:0.9rem;">{{ empeno.fecha_vencimiento }}</td>
+                            <td style="padding:0.85rem 1rem;">
+                                <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
+                                    {% if empeno.estado == 'Activo' %}background:#d1fae5;color:#065f46;
+                                    {% elif empeno.estado == 'Vencido' %}background:#fee2e2;color:#991b1b;
+                                    {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+                                    {{ empeno.estado }}
+                                </span>
+                            </td>
+                            <td style="padding:0.85rem 1rem;text-align:center;white-space:nowrap;">
+                                <a href="{% url 'empenos:detalle' empeno.id_empeno %}" title="Ver Detalle" style="text-decoration:none; margin-right:8px;">🔍</a>
+                                
+                                {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+                                <a href="{% url 'empenos:editar' empeno.id_empeno %}" title="Editar" style="text-decoration:none; margin-right:8px;">✏️</a>
+                                <a href="{% url 'empenos:eliminar' empeno.id_empeno %}" title="Eliminar" style="text-decoration:none; margin-right:8px;">🗑️</a>
+                                <a href="{% url 'empenos:registrar_abono' empeno.id_empeno %}" title="Abono"  style="text-decoration:none; margin-right:8px;">💳</a>
+                                {% endif %}
+                                
+                                {% if empeno.cuota_pendiente %}
+                                <a href="{% url 'empenos:pagar' empeno.cuota_pendiente.id_cuota %}" class="btn-login" style="padding:0.3rem 0.7rem; font-size:0.75rem; text-decoration:none;">💸</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" style="padding:2.5rem;text-align:center;color:#aaa;">
+                                No hay empeños registrados.
+                                {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+                                <a href="{% url 'empenos:crear' %}" style="color:#4a7ab5;font-weight:600;margin-left:0.5rem;">Registrar uno →</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario" style="text-decoration:none;">← Volver al inicio</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

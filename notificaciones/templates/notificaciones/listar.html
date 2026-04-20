@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:780px;margin:0 auto;">
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <div>
+                    <a href="{% url 'home' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver al inicio</a>
+                    <h2 style="margin:0.5rem 0 0;">🔔 Notificaciones</h2>
+                </div>
+            </div>
+
+            {% if notificaciones %}
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                {% for n in notificaciones %}
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.25rem 1.5rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);
+                    border-left:4px solid
+                    {% if n.tipo == 'success' %}#10b981
+                    {% elif n.tipo == 'warning' %}#f59e0b
+                    {% elif n.tipo == 'error' %}#ef4444
+                    {% else %}#4a7ab5{% endif %};
+                    {% if not n.leida %}opacity:1;{% else %}opacity:0.65;{% endif %}">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                        <div style="flex:1;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+                                <span>
+                                    {% if n.tipo == 'success' %}✅
+                                    {% elif n.tipo == 'warning' %}⚠️
+                                    {% elif n.tipo == 'error' %}🔴
+                                    {% else %}ℹ️{% endif %}
+                                </span>
+                                <strong style="font-size:0.95rem;">{{ n.titulo }}</strong>
+                                {% if not n.leida %}
+                                <span style="background:#4a7ab5;color:#fff;font-size:0.68rem;padding:0.1rem 0.45rem;border-radius:20px;font-weight:600;">NUEVA</span>
+                                {% endif %}
+                            </div>
+                            <p style="margin:0 0 0.4rem;font-size:0.88rem;color:#666;">{{ n.mensaje }}</p>
+                            <p style="margin:0;font-size:0.78rem;color:#aaa;">{{ n.fecha|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        {% if n.url %}
+                        <a href="{{ n.url }}" style="color:#4a7ab5;font-size:0.82rem;font-weight:600;text-decoration:none;white-space:nowrap;">Ver →</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:3rem;text-align:center;box-shadow:0 2px 16px rgba(74,122,181,0.08);">
+                <p style="font-size:2rem;margin-bottom:0.5rem;">🔔</p>
+                <p style="color:#aaa;">No hay notificaciones.</p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+    </div>
+</nav>
+
+<div class="auth-page">
+    <div class="auth-deco">
+        <svg class="auth-figura" viewBox="0 0 400 400" fill="none">
+            <polygon points="200,10 390,110 390,290 200,390 10,290 10,110" fill="none" stroke="rgba(74,122,181,0.15)" stroke-width="1"/>
+            <polygon points="200,50 350,135 350,265 200,350 50,265 50,135" fill="none" stroke="rgba(74,122,181,0.1)" stroke-width="1"/>
+            <polygon points="200,100 295,155 295,245 200,300 105,245 105,155" fill="rgba(74,122,181,0.05)" stroke="rgba(74,122,181,0.12)" stroke-width="1"/>
+            <polygon points="200,150 245,175 245,225 200,250 155,225 155,175" fill="rgba(74,122,181,0.08)"/>
+        </svg>
+        <div class="auth-deco-texto">
+            <h2>Bienvenido de vuelta</h2>
+            <p>Accede a tu cuenta para gestionar tus empeños, contratos y mucho más.</p>
+            <div class="auth-beneficios">
+                <div class="auth-beneficio"><span>💎</span><span>Gestión de empeños en tiempo real</span></div>
+                <div class="auth-beneficio"><span>📋</span><span>Historial completo de contratos</span></div>
+                <div class="auth-beneficio"><span>🔒</span><span>Tu información siempre segura</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <div class="auth-logo-mini">
+                <svg viewBox="0 0 36 36" fill="none">
+                    <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+                    <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.15)" stroke="#4a7ab5" stroke-width="1"/>
+                    <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+                </svg>
+            </div>
+            <h1 class="auth-titulo">Iniciar Sesión</h1>
+            <p class="auth-subtitulo">Ingresa tus credenciales para continuar</p>
+        </div>
+
+        {% if messages %}
+        <div class="auth-messages">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+            <div class="auth-campo">
+                <label class="auth-label">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}<span class="auth-error">{{ form.email.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="auth-campo">
+                <label class="auth-label">{{ form.password.label }}</label>
+                <div class="auth-input-group">
+                    {{ form.password }}
+                    <button type="button" class="toggle-pass" data-target="id_password" title="Mostrar/ocultar">👁</button>
+                </div>
+                {% if form.password.errors %}<span class="auth-error">{{ form.password.errors.0 }}</span>{% endif %}
+            </div>
+            {% if form.non_field_errors %}
+            <div class="auth-alert auth-alert-error">{{ form.non_field_errors.0 }}</div>
+            {% endif %}
+            <button type="submit" class="auth-btn-submit">Iniciar Sesión</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}">Regístrate aquí</a></p>
+            <a href="{% url 'home' %}" class="auth-volver">← Volver al inicio</a>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+document.querySelectorAll('.toggle-pass').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        input.type = input.type === 'password' ? 'text' : 'password';
+    });
+});
+</script>
+</body>
+</html>

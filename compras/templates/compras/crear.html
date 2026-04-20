@@ -1,0 +1,397 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Compra — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.activo { display: flex; }
+        .modal-box {
+            background: var(--card-bg, #fff);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-cerrar {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #aaa;
+            line-height: 1;
+        }
+        .modal-cerrar:hover { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'compras:listar' %}" class="active">Compras</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:600px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'compras:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Compras</a>
+                <h2 style="margin:0.5rem 0 0;">🛍️ Nueva Compra</h2>
+                <p style="color:#888;margin:0;font-size:0.9rem;">Registra la compra de un artículo al cliente</p>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages" style="margin-bottom:1.2rem;">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:2rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                <form method="post" id="form-compra">
+                    {% csrf_token %}
+
+                    <div class="auth-field">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <label class="auth-label">{{ form.id_cliente.label }} *</label>
+                            <button type="button" onclick="abrirModal('modal-cliente')" style="background:none;border:none;color:#4a7ab5;font-size:0.82rem;cursor:pointer;font-weight:600;">+ Nuevo Cliente</button>
+                        </div>
+                        {{ form.id_cliente }}
+                        {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <label class="auth-label">{{ form.id_articulo.label }} *</label>
+                            <button type="button" onclick="abrirModal('modal-articulo')" style="background:none;border:none;color:#4a7ab5;font-size:0.82rem;cursor:pointer;font-weight:600;">+ Nuevo Artículo</button>
+                        </div>
+                        {{ form.id_articulo }}
+                        {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.precio_pagado.label }} *</label>
+                            {{ form.precio_pagado }}
+                            {% if form.precio_pagado.errors %}<span class="auth-error">{{ form.precio_pagado.errors.0 }}</span>{% endif %}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.precio_reventa.label }} *</label>
+                            {{ form.precio_reventa }}
+                            {% if form.precio_reventa.errors %}<span class="auth-error">{{ form.precio_reventa.errors.0 }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">{{ form.forma_pago.label }} *</label>
+                        {{ form.forma_pago }}
+                        {% if form.forma_pago.errors %}<span class="auth-error">{{ form.forma_pago.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div class="auth-field" style="margin-bottom:1.5rem;">
+                        <label class="auth-label">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}<span class="auth-error">{{ form.observaciones.errors.0 }}</span>{% endif %}
+                    </div>
+
+                    <div style="display:flex;gap:1rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">✅ Registrar Compra</button>
+                        <a href="{% url 'compras:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Modal Nuevo Cliente ── #}
+<div class="modal-overlay" id="modal-cliente">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0;">👥 Nuevo Cliente</h3>
+            <button class="modal-cerrar" onclick="cerrarModal('modal-cliente')">✕</button>
+        </div>
+        <div id="modal-cliente-mensaje"></div>
+
+        <div class="auth-field">
+            <label class="auth-label">Número de Documento *</label>
+            <input type="text" id="mc-documento" class="auth-input" placeholder="Ej: 1234567890">
+        </div>
+        <div class="auth-field">
+            <label class="auth-label">Nombre Completo *</label>
+            <input type="text" id="mc-nombre" class="auth-input" placeholder="Nombre completo">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Teléfono</label>
+                <input type="text" id="mc-telefono" class="auth-input" placeholder="Opcional">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Dirección</label>
+                <input type="text" id="mc-direccion" class="auth-input" placeholder="Opcional">
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(74,122,181,0.15);margin:1rem 0;">
+        <p style="font-size:0.82rem;color:#aaa;margin:0 0 0.75rem;">Acceso al sistema <span style="font-style:italic;">(opcional)</span></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Correo</label>
+                <input type="email" id="mc-email" class="auth-input" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Contraseña</label>
+                <input type="password" id="mc-password" class="auth-input" placeholder="Mínimo 6 caracteres">
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <button type="button" onclick="guardarCliente()" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cliente</button>
+            <button type="button" onclick="cerrarModal('modal-cliente')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+{# ── Modal Nuevo Artículo ── #}
+<div class="modal-overlay" id="modal-articulo">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0;">📦 Nuevo Artículo</h3>
+            <button class="modal-cerrar" onclick="cerrarModal('modal-articulo')">✕</button>
+        </div>
+        <div id="modal-articulo-mensaje"></div>
+
+        <div class="auth-field">
+            <label class="auth-label">Nombre *</label>
+            <input type="text" id="ma-nombre" class="auth-input" placeholder="Ej: Anillo de oro">
+        </div>
+        <div class="auth-field">
+            <label class="auth-label">Descripción</label>
+            <textarea id="ma-descripcion" class="auth-input" rows="2" placeholder="Descripción del artículo..."></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Categoría *</label>
+                <select id="ma-categoria" class="auth-input">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Bicicletas">Bicicletas</option>
+                    <option value="Neveras">Neveras</option>
+                    <option value="Oro">Oro</option>
+                    <option value="Plata">Plata</option>
+                    <option value="Ollas">Ollas</option>
+                    <option value="VideoJuegos">Videojuegos</option>
+                    <option value="Relojes">Relojes</option>
+                    <option value="Computadores">Computadores</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Número de Serie</label>
+                <input type="text" id="ma-serie" class="auth-input" placeholder="Opcional">
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="auth-field">
+                <label class="auth-label">Precio Sugerido *</label>
+                <input type="number" id="ma-precio" class="auth-input" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Quilataje</label>
+                <select id="ma-quilataje" class="auth-input">
+                    <option value="">— N/A —</option>
+                    <option value="0">0</option>
+                    <option value="10">10</option>
+                    <option value="14">14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <button type="button" onclick="guardarArticulo()" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Artículo</button>
+            <button type="button" onclick="cerrarModal('modal-articulo')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+    function abrirModal(id) {
+        document.getElementById(id).classList.add('activo');
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).classList.remove('activo');
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) cerrarModal(this.id);
+        });
+    });
+
+    function mostrarMensaje(idContenedor, texto, tipo) {
+        document.getElementById(idContenedor).innerHTML = `
+            <div style="padding:0.6rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.88rem;
+                background:${tipo === 'ok' ? '#d1fae5' : '#fee2e2'};
+                color:${tipo === 'ok' ? '#065f46' : '#991b1b'};">${texto}</div>`;
+    }
+
+    function agregarOpcion(selectId, id, texto) {
+        const select = document.getElementById(selectId);
+        const option = document.createElement('option');
+        option.value = id;
+        option.text = texto;
+        option.selected = true;
+        select.appendChild(option);
+    }
+
+    function guardarCliente() {
+        const documento = document.getElementById('mc-documento').value.trim();
+        const nombre    = document.getElementById('mc-nombre').value.trim();
+        const telefono  = document.getElementById('mc-telefono').value.trim();
+        const direccion = document.getElementById('mc-direccion').value.trim();
+        const email     = document.getElementById('mc-email').value.trim();
+        const password  = document.getElementById('mc-password').value.trim();
+
+        if (!documento || !nombre) {
+            mostrarMensaje('modal-cliente-mensaje', 'Documento y nombre son obligatorios.', 'error');
+            return;
+        }
+
+        fetch('{% url "clientes:crear_ajax" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ documento_id: documento, nombre, telefono, direccion, email, password })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                agregarOpcion('id_id_cliente', data.id, data.nombre);
+                mostrarMensaje('modal-cliente-mensaje', '✅ Cliente creado correctamente.', 'ok');
+                setTimeout(() => cerrarModal('modal-cliente'), 1200);
+            } else {
+                const msgs = typeof data.error === 'object'
+                    ? Object.values(data.error).join(' | ')
+                    : data.error;
+                mostrarMensaje('modal-cliente-mensaje', msgs, 'error');
+            }
+        })
+        .catch(() => mostrarMensaje('modal-cliente-mensaje', 'Error de conexión.', 'error'));
+    }
+
+    function guardarArticulo() {
+        const nombre      = document.getElementById('ma-nombre').value.trim();
+        const descripcion = document.getElementById('ma-descripcion').value.trim();
+        const categoria   = document.getElementById('ma-categoria').value;
+        const serie       = document.getElementById('ma-serie').value.trim();
+        const precio      = document.getElementById('ma-precio').value;
+        const quilataje   = document.getElementById('ma-quilataje').value;
+
+        if (!nombre || !categoria || !precio) {
+            mostrarMensaje('modal-articulo-mensaje', 'Nombre, categoría y precio son obligatorios.', 'error');
+            return;
+        }
+
+        fetch('{% url "articulos:crear_ajax" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ nombre, descripcion, categoria, numero_serie: serie, precio_sugerido_venta: precio, quilataje })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                agregarOpcion('id_id_articulo', data.id, data.nombre);
+                mostrarMensaje('modal-articulo-mensaje', '✅ Artículo creado correctamente.', 'ok');
+                setTimeout(() => cerrarModal('modal-articulo'), 1200);
+            } else {
+                const msgs = typeof data.error === 'object'
+                    ? Object.values(data.error).join(' | ')
+                    : data.error;
+                mostrarMensaje('modal-articulo-mensaje', msgs, 'error');
+            }
+        })
+        .catch(() => mostrarMensaje('modal-articulo-mensaje', 'Error de conexión.', 'error'));
+    }
+
+    // Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) { badge.textContent = data.count; } else { location.reload(); }
+                } else if (badge) { badge.remove(); }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

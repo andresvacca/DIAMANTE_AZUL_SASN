@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eliminar Factura — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'factura:listar' %}" class="active">Facturas</a></li>
+        {% endif %}
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+    </ul>
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+
+        <div style="max-width:500px;margin:0 auto;">
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2.5rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);text-align:center;">
+
+                <div style="font-size:3rem;margin-bottom:1rem;">🗑️</div>
+                <h2 style="margin:0 0 0.5rem;color:#e74c3c;">Eliminar Factura</h2>
+                <p style="color:#666;margin-bottom:1.5rem;">¿Estás seguro que deseas eliminar esta factura? Esta acción eliminará también todos sus artículos y no se puede deshacer.</p>
+
+                <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.2);border-radius:10px;padding:1.2rem;margin-bottom:1.8rem;text-align:left;">
+                    <p style="margin:0 0 0.4rem;font-weight:600;font-size:1rem;">Factura #{{ factura.id_factura }}</p>
+                    <p style="margin:0 0 0.4rem;font-size:0.9rem;color:#666;"><strong>Cliente:</strong> {{ factura.id_cliente.nombre }}</p>
+                    <p style="margin:0 0 0.4rem;font-size:0.9rem;color:#666;"><strong>Fecha:</strong> {{ factura.fecha_venta|date:"d/m/Y H:i" }}</p>
+                    <p style="margin:0 0 0.4rem;font-size:0.9rem;color:#666;"><strong>Total Neto:</strong> ${{ factura.total_neto|default:"0.00" }}</p>
+                    <p style="margin:0;font-size:0.9rem;color:#666;"><strong>Método de Pago:</strong> {{ factura.get_metodo_pago_display }}</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div style="display:flex;gap:1rem;">
+                        <button type="submit" style="flex:1;padding:0.7rem;background:#e74c3c;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">
+                            Sí, eliminar
+                        </button>
+                        <a href="{% url 'factura:detalle' factura.id_factura %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+ {% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casa de Empeño Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="#" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="#servicios">Servicios</a></li>
+        <li><a href="#productos">Productos</a></li>
+        <li><a href="#nosotros">Nosotros</a></li>
+        <li><a href="#contacto">Contacto</a></li>
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+        {% if request.session.usuario_id %}
+        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Mi Panel</a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-registro">Cerrar Sesión</a>
+        {% else %}
+        <a href="{% url 'usuarios:login' %}" class="btn-login">Iniciar Sesión</a>
+        <a href="{% url 'usuarios:registro' %}" class="btn-registro">Registrarse</a>
+        {% endif %}
+        <button class="hamburger" id="hamburger" aria-label="Menú">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-patron"></div>
+    <svg class="hero-figura" viewBox="0 0 360 360" fill="none">
+        <polygon points="180,10 350,100 350,260 180,350 10,260 10,100" fill="none" stroke="white" stroke-width="1"/>
+        <polygon points="180,50 310,120 310,240 180,310 50,240 50,120" fill="none" stroke="white" stroke-width="1"/>
+        <polygon points="180,95 265,145 265,215 180,265 95,215 95,145" fill="none" stroke="white" stroke-width="1"/>
+        <polygon points="180,135 230,162 230,198 180,225 130,198 130,162" fill="rgba(255,255,255,0.25)"/>
+    </svg>
+    <div class="hero-contenido">
+        <p class="hero-etiqueta">Bogotá, Colombia — Desde 2010</p>
+        <h1>Tu valor,<br><em>nuestra confianza</em></h1>
+        <p class="hero-descripcion">
+            En Casa de Empeño Diamante Azul ofrecemos préstamos rápidos y justos
+            sobre tus artículos de valor, con total transparencia y el mejor trato en la ciudad.
+        </p>
+        <div class="hero-botones">
+            <a href="#servicios" class="btn-hero-primario">Ver servicios</a>
+            <a href="#contacto" class="btn-hero-secundario">Cómo llegar →</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="stat-item">
+            <div class="stat-numero">+5K</div>
+            <div class="stat-etiqueta">Clientes atendidos</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-numero">15+</div>
+            <div class="stat-etiqueta">Años de experiencia</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-numero">30 min</div>
+            <div class="stat-etiqueta">Respuesta rápida</div>
+        </div>
+    </div>
+</section>
+
+<section id="servicios" class="seccion seccion-suave">
+    <div class="seccion-cabecera revelar">
+        <p class="seccion-eyebrow">Lo que hacemos</p>
+        <h2 class="seccion-titulo">Nuestros Servicios</h2>
+        <div class="seccion-linea"></div>
+    </div>
+    <div class="servicios-grid">
+        <div class="servicio-card revelar">
+            <div class="servicio-icono">💎</div>
+            <h3>Empeños</h3>
+            <p>Préstamos inmediatos sobre artículos de valor. Proceso ágil, tasas justas y plazos flexibles adaptados a tu situación.</p>
+        </div>
+        <div class="servicio-card revelar">
+            <div class="servicio-icono">🔄</div>
+            <h3>Compraventa</h3>
+            <p>Compramos y vendemos artículos usados en buen estado. Valuación honesta y pago inmediato en efectivo.</p>
+        </div>
+        <div class="servicio-card revelar">
+            <div class="servicio-icono">📋</div>
+            <h3>Contratos Flexibles</h3>
+            <p>Contrato normal, plazo máximo y contratos sobre oro. Escoge la modalidad que mejor se adapte a tus necesidades.</p>
+        </div>
+        <div class="servicio-card revelar">
+            <div class="servicio-icono">🏷️</div>
+            <h3>Remates</h3>
+            <p>Artículos de calidad a precios accesibles. Renovamos inventario constantemente con productos verificados.</p>
+        </div>
+    </div>
+</section>
+
+<section id="productos" class="seccion seccion-blanco">
+    <div class="seccion-cabecera revelar">
+        <p class="seccion-eyebrow">Qué aceptamos y vendemos</p>
+        <h2 class="seccion-titulo">Productos</h2>
+        <div class="seccion-linea"></div>
+    </div>
+    <p class="productos-intro revelar">
+        Trabajamos con una amplia variedad de artículos. Si tienes algo de valor
+        y necesitas liquidez, probablemente podemos ayudarte.
+    </p>
+    <div class="categorias-grid">
+        <div class="categoria-item revelar"><span class="categoria-emoji">💍</span><span class="categoria-nombre">Oro & Joyas</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">🥈</span><span class="categoria-nombre">Plata</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">⌚</span><span class="categoria-nombre">Relojes</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">💻</span><span class="categoria-nombre">Computadores</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">🎮</span><span class="categoria-nombre">Videojuegos</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">🚲</span><span class="categoria-nombre">Bicicletas</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">❄️</span><span class="categoria-nombre">Neveras</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">🍳</span><span class="categoria-nombre">Ollas</span></div>
+        <div class="categoria-item revelar"><span class="categoria-emoji">📦</span><span class="categoria-nombre">Y más...</span></div>
+    </div>
+</section>
+
+<section id="nosotros" class="seccion seccion-suave">
+    <div class="nosotros-grid">
+        <div class="nosotros-texto revelar">
+            <div class="seccion-cabecera" style="text-align:left;">
+                <p class="seccion-eyebrow">Nuestra historia</p>
+                <h2 class="seccion-titulo">Quiénes Somos</h2>
+                <div class="seccion-linea" style="margin-left:0;"></div>
+            </div>
+            <br>
+            <p>Casa de Empeño Diamante Azul nació con una misión clara: ofrecer una alternativa
+            financiera rápida, transparente y digna para las personas que necesitan liquidez inmediata.</p>
+            <p>Con más de 15 años en el mercado bogotano, hemos construido nuestra reputación sobre
+            la base de la confianza, el trato justo y el respeto por cada uno de nuestros clientes.</p>
+            <div class="valores-lista">
+                <div class="valor-item">
+                    <div class="valor-icono-caja">🤝</div>
+                    <div class="valor-texto">
+                        <h4>Transparencia total</h4>
+                        <p>Sin costos ocultos. Explicamos cada detalle del proceso antes de firmar.</p>
+                    </div>
+                </div>
+                <div class="valor-item">
+                    <div class="valor-icono-caja">⚡</div>
+                    <div class="valor-texto">
+                        <h4>Rapidez</h4>
+                        <p>Valuación y préstamo en menos de 30 minutos. Tu tiempo es valioso.</p>
+                    </div>
+                </div>
+                <div class="valor-item">
+                    <div class="valor-icono-caja">🔒</div>
+                    <div class="valor-texto">
+                        <h4>Seguridad</h4>
+                        <p>Tus artículos están asegurados y almacenados en condiciones óptimas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nosotros-panel revelar">
+            <h3>Nuestro compromiso</h3>
+            <ul class="compromiso-lista">
+                <li>Valuación justa basada en precios del mercado</li>
+                <li>Tasas de interés claras desde el primer momento</li>
+                <li>Plazo de gracia para el retiro de artículos</li>
+                <li>Contratos legales y respaldados</li>
+                <li>Atención personalizada sin filas ni esperas</li>
+                <li>Devolución garantizada al cancelar el empeño</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section id="contacto" class="seccion seccion-contacto">
+    <div class="seccion-cabecera revelar">
+        <p class="seccion-eyebrow">Encuéntranos</p>
+        <h2 class="seccion-titulo">Contacto & Ubicación</h2>
+        <div class="seccion-linea"></div>
+    </div>
+    <div class="contacto-grid">
+        <div class="contacto-card revelar">
+            <span class="contacto-icono">📍</span>
+            <h4>Dirección</h4>
+            <p>Calle 13 # 24-55<br>Bogotá, Colombia</p>
+        </div>
+        <div class="contacto-card revelar">
+            <span class="contacto-icono">📞</span>
+            <h4>Teléfono</h4>
+            <p>+57 (601) 123 4567<br>+57 310 000 0000</p>
+        </div>
+        <div class="contacto-card revelar">
+            <span class="contacto-icono">🕐</span>
+            <h4>Horario</h4>
+            <p>Lunes a Sabado<br>9:00 am – 8:00 pm</p>
+            <p>Domingos y Festivos <br> 10:00 am - 5:00pm </p>
+        </div>
+        <div class="contacto-card revelar">
+            <span class="contacto-icono">✉️</span>
+            <h4>Correo</h4>
+            <p>info@diamanteazul.com.co</p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <span class="footer-logo">Diamante Azul</span>
+    <p>© 2025 Casa de Empeño Diamante Azul — Bogotá, Colombia</p>
+    <p>Todos los derechos reservados</p>
+</footer>
+
+<script src="{% static 'js/landing.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Contrato — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:780px;margin:0 auto;">
+            <div style="margin-bottom:1.5rem;">
+                <a href="{% url 'contratos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Contratos</a>
+                <h2 style="margin:0.5rem 0 0;">📋 Nuevo Contrato</h2>
+                <p style="color:#aaa;font-size:0.85rem;margin:0.3rem 0 0;">Al guardar se generará el PDF automáticamente.</p>
+            </div>
+
+            {% if messages %}
+            <div class="auth-messages">
+                {% for msg in messages %}
+                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Paso 1: Buscar cliente -->
+            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">① Buscar Cliente</h3>
+                <div style="display:flex;gap:0.75rem;">
+                    <input type="text" id="input-cliente" class="auth-input" placeholder="Escribe el nombre o el documento del cliente..." style="flex:1;" oninput="buscarClientes()">
+                    <button type="button" onclick="buscarClientes()" class="btn-login" style="padding:0.5rem 1.2rem;white-space:nowrap;">🔍 Buscar</button>
+                </div>
+                <div id="resultados-clientes" style="margin-top:0.75rem;display:none;border:1px solid rgba(74,122,181,0.2);border-radius:8px;overflow:hidden;"></div>
+                <div id="cliente-seleccionado" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(74,122,181,0.07);border:1px solid rgba(74,122,181,0.2);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span id="cliente-nombre-badge" style="font-weight:600;color:#4a7ab5;"></span>
+                    <button type="button" onclick="limpiarCliente()" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:0.85rem;">✕ Cambiar</button>
+                </div>
+            </div>
+
+            <!-- Paso 2: Empeños del cliente -->
+            <div id="panel-empenos" style="display:none;background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.25rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">② Seleccionar Empeño</h3>
+                <div id="lista-empenos"></div>
+            </div>
+
+            <!-- Paso 3: Formulario del contrato -->
+            <div id="panel-contrato" style="display:none;background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+                <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">③ Datos del Contrato</h3>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <!-- Campos ocultos -->
+                    <input type="hidden" name="id_empeno"   id="h-empeno">
+                    <input type="hidden" name="id_cliente"  id="h-cliente">
+                    <input type="hidden" name="id_articulo" id="h-articulo">
+
+                    <!-- Resumen del empeño seleccionado -->
+                    <div style="background:rgba(74,122,181,0.05);border:1px solid rgba(74,122,181,0.15);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div>
+                                <p style="margin:0 0 0.2rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Cliente</p>
+                                <p id="info-cliente" style="margin:0;font-weight:600;">—</p>
+                            </div>
+                            <div>
+                                <p style="margin:0 0 0.2rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Artículo</p>
+                                <p id="info-articulo" style="margin:0;font-weight:600;">—</p>
+                            </div>
+                            <div>
+                                <p style="margin:0 0 0.2rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Descripción</p>
+                                <p id="info-descripcion" style="margin:0;font-size:0.9rem;color:#666;">—</p>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+                                <div>
+                                    <p style="margin:0 0 0.2rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Valor Empeñado</p>
+                                    <p id="info-monto" style="margin:0;font-family:monospace;font-weight:700;">—</p>
+                                </div>
+                                <div>
+                                    <p style="margin:0 0 0.2rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Valor Retiro</p>
+                                    <p id="info-retiro" style="margin:0;font-family:monospace;font-weight:700;color:#065f46;">—</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.fecha_contrato.label }} *</label>
+                            {{ form.fecha_contrato }}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.tipo_contrato.label }}</label>
+                            {{ form.tipo_contrato }}
+                        </div>
+                        <div class="auth-field">
+                            <label class="auth-label">{{ form.estado_contrato.label }}</label>
+                            {{ form.estado_contrato }}
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">📄 Crear y Descargar PDF</button>
+                        <a href="{% url 'contratos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+    // Fecha de hoy por defecto
+    const fechaInput = document.getElementById('id_fecha_contrato');
+    if (fechaInput && !fechaInput.value) {
+        fechaInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    let clienteIdSeleccionado = null;
+    let clienteNombreSeleccionado = null;
+    let buscarTimeout = null;
+
+    function buscarClientes() {
+        clearTimeout(buscarTimeout);
+        buscarTimeout = setTimeout(() => {
+            const q = document.getElementById('input-cliente').value.trim();
+            const box = document.getElementById('resultados-clientes');
+            if (!q) { box.style.display = 'none'; return; }
+
+            fetch(`/contratos/buscar-clientes/?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.length) {
+                        box.innerHTML = '<p style="padding:0.75rem 1rem;color:#aaa;margin:0;font-size:0.88rem;">No se encontraron clientes.</p>';
+                        box.style.display = 'block';
+                        return;
+                    }
+                    box.innerHTML = data.map(c => `
+                        <div onclick="seleccionarCliente(${c.id}, '${c.nombre}')"
+                            style="padding:0.75rem 1rem;cursor:pointer;border-bottom:1px solid rgba(74,122,181,0.1);font-size:0.9rem;transition:background 0.15s;"
+                            onmouseover="this.style.background='rgba(74,122,181,0.06)'"
+                            onmouseout="this.style.background=''">
+                            <strong>${c.nombre}</strong>
+                            <span style="color:#aaa;font-size:0.82rem;margin-left:0.5rem;">Doc: ${c.documento}</span>
+                        </div>
+                    `).join('');
+                    box.style.display = 'block';
+                });
+        }, 300);
+    }
+
+    function seleccionarCliente(id, nombre) {
+        clienteIdSeleccionado  = id;
+        clienteNombreSeleccionado = nombre;
+
+        document.getElementById('resultados-clientes').style.display = 'none';
+        document.getElementById('input-cliente').style.display = 'none';
+
+        const badge = document.getElementById('cliente-seleccionado');
+        document.getElementById('cliente-nombre-badge').textContent = '👤 ' + nombre;
+        badge.style.display = 'flex';
+
+        cargarEmpenos(id);
+    }
+
+    function limpiarCliente() {
+        clienteIdSeleccionado = null;
+        document.getElementById('input-cliente').style.display = 'block';
+        document.getElementById('input-cliente').value = '';
+        document.getElementById('cliente-seleccionado').style.display = 'none';
+        document.getElementById('panel-empenos').style.display = 'none';
+        document.getElementById('panel-contrato').style.display = 'none';
+    }
+
+    function cargarEmpenos(clienteId) {
+        const panel = document.getElementById('panel-empenos');
+        const lista = document.getElementById('lista-empenos');
+        lista.innerHTML = '<p style="color:#aaa;font-size:0.88rem;">Cargando empeños...</p>';
+        panel.style.display = 'block';
+
+        fetch(`/contratos/empenos-cliente/${clienteId}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.length) {
+                    lista.innerHTML = '<p style="color:#aaa;font-size:0.88rem;text-align:center;padding:1rem 0;">Este cliente no tiene empeños activos sin contrato.</p>';
+                    return;
+                }
+                lista.innerHTML = data.map(e => `
+                    <div onclick="seleccionarEmpeno(${e.id}, '${e.articulo_nombre}', '${e.articulo_id}', '${e.articulo_desc}', '${e.monto_prestado}', '${e.precio_retiro}')"
+                         style="padding:1rem;border:1.5px solid rgba(74,122,181,0.15);border-radius:10px;margin-bottom:0.75rem;cursor:pointer;transition:all 0.2s;"
+                         onmouseover="this.style.borderColor='#4a7ab5';this.style.background='rgba(74,122,181,0.04)'"
+                         onmouseout="this.style.borderColor='rgba(74,122,181,0.15)';this.style.background=''">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <p style="margin:0 0 0.2rem;font-weight:600;">💎 ${e.articulo_nombre}</p>
+                                <p style="margin:0;font-size:0.82rem;color:#888;">${e.articulo_desc || '—'}</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <p style="margin:0 0 0.15rem;font-size:0.78rem;color:#aaa;">Valor empeñado</p>
+                                <p style="margin:0;font-family:monospace;font-weight:700;color:#4a7ab5;">$${e.monto_prestado}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            });
+    }
+
+    function seleccionarEmpeno(id, articulo, articuloId, desc, monto, retiro) {
+        document.getElementById('h-empeno').value   = id;
+        document.getElementById('h-cliente').value  = clienteIdSeleccionado;
+        document.getElementById('h-articulo').value = articuloId;
+
+        document.getElementById('info-cliente').textContent     = clienteNombreSeleccionado;
+        document.getElementById('info-articulo').textContent    = articulo;
+        document.getElementById('info-descripcion').textContent = desc || '—';
+        document.getElementById('info-monto').textContent       = '$' + monto;
+        document.getElementById('info-retiro').textContent      = '$' + retiro;
+
+        document.getElementById('panel-contrato').style.display = 'block';
+        document.getElementById('panel-contrato').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

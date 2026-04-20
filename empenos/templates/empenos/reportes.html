@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+
+    <ul class="navbar-links" id="navbar-links">
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+
+        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
+        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
+        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
+        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
+        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 1 %}
+        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
+        {% endif %}
+
+        {% if request.session.usuario_rol_id == 3 %}
+        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
+        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
+        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
+        {% endif %}
+    </ul>
+
+    <div class="navbar-acciones">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+            <span class="icono-sol">☀️</span>
+            <span class="icono-luna">🌙</span>
+        </button>
+
+        {% if request.session.usuario_id %}
+        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
+            <span style="font-size:1.2rem;">🔔</span>
+            {% if notif_count > 0 %}
+            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
+        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
+            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        </a>
+        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
+        {% endif %}
+    </div>
+</nav>
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros de Reporte</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'empenos:pagina_reportes' %}" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Desde:</label>
+                <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros_previos.fecha_inicio }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Hasta:</label>
+                <input type="date" name="fecha_fin" class="form-control" value="{{ filtros_previos.fecha_fin }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Tipo de Contrato:</label>
+                <select name="tipo_contrato" class="form-control">
+                    <option value="">-- Todos los Tipos --</option>
+                    {% for valor, etiqueta in tipos_contrato %}
+                        <option value="{{ valor }}" {% if filtros_previos.tipo_contrato == valor %}selected{% endif %}>
+                            {{ etiqueta }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Nombre del Cliente:</label>
+                <input type="text" name="cliente_nombre" class="form-control" placeholder="Ej: Juan Perez" value="{{ filtros_previos.cliente_nombre }}">
+            </div>
+
+            <div class="col-12 text-right mt-3">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-search"></i> Generar Reporte
+                </button>
+                <a href="{% url 'empenos:pagina_reportes' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt"></i> Limpiar Filtros
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:1100px;margin:0 auto;">
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h2 style="margin:0;">📊 Reportes Financieros</h2>
+                <button onclick="window.print()" class="btn-login" style="padding:0.5rem 1.2rem; background:#4a7ab5;">Imprimir Reporte</button>
+            </div>
+
+            <div style="background:var(--card-bg,#fff); padding:2rem; border-radius:12px; box-shadow:0 2px 12px rgba(74,122,181,0.08); margin-bottom:2rem;">
+                <h3 style="color:#4a7ab5; margin-bottom:1.5rem; font-size:1.1rem; text-transform:uppercase; letter-spacing:0.05em;">Inversión por Tipo de Contrato</h3>
+                <div style="position: relative; height:400px; width:100%;">
+                    <canvas id="graficaEmpenos"></canvas>
+                </div>
+            </div>
+
+            <div style="margin-top:1.5rem;">
+                <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario">← Volver a Empeños</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{% url 'empenos:api_reporte_empenos' %}")
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('graficaEmpenos').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Total Prestado ($)',
+                            data: data.values,
+                            backgroundColor: 'rgba(74, 122, 181, 0.5)',
+                            borderColor: '#4a7ab5',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return '$' + value.toLocaleString(); }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    });
+</script>
+
+<script src="{% static 'js/landing.js' %}"></script>
+<script>
+// Actualizar badge de notificaciones cada 30 segundos
+    setInterval(() => {
+        fetch('/notificaciones/conteo/')
+            .then(r => r.json())
+            .then(data => {
+                let badge = document.getElementById('notif-badge');
+                if (data.count > 0) {
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else {
+                        location.reload();
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }).catch(() => {});
+    }, 30000);
+</script>
+</body>
+</html>

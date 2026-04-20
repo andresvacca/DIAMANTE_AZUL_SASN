@@ -1,0 +1,45 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <h2>Abono a Capital - Empeño #{{ empeno.id_empeno }}</h2>
+
+        <div class="info-resumen">
+            <p><strong>Cliente:</strong> {{ empeno.id_cliente.nombre }} {{ empeno.id_cliente.apellido }}</p>
+            <p><strong>Saldo Pendiente:</strong> <span class="text-danger">${{ empeno.monto_prestado }}</span></p>
+        </div>
+
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert-error">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.abonoCap.id_for_label }}">Monto del Abono:</label>
+                {{ form.abonoCap }}
+                {% if form.abonoCap.errors %}
+                    <span class="error-msg">{{ form.abonoCap.errors }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.tipo_contrato.id_for_label }}">Tipo de Contrato tras abono:</label>
+                {{ form.tipo_contrato }}
+                {% if form.tipo_contrato.errors %}
+                    <span class="error-msg">{{ form.tipo_contrato.errors }}</span>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn-principal">Procesar Abono</button>
+                <a href="{% url 'empenos:detalle' empeno.id_empeno %}" class="btn-secundario">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

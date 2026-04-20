@@ -1,0 +1,100 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle Artículo — Diamante Azul</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+<body>
+
+<div class="dashboard-page">
+    <div class="dashboard-contenido">
+        <div style="max-width:950px;margin:0 auto;">
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <div>
+                    <a href="{% url 'articulos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver al Inventario</a>
+                    <h2 style="margin:0.5rem 0 0;">📦 Artículo: {{ articulo.nombre }} <span style="color:#aaa;font-size:0.75em;">#{{ articulo.id_articulo }}</span></h2>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <a href="{% url 'articulos:editar' articulo.id_articulo %}" class="btn-login" style="padding:0.5rem 1.2rem; background:#f39c12;">✏️ Editar</a>
+                </div>
+
+            </div>
+
+            <div style="display:grid;grid-template-columns: 1.5fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+                
+                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Ficha Técnica</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <p><strong>Categoría:</strong><br>{{ articulo.get_categoria_display }}</p>
+                        <p><strong>Estado:</strong><br>
+                            <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
+                                {% if articulo.estado == 'En venta' %}background:#d1fae5;color:#065f46;
+                                {% elif articulo.estado == 'Empeñado' %}background:#fef3c7;color:#92400e;
+                                {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+                                {{ articulo.estado }}
+                            </span>
+                        </p>
+                        <p><strong>No. Serie:</strong><br><code>{{ articulo.numero_serie|default:"N/A" }}</code></p>
+                        <p><strong>Quilataje:</strong><br>{{ articulo.quilataje|default:"0" }}k</p>
+                    </div>
+                    <hr style="border:0; border-top:1px solid rgba(74,122,181,0.1); margin:1rem 0;">
+                    <p><strong>Descripción:</strong></p>
+                    <p style="color:#666; font-size:0.95rem; line-height:1.4;">{{ articulo.descripcion|default:"Sin descripción detallada registrada." }}</p>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div style="background:#4a7ab5; border-radius:12px; padding:1.5rem; color:white; text-align:center;">
+                        <span style="font-size:0.8rem; text-transform:uppercase; opacity:0.8;">Precio Sugerido Venta</span>
+                        <div style="font-size:2rem; font-weight:800; margin-top:0.5rem;">${{ articulo.precio_sugerido_venta }}</div>
+                    </div>
+
+                    <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
+                        <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Origen del Artículo</h3>
+                        {% if empeno %}
+                            <p style="margin-bottom:0.5rem;"><strong>Tipo:</strong> Empeño</p>
+                            <p style="margin-bottom:0.5rem;"><strong>Cliente:</strong> {{ empeno.id_cliente.nombre }} {{ empeno.id_cliente.apellido }}</p>
+                            <a href="{% url 'empenos:detalle' empeno.id_empeno %}" style="color:#4a7ab5; font-size:0.85rem; font-weight:700;">Ver Empeño #{{ empeno.id_empeno }} →</a>
+                        {% else %}
+                            <p style="margin-bottom:0.5rem;"><strong>Tipo:</strong> Compra Directa / Carga Masiva</p>
+                            <p style="color:#888; font-size:0.85rem;">Este artículo fue ingresado directamente al inventario de ventas.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if contrato %}
+            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.5rem;">
+                <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Historial Financiero</h3>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; text-align:center;">
+                    <div>
+                        <span style="display:block; font-size:0.75rem; color:#888;">CAPITAL PRESTADO</span>
+                        <span style="font-size:1.1rem; font-weight:700;">${{ empeno.monto_prestado }}</span>
+                    </div>
+                    <div>
+                        <span style="display:block; font-size:0.75rem; color:#888;">CONTRATO ASOCIADO</span>
+                        <span style="font-size:1.1rem; font-weight:700;">#{{ contrato.id_contrato }}</span>
+                    </div>
+                    <div>
+                        <span style="display:block; font-size:0.75rem; color:#888;">FECHA VENCIMIENTO</span>
+                        <span style="font-size:1.1rem; font-weight:700; color:#e74c3c;">{{ empeno.fecha_vencimiento }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="display:flex;gap:1rem;">
+                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
+                <a href="{% url 'articulos:eliminar' articulo.id_articulo %}" style="padding:0.6rem 1.2rem;background:#fee2e2;color:#991b1b;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;">🗑️ Eliminar de Inventario</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
