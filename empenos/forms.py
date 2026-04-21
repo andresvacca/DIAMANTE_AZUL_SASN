@@ -59,7 +59,7 @@ class EmpenoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # 1. Hacemos que el contrato no sea obligatorio (porque está disabled)
-        self.fields['tipo_contrato'].required = False
+        self.fields['tipo_contrato'].required = True
 
         # 2. Tu lógica de formato de fecha para la edición
         if self.instance and self.instance.fecha_vencimiento:
