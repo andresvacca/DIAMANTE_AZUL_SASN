@@ -60,8 +60,13 @@ class EmpenoForm(forms.ModelForm):
         super().clean()
         articu = self.cleaned_data.get('id_articulo')
         monto = self.cleaned_data.get('monto_prestado')
-        if articu == str(articu.categoria) == "Oro":
-            limite = articu.precio_sugerido_venta * 0.45
+        if articu and monto:
+            if articu and str(articu.categoria) == "Oro":
+                limite = articu.precio_sugerido_venta * 0.45
+                if monto > limite:
+                    self.cleaned_data['tipo_contrato']
+            else:
+                limite = articu.precio_sugerido_venta * 0.40
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
