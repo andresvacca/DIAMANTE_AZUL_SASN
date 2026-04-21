@@ -1,6 +1,7 @@
 from django import forms
 from .models import Empeno, Pago
 from contratos.models import Contrato
+from articulos.models import Articulos
 
 
 class EmpenoForm(forms.ModelForm):
@@ -54,6 +55,10 @@ class EmpenoForm(forms.ModelForm):
                 format='%Y-%m-%d'
             ),
         }
+        
+    def clean(self):
+        super().clean()
+        
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
