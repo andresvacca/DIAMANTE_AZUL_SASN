@@ -1,0 +1,45 @@
+Package               Version
+--------------------- -----------
+amqp                  5.3.1
+asgiref               3.11.1
+billiard              4.2.4
+celery                5.6.3
+certifi               2026.2.25
+charset-normalizer    3.4.7
+click                 8.3.2
+click-didyoumean      0.3.1
+click-plugins         1.1.1.2
+click-repl            0.3.0
+colorama              0.4.6
+cron-descriptor       1.4.5
+Django                4.2
+django-celery-beat    2.9.0
+django_celery_results 2.6.0
+django-timezone-field 7.2.1
+et_xmlfile            2.0.0
+greenlet              3.3.2
+idna                  3.11
+kombu                 5.6.2
+mysqlclient           2.2.8
+openpyxl              3.1.5
+packaging             26.1
+pillow                12.1.1
+pip                   26.0.1
+prompt_toolkit        3.0.52
+psycopg2-binary       2.9.11
+python-crontab        3.3.0
+python-dateutil       2.9.0.post0
+reportlab             4.4.10
+requests              2.32.5
+six                   1.17.0
+SQLAlchemy            2.0.48
+sqlparse              0.5.5
+typing_extensions     4.15.0
+tzdata                2026.1
+tzlocal               5.3.1
+urllib3               2.6.3
+vine                  5.1.0
+wcwidth               0.6.0
+
+
+Estas son todas las Dependencias instaladas hasta el momento
