@@ -55,10 +55,13 @@ class EmpenoForm(forms.ModelForm):
                 format='%Y-%m-%d'
             ),
         }
-        
+    # ! Funcion para Automatizar los tipos de contratos en los formularios de crear y editar empeno
     def clean(self):
         super().clean()
-        
+        articu = self.cleaned_data.get('id_articulo')
+        monto = self.cleaned_data.get('monto_prestado')
+        if articu == str(articu.categoria) == "Oro":
+            limite = articu.precio_sugerido_venta * 0.45
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
