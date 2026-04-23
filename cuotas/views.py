@@ -1,10 +1,11 @@
-from django.shortcuts import redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.shortcuts import render
-from empenos.models import Cuota
+from empenos.models import Cuota, Empeno
 from empenos.views import verificar_vencidos
 from usuarios.views import _requiere_admin, _requiere_empleado
 from .forms import FiltroCuota
+
 from usuarios.views import _requiere_admin, _requiere_empleado
 
 def listar_cuotas(request):
@@ -44,3 +45,15 @@ def listar_cuotas(request):
         'total_pagadas':    Cuota.objects.filter(estado='Pagada').count(),
         'total_vencidas':   Cuota.objects.filter(estado='Vencida').count(),
     })
+    
+def detalle_cuota(request, id_cuota, id_empeno):
+    if not (_requiere_admin(request) or _requiere_empleado(request)):
+        usuario_rol_id = request.session.get('usuario_rol_id')
+        if usuario_rol_id != 3:
+            return redirect('usuarios:login')
+
+    verificar_vencidos()
+    empeno = get_object_or_404(Empeno, pk=id_empeno)
+    cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
+
+    return render(request, 'empenos/cuotas.html', {'empeno': empeno, 'cuotas': cuotas})
