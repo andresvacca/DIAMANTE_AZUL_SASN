@@ -39,6 +39,7 @@
                                 {% else %}
                                 <span style="color:#10b981; font-weight:700; font-size:0.75rem;">PAGADA</span>
                                 {% endif %}
+                                <a href="{% url 'cuotas:detalle' cuota.id_cuota %}" title="Abono"  style="text-decoration:none; margin-right:8px;">💳</a>
                             </td>
                         </tr>
                         {% endfor %}

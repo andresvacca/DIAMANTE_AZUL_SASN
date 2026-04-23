@@ -8,7 +8,7 @@ from .forms import FiltroCuota
 
 from usuarios.views import _requiere_admin, _requiere_empleado
 
-def listar_cuotas(request):
+"""def listar_cuotas(request):
     
     verificar_vencidos()
 
@@ -56,4 +56,4 @@ def detalle_cuota(request, id_cuota, id_empeno):
     empeno = get_object_or_404(Empeno, pk=id_empeno)
     cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
 
-    return render(request, 'empenos/cuotas.html', {'empeno': empeno, 'cuotas': cuotas})
+    return render(request, 'empenos/cuotas.html', {'empeno': empeno, 'cuotas': cuotas})"""
