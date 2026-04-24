@@ -255,6 +255,13 @@
         </div>
     </div>
 </div>
+
+{% if form.errors %}
+    <div style="background: #ffcccc; color: #cc0000; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+        <strong>Hay errores en el formulario:</strong>
+        {{ form.errors }}
+    </div>
+{% endif %}
 {% block extra_js %}
 <script>
     // --- FUNCIONES DE MODAL ---

@@ -1,45 +1,124 @@
 {% extends "home/base.html" %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-box">
-        <h2>Abono a Capital - Empeño #{{ empeno.id_empeno }}</h2>
-
-        <div class="info-resumen">
-            <p><strong>Cliente:</strong> {{ empeno.id_cliente.nombre }} {{ empeno.id_cliente.apellido }}</p>
-            <p><strong>Saldo Pendiente:</strong> <span class="text-danger">${{ empeno.monto_prestado }}</span></p>
+<div class="main-wrapper-abono">
+    <div class="card-abono">
+        
+        <div class="header-abono">
+            <div class="icon-circle">
+                <i class="fas fa-coins"></i>
+            </div>
+            <h3 class="title-abono">Abono a Capital</h3>
+            <span class="badge-empeno">Empeño #{{ empeno.id_empeno }}</span>
         </div>
 
-        <form method="POST" class="auth-form">
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="alert-error">
-                    {{ form.non_field_errors }}
+        <div class="body-abono">
+            <div class="info-resumen-abono">
+                <div class="info-row">
+                    <span class="info-label">CLIENTE</span>
+                    <span class="info-value">{{ empeno.id_cliente.nombre }} {{ empeno.id_cliente.apellido }}</span>
                 </div>
-            {% endif %}
+                <div class="info-row">
+                    <span class="info-label">SALDO ACTUAL</span>
+                    <span class="info-value saldo-rojo">${{ empeno.monto_prestado }}</span>
+                </div>
+            </div>
 
-            <div class="form-group">
-                <label for="{{ form.abonoCap.id_for_label }}">Monto del Abono:</label>
-                {{ form.abonoCap }}
-                {% if form.abonoCap.errors %}
-                    <span class="error-msg">{{ form.abonoCap.errors }}</span>
+            <hr class="divider-abono">
+
+            <form method="POST" class="form-abono">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert-error-abono">
+                        {{ form.non_field_errors }}
+                    </div>
                 {% endif %}
-            </div>
 
-            <div class="form-group">
-                <label for="{{ form.tipo_contrato.id_for_label }}">Tipo de Contrato tras abono:</label>
-                {{ form.tipo_contrato }}
-                {% if form.tipo_contrato.errors %}
-                    <span class="error-msg">{{ form.tipo_contrato.errors }}</span>
-                {% endif %}
-            </div>
+                <div class="form-group-abono">
+                    <label for="{{ form.abonoCap.id_for_label }}">Monto a Abonar</label>
+                    <div class="input-wrapper-abono">
+                        <span class="currency-symbol">$</span>
+                        {{ form.abonoCap }}
+                    </div>
+                </div>
 
-            <div class="actions">
-                <button type="submit" class="btn-principal">Procesar Abono</button>
-                <a href="{% url 'empenos:detalle' empeno.id_empeno %}" class="btn-secundario">Cancelar</a>
-            </div>
-        </form>
+                <div class="form-group-abono">
+                    <label for="{{ form.tipo_contrato.id_for_label }}">Nuevo Contrato</label>
+                    {{ form.tipo_contrato }}
+                    <p class="help-text-abono">Se ajustará automáticamente según el saldo resultante.</p>
+                </div>
+
+                <div class="actions-abono">
+                    <button type="submit" class="btn-primary-abono">
+                        Procesar Abono <i class="fas fa-check-circle"></i>
+                    </button>
+                    <a href="{% url 'empenos:detalle' empeno.id_empeno %}" class="btn-link-abono">
+                        <i class="fas fa-times"></i> Cancelar Operación
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    /* Centrado Total */
+    .main-wrapper-abono {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        min-height: calc(100vh - 80px); /* Restamos la altura aproximada del navbar */
+        padding: 20px;
+    }
+
+    .card-abono {
+        background: #111827;
+        width: 100%;
+        max-width: 420px;
+        border-radius: 24px;
+        padding: 40px 35px 35px 35px; /* Más espacio arriba para el icono */
+        border: 1px solid #1f2937;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        color: #f3f4f6;
+        position: relative;
+    }
+
+    .header-abono { text-align: center; margin-bottom: 30px; }
+
+    .icon-circle {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        width: 55px;
+        height: 55px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 22px;
+        color: white;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+
+    /* Resto de estilos se mantienen igual para conservar el look premium */
+    .title-abono { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+    .badge-empeno { display: inline-block; background: #1f2937; color: #9ca3af; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .info-resumen-abono { background: #1f2937; padding: 15px; border-radius: 15px; margin-bottom: 20px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .info-label { font-size: 10px; color: #9ca3af; font-weight: 800; }
+    .info-value { font-size: 14px; font-weight: 600; }
+    .saldo-rojo { color: #ef4444; font-size: 16px; }
+    .divider-abono { border: 0; border-top: 1px solid #374151; margin: 25px 0; }
+    .form-group-abono { margin-bottom: 20px; }
+    .form-group-abono label { display: block; font-size: 13px; font-weight: 600; color: #d1d5db; margin-bottom: 8px; }
+    .form-group-abono input, .form-group-abono select { width: 100%; background: #030712 !important; border: 1px solid #374151 !important; border-radius: 12px !important; padding: 12px 15px !important; color: white !important; }
+    .input-wrapper-abono { position: relative; }
+    .currency-symbol { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600; }
+    .input-wrapper-abono input { padding-left: 30px !important; }
+    .actions-abono { display: flex; flex-direction: column; gap: 12px; margin-top: 30px; }
+    .btn-primary-abono { background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-primary-abono:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-link-abono { text-align: center; color: #9ca3af; text-decoration: none; font-size: 13px; }
+</style>
 {% endblock %}

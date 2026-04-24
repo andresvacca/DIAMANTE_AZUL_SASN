@@ -58,6 +58,7 @@ def crear_contrato(request):
             return response
         messages.error(request, f'Errores: {form.errors}')
     else:
+        
         form = ContratoForm()
     return render(request, 'contratos/crear.html', {'form': form})
 

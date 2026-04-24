@@ -12,6 +12,32 @@ from cuotas.forms import FiltroCuota
 from datetime import timedelta
 from decimal import Decimal
 # ── Helpers ──────────────────────────────────────────────────────────────────
+def clean(self):
+    cleaned_data = super().clean()
+    valor_empeno = cleaned_data.get('valor_empeno')
+    tipo_contrato = cleaned_data.get('tipo_contrato')
+
+    # Si el valor existe pero el tipo viene vacío desde el navegador
+    if valor_empeno and not tipo_contrato:
+        # Definimos la lógica de Diamante Azul
+        if valor_empeno <= Decimal('500000'):
+            # Usamos el nombre exacto que está en TIPO_CHOICES de tu modelo
+            nuevo_tipo = 'Normal'
+        elif valor_empeno > Decimal('500000') and valor_empeno <= Decimal('2000000'):
+            nuevo_tipo = 'Plazo Maximo'
+        else:
+            # Por ejemplo, para montos muy altos
+            nuevo_tipo = 'Contrato sobre Oro'
+        
+        # Asignamos el valor al diccionario de datos limpios
+        cleaned_data['tipo_contrato'] = nuevo_tipo
+        
+        # Muy importante: Si Django ya había marcado el error de "obligatorio", lo borramos
+        if 'tipo_contrato' in self._errors:
+            del self._errors['tipo_contrato']
+
+    return cleaned_data
+
 
 def _sincronizar_articulo(empeno):
     """Sincroniza el estado del artículo según el estado del empeño."""
@@ -126,16 +152,39 @@ def listar_empenos(request):
         'form': form
     })
 
-
 def crear_empeno(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
     if request.method == 'POST':
-        form = EmpenoForm(request.POST)
+        # 1. Copiamos los datos del POST para poder modificarlos
+        data = request.POST.copy()
+        
+        # 2. Lógica de automatización: Decidir el tipo según el valor
+        valor_str = data.get('valor_empeno', '0')
+        try:
+            valor = Decimal(valor_str)
+        except:
+            valor = Decimal('0')
+
+        # Si el tipo de contrato viene vacío (porque está oculto o disabled en el HTML)
+        if not data.get('tipo_contrato'):
+            if valor <= Decimal('500000'):
+                data['tipo_contrato'] = 'Normal'
+            elif valor <= Decimal('2000000'):
+                data['tipo_contrato'] = 'Plazo Maximo'
+            else:
+                data['tipo_contrato'] = 'Contrato sobre Oro'
+
+        # 3. Ahora sí, creamos el form con los datos ya "parchados"
+        form = EmpenoForm(data)
+        
         if form.is_valid():
             empeno = form.save()
-            tipo_elegido = form.cleaned_data.get('tipo_contrato', 'Normal   ')
+            
+            # 4. Usamos el tipo que ya validamos en el form
+            tipo_elegido = form.cleaned_data.get('tipo_contrato')
+            
             nuevo_contrato = Contrato.objects.create(
                 id_empeno=empeno,
                 id_cliente=empeno.id_cliente,
@@ -144,12 +193,27 @@ def crear_empeno(request):
                 tipo_contrato=tipo_elegido,
                 estado_contrato='Disponible'
             )
+            empeno = form.save(commit=False) # No guardamos en DB todavía
+            articulo = empeno.id_articulo
+
+            # Calculamos el 40%
+            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.40')
+
+            if empeno.monto_prestado > tope_maximo:
+                messages.error(request, f"Error: El préstamo no puede superar el 40% (${tope_maximo})")
+                return render(request, 'empenos/crear.html', {'form': form})
+            
             empeno.id_contrato = nuevo_contrato
             empeno.save()
+            
             _sincronizar_articulo(empeno)
-            _generar_cuota(empeno)          # ← genera cuota automáticamente
-            messages.success(request, f'Empeño #{empeno.id_empeno} registrado. Cuota generada automáticamente.')
+            _generar_cuota(empeno)
+            
+            messages.success(request, f'Empeño #{empeno.id_empeno} registrado y contrato {tipo_elegido} generado.')
             return redirect('empenos:detalle', empeno.id_empeno)
+        
+        # Si llega aquí, es porque falló la validación (puedes ver por qué en consola)
+        print("ERRORES:", form.errors)
         messages.error(request, 'Por favor corrige los errores del formulario.')
     else:
         form = EmpenoForm()
@@ -496,3 +560,7 @@ def ver_cuotas(request, id_empeno):
     cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
 
     return render(request, 'cuotas/detalle.html', {'empeno': empeno, 'cuotas': cuotas}) # CORRECCIÓN: Falta paréntesis
+
+
+
+

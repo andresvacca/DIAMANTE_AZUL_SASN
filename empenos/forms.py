@@ -2,7 +2,7 @@ from django import forms
 from .models import Empeno, Pago
 from contratos.models import Contrato
 from articulos.models import Articulos
-
+from decimal import Decimal
 
 class EmpenoForm(forms.ModelForm):
     # --- CAMPOS CON VALIDACIÓN DE NEGATIVOS Y ESTILO ---
@@ -62,13 +62,13 @@ class EmpenoForm(forms.ModelForm):
         monto = self.cleaned_data.get('monto_prestado')
         if articu and monto:
             if articu and str(articu.categoria) == "Oro":
-                limite = articu.precio_sugerido_venta * 0.45
+                limite = articu.precio_sugerido_venta * Decimal('0.45')
                 if monto > limite:
                     self.cleaned_data['tipo_contrato'] = "Oro Maximo"
                 else:
                     self.cleaned_data['tipo_contrato'] = "Contrato sobre Oro"
             else:
-                limite = articu.precio_sugerido_venta * 0.40
+                limite = articu.precio_sugerido_venta * Decimal('0.4')
                 if monto > limite:
                     self.cleaned_data['tipo_contrato'] = "Plazo Maximo"
                 else:
