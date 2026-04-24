@@ -357,18 +357,17 @@ def registrar_abono(request, id_empeno):
     
 #CUOTAS
 def listar_cuotas(request):
-    
     verificar_vencidos()
 
     usuario_rol_id = request.session.get('usuario_rol_id')
-    usuario_id     = request.session.get('usuario_id')
+    usuario_id = request.session.get('usuario_id')
 
-    form   = FiltroCuota(request.GET)
-    cuotas = Cuota.objects.select_related(
-        'id_empeno', 'id_empeno__id_cliente', 'id_empeno__id_articulo'
-    ).order_by('estado', 'fecha_programada')
+    form = FiltroCuota(request.GET)
+    
 
+    cuotas = Cuota.objects.select_related('id_empeno', 'id_cliente').order_by('estado', 'fecha_programada')
 
+    # Filtro para Clientes (Rol 3)
     if usuario_rol_id == 3:
         try:
             from clientes.models import Cliente
@@ -377,22 +376,31 @@ def listar_cuotas(request):
         except Exception:
             cuotas = cuotas.none()
 
-
+    # Aplicación de filtros del formulario
     if form.is_valid():
         estado = form.cleaned_data.get('estado')
-        q      = form.cleaned_data.get('q')
+        q = form.cleaned_data.get('q')
+        
         if estado:
             cuotas = cuotas.filter(estado=estado)
+        
         if q:
-            cuotas = cuotas.filter(id_empeno__id_cliente__nombre__icontains=q)
+            # Esto buscará coincidencias en el nombre del cliente 
+            # O filtrará para que el ID del empeño sea exactamente el que escribiste
+            if q.isdigit():
+                # Si el usuario escribe solo números, filtramos SOLO por ese empeño
+                cuotas = cuotas.filter(id_empeno__id_empeno=q)
+            else:
+                # Si escribe texto, busca por nombre de cliente
+                cuotas = cuotas.filter(id_cliente__nombre__icontains=q)
 
-    return render(request, 'cuotas/listar.html', {
-        'cuotas':           cuotas,
-        'form':             form,
-        'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
-        'total_pagadas':    Cuota.objects.filter(estado='Pagada').count(),
-        'total_vencidas':   Cuota.objects.filter(estado='Vencida').count(),
-    })
+        return render(request, 'cuotas/listar.html', {
+            'cuotas': cuotas,
+            'form': form,
+            'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
+            'total_pagadas': Cuota.objects.filter(estado='Pagada').count(),
+            'total_vencidas': Cuota.objects.filter(estado='Vencida').count(),
+        })
     
     
 def pagar_multiples(request, id_empeno):

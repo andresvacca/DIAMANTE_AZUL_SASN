@@ -2,6 +2,7 @@ from django import forms
 from empenos.models import Cuota
 
 class FiltroCuota(forms.Form):
+    
     estado = forms.ChoiceField(
         required=False,
         label='ESTADO DE CUOTA', # Texto de arriba personalizado
