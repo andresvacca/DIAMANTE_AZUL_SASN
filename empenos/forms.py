@@ -55,10 +55,28 @@ class EmpenoForm(forms.ModelForm):
                 format='%Y-%m-%d'
             ),
         }
-        
+    # ! Funcion para Automatizar los tipos de contratos en los formularios de crear y editar empeno
     def clean(self):
         super().clean()
-        
+        articu = self.cleaned_data.get('id_articulo')
+        monto = self.cleaned_data.get('monto_prestado')
+        if articu and monto:
+            if articu and str(articu.categoria) == "Oro":
+                limite = articu.precio_sugerido_venta * 0.45
+                if monto > limite:
+                    self.cleaned_data['tipo_contrato'] = "Oro Maximo"
+                else:
+                    self.cleaned_data['tipo_contrato'] = "Contrato sobre Oro"
+            else:
+                limite = articu.precio_sugerido_venta * 0.40
+                if monto > limite:
+                    self.cleaned_data['tipo_contrato'] = "Plazo Maximo"
+                else:
+                    self.cleaned_data['tipo_contrato'] = "Normal"
+                    
+        return self.cleaned_data   
+                
+                
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

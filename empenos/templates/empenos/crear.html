@@ -282,7 +282,13 @@
         if (fechaInput && !fechaInput.value) {
             const hoy = new Date();
             hoy.setMonth(hoy.getMonth() + 1);
-            fechaInput.value = hoy.toISOString().split('T')[0];
+            
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+            
+            // Ajustado a tu configuración de base de datos: DD-MM-YYYY
+            fechaInput.value = `${dd}-${mm}-${yyyy}`;
         }
     });
 
@@ -305,6 +311,7 @@
         .then(r => r.json())
         .then(data => {
             if(data.ok) {
+                document.querySelectorAll('#modal-cliente input').forEach(input => input.value = '');
                 const select = document.getElementById('id_id_cliente');
                 const opt = new Option(data.nombre, data.id, true, true);
                 select.add(opt);
@@ -332,13 +339,21 @@
         .then(r => r.json())
         .then(data => {
             if(data.ok) {
+                document.querySelectorAll('#modal-articulo input, #modal-articulo textarea').forEach(input => input.value = '');
                 const select = document.getElementById('id_id_articulo');
                 const opt = new Option(data.nombre, data.id, true, true);
                 select.add(opt);
                 cerrarModal('modal-articulo');
-            } else { alert("Error: " + JSON.stringify(data.error)); }
-        });
-    }
+            } else { 
+                // En lugar de JSON.stringify, puedes intentar mostrar los mensajes más limpios
+                let errorMsg = "";
+                for (const campo in data.error) {
+                    errorMsg += `${campo}: ${data.error[campo]}\n`;
+                }
+                alert("Error al guardar:\n" + errorMsg); 
+            }
+                    });
+                }
 </script>
 {% endblock %}
 {% endblock %}

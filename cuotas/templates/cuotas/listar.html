@@ -2,7 +2,108 @@
 {% load static %}
 
 {% block title %}Cuotas — Diamante Azul{% endblock %}
+{% block extra_css %}
+<style>
+/* Contenedor principal del buscador */
+.search-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+    border: 1px solid #e1e8ed;
+}
 
+/* Formulario en línea */
+.search-form {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Grupos de input y label */
+.search-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 8px;
+}
+
+.search-group input, 
+.search-group select {
+    padding: 10px 15px;
+    border: 2px solid #edf2f7;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.search-group input:focus, 
+.search-group select:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+/* Acciones (Botones) */
+.search-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-search {
+    background-color: #3182ce;
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-search:hover {
+    background-color: #2b6cb0;
+}
+
+.btn-clear {
+    background-color: #edf2f7;
+    color: #4a5568;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.btn-clear:hover {
+    background-color: #e2e8f0;
+    color: #2d3748;
+}
+
+/* Responsivo para móviles */
+@media (max-width: 768px) {
+    .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="dashboard-page">
     <div class="dashboard-contenido">
@@ -10,13 +111,36 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
                 <h2 style="margin:0;">📅 Gestión de Cuotas</h2>
             </div>
+                <div class="search-container">
+    <form method="GET" action="" class="search-form">
+        <div class="search-group">
+            <label for="q"><i class="fas fa-search"></i> Buscar Empeño o Cliente</label>
+            <input type="text" name="q" id="q" placeholder="Ej: 16 o Juan Pérez" value="{{ request.GET.q }}">
+        </div>
 
+        <div class="search-group">
+            <label for="estado"><i class="fas fa-filter"></i> Estado</label>
+            <select name="estado" id="estado">
+                <option value="">Todos</option>
+                <option value="Pendiente" {% if request.GET.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="Pagada" {% if request.GET.estado == 'Pagada' %}selected{% endif %}>Pagada</option>
+                <option value="Vencida" {% if request.GET.estado == 'Vencida' %}selected{% endif %}>Vencida</option>
+            </select>
+        </div>
+
+        <div class="search-actions">
+            <button type="submit" class="btn-search">Filtrar</button>
+            <a href="{% url 'cuotas:listar' %}" class="btn-clear">Limpiar</a>
+        </div>
+    </form>
+</div>
             <div style="overflow-x:auto; border-radius:12px; box-shadow:0 4px 20px var(--sombra);">
                 <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);">
                     <thead>
                         <tr style="background:rgba(74,122,181,0.12);">
                             <th style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--azul-claro);"># EMPEÑO</th>
                             <th style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--azul-claro);">CLIENTE / ARTÍCULO</th>
+                            <th style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--azul-claro);">EMPEÑO RELACIONADO</th>
                             <th style="padding:1rem;text-align:right;font-size:0.8rem;color:var(--azul-claro);">TOTAL CUOTA</th>
                             <th style="padding:1rem;text-align:center;font-size:0.8rem;color:var(--azul-claro);">ACCIONES</th>
                         </tr>
@@ -29,6 +153,11 @@
                                 <div style="font-weight:600;">{{ cuota.id_empeno.id_cliente.nombre }}</div>
                                 <div style="font-size:0.75rem;color:var(--texto-gris);">{{ cuota.id_empeno.id_articulo.nombre }}</div>
                             </td>
+                            <td>
+                                <strong>#{{ cuota.id_empeno.id_empeno }}</strong> 
+                                <br>
+                                <small class="text-muted">{{ cuota.id_empeno.articulo }}</small>
+                            </td>
                             <td style="padding:1rem;text-align:right;font-weight:700;">
                                 ${{ cuota.capital|add:cuota.interes }}
                             </td>
@@ -39,6 +168,7 @@
                                 {% else %}
                                 <span style="color:#10b981; font-weight:700; font-size:0.75rem;">PAGADA</span>
                                 {% endif %}
+                                <a href="{% url 'cuotas:detalle' cuota.id_cuota %}" title="Abono"  style="text-decoration:none; margin-right:8px;">💳</a>
                             </td>
                         </tr>
                         {% endfor %}
