@@ -16,8 +16,8 @@
             </div>
             
             {# BOTÓN PARA EL MODAL DE PAGAR MÚLTIPLES #}
-            <button type="button" class="btn-hero" onclick="abrirModalPagos()" style="padding: 10px 20px; border-radius: 8px;">
-                💳 Pagar Cuotas
+            <button type="button" onclick="abrirModal()" class="btn-hero" style="margin-bottom: 20px;">
+                    <i class="fas fa-check-double"></i> 💷Registrar Pago Múltiple
             </button>
         </div>
 
@@ -67,47 +67,138 @@
 </div>
 
 {# MODAL PARA EL PAGO DE CUOTAS (OCULTO POR DEFECTO) #}
-<div id="modalPagos" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-    <div style="background:var(--blanco); margin:10% auto; padding:2rem; border-radius:15px; width:400px; box-shadow:0 5px 30px rgba(0,0,0,0.3);">
-        <h3 style="margin-top:0; color:var(--azul-oscuro);">Pagar Cuotas de Custodia</h3>
-        <hr style="border:0; border-top:1px solid var(--gris-claro); margin:1rem 0;">
+<div id="modalPagos" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(3px);">
+    <div style="background:white; margin:5% auto; padding:0; border-radius:15px; width:450px; box-shadow:0 10px 40px rgba(0,0,0,0.4); overflow:hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         
-        <form id="formPagarCuotas" method="POST" action="#">
+        <div style="background: #003366; padding: 1.5rem; color: white;">
+            <h3 style="margin:0; font-size: 1.3rem;">Pagar Cuotas de Custodia</h3>
+            <p style="margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem;">Empeño #{{ empeno.id_empeno }}</p>
+        </div>
+
+        <form id="formPagarCuotas" method="POST" action="{% url 'cuotas:pagar_multiples' empeno.id_empeno %}" style="padding: 2rem;">
             {% csrf_token %}
-            <label style="display:block; margin-bottom:0.5rem; font-weight:600;">¿Cuántas cuotas desea pagar?</label>
-            <input type="number" name="cantidad_cuotas" id="cantidad_cuotas" min="1" value="1" 
-                   style="width:100%; padding:10px; border:1px solid var(--gris-claro); border-radius:8px; margin-bottom:1.5rem;"
-                   oninput="calcularTotal()">
             
-            <div style="background:var(--gris-muy-claro); padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
-                <p style="margin:0; font-size:0.9rem;">Valor cuota: <strong>${{ empeno.tasa_interes }}</strong> (aprox)</p>
-                <p style="margin:0.5rem 0 0; font-size:1.1rem; color:var(--azul-principal);">Total a pagar: <strong id="total_visor">$0</strong></p>
+            <label style="display:block; margin-bottom:1rem; font-weight:600; color: #333;">Seleccione las cuotas a pagar:</label>
+            
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-bottom: 1.5rem; background: #fafafa;">
+                {% for cuota in cuotas %}
+                    {% if cuota.estado == 'Pendiente' %}
+                    <label style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" 
+                           onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background='transparent'">
+                        <input type="checkbox" name="cuotas_seleccionadas" value="{{ cuota.id_cuota }}" 
+                            class="cuota-check" 
+                            data-valor="{{ cuota.capital|add:cuota.interes|add:cuota.mora }}" 
+                            onchange="actualizarTotalVisor()">
+                        <div style="margin-left: 15px;">
+                            <span style="display: block; font-weight: 600; color: #444;">Cuota {{ cuota.numero_cuota }}</span>
+                            <span style="font-size: 0.85rem; color: #888;">Vence: {{ cuota.fecha_vencimiento }}</span>
+                        </div>
+                        <span style="margin-left: auto; font-weight: bold; color: #28a745;">${{ cuota.valor_cuota }}</span>
+                    </label>
+                    {% endif %}
+                {% empty %}
+                    <div style="padding: 20px; text-align: center; color: #999;">No hay cuotas pendientes.</div>
+                {% endfor %}
+            </div>
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                <label style="display:block; margin-bottom:5px; font-weight:600; color: #333;">¿Pagar cuotas extra (Excedente)?</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="number" name="cantidad_extra" id="cantidad_extra" min="0" value="0" 
+                        style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                        oninput="actualizarTotalVisor()">
+                    <span style="font-size: 0.9rem; color: #666;">Cuotas adicionales</span>
+                </div>
+            </div>
+
+            <div style="background:#eef2f7; padding:1.2rem; border-radius:8px; margin-bottom:1.5rem; border-left: 5px solid #003366;">
+                <p style="margin:0; font-size:0.9rem; color: #666;">Total a cobrar hoy:</p>
+                <p style="margin:0.3rem 0 0; font-size:1.4rem; color:#003366; font-weight: bold;"><span id="total_visor">$0</span></p>
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button type="submit" class="btn-hero" style="flex:1;">Confirmar Pago</button>
-                <button type="button" onclick="cerrarModal()" class="btn-hero-secundario" style="flex:1;">Cancelar</button>
+                <button type="submit" id="btnConfirmar" class="btn-hero" style="flex:2; padding: 12px; font-weight: bold; opacity: 0.5;" disabled>Confirmar Pago</button>
+                <button type="button" onclick="cerrarModal()" class="btn-hero-secundario" style="flex:1; padding: 12px;">Cancelar</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    const valorCuotaBase = {{ empeno.monto_prestado }} * ({{ empeno.tasa_interes }} / 100);
 
-    function abrirModalPagos() {
-        document.getElementById('modalPagos').style.display = 'block';
-        calcularTotal();
+function abrirModal() {
+    document.getElementById('modalPagos').style.display = 'block';
+}
+
+function cerrarModal() {
+    document.getElementById('modalPagos').style.display = 'none';
+}
+
+function actualizarTotalVisor() {
+    const checks = document.querySelectorAll('.cuota-check');
+    const inputExtra = document.getElementById('cantidad_extra');
+    const visor = document.getElementById('total_visor');
+    const btn = document.getElementById('btnConfirmar'); // Buscamos el botón
+    
+    // Obtenemos el interés de la primera cuota que envía Django
+    let interesBase = parseFloat("{{ cuotas.0.interes|default:'0' }}".replace(',', '.'));
+    let total = 0;
+    let haySeleccion = false; // Variable para rastrear si hay algo marcado
+
+    checks.forEach(check => {
+        if (check.checked) {
+            // Convertimos el data-valor a número puro
+            let v = check.getAttribute('data-valor').replace(/[$.]/g, '').replace(',', '.');
+            total += parseFloat(v) || 0;
+            haySeleccion = true;
+        }
+    });
+
+    let extraCount = parseInt(inputExtra.value) || 0;
+    if (extraCount > 0) {
+        total += (extraCount * interesBase);
+        haySeleccion = true;
     }
 
-    function cerrarModal() {
-        document.getElementById('modalPagos').style.display = 'none';
+    if (visor) {
+        visor.innerText = '$' + Math.round(total).toLocaleString('es-CO');
     }
 
-    function calcularTotal() {
-        const cantidad = document.getElementById('cantidad_cuotas').value;
-        const total = cantidad * valorCuotaBase;
-        document.getElementById('total_visor').innerText = '$' + total.toLocaleString();
+    // Lógica para habilitar/deshabilitar el botón
+    if (btn) {
+        if (haySeleccion && total > 0) {
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+        }
+    }
+}
+
+    // 3. Sumar excedentes (cantidad_extra * interés base)
+    let extraCount = parseInt(inputExtra.value) || 0;
+    if (extraCount > 0) {
+        total += (extraCount * valorInteresBase);
+        seleccionados += extraCount;
+    }
+
+    // 4. Mostrar en el visor con formato Colombiano
+    visor.innerText = '$' + Math.round(total).toLocaleString('es-CO');
+
+    // 5. Activar/Desactivar botón
+    if (btn) {
+        btn.disabled = (seleccionados === 0);
+        btn.style.opacity = (seleccionados === 0) ? "0.5" : "1";
+    }
+
+    // Cerrar modal si se hace clic fuera de la caja blanca
+    window.onclick = function(event) {
+        let modal = document.getElementById('modalPagos');
+        if (event.target == modal) {
+            cerrarModal();
+        }
     }
 </script>
 {% endblock %}

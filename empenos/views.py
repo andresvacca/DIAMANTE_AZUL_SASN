@@ -9,7 +9,8 @@ from django.db.models import Sum
 from contratos.models import Contrato
 from django.db.models import Q, Sum
 from cuotas.forms import FiltroCuota
-
+from datetime import timedelta
+from decimal import Decimal
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _sincronizar_articulo(empeno):
@@ -185,19 +186,6 @@ def detalle_empeno(request, id_empeno):
         'cuotas': cuotas,
         'pagos':  pagos,
     })
-
-
-def ver_cuotas(request, id_empeno):
-    if not (_requiere_admin(request) or _requiere_empleado(request)):
-        usuario_rol_id = request.session.get('usuario_rol_id')
-        if usuario_rol_id != 3:
-            return redirect('usuarios:login')
-
-    verificar_vencidos()
-    empeno = get_object_or_404(Empeno, pk=id_empeno)
-    cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
-
-    return render(request, 'cuotas/detalle.html', {'empeno': empeno, 'cuotas': cuotas})
 
 
 def registrar_pago(request, id_cuota):
@@ -406,3 +394,97 @@ def listar_cuotas(request):
         'total_vencidas':   Cuota.objects.filter(estado='Vencida').count(),
     })
     
+    
+def pagar_multiples(request, id_empeno):
+    if not (_requiere_admin(request) or _requiere_empleado(request)):
+        if request.session.get('usuario_rol_id') != 3:
+            return redirect('usuarios:login')
+
+    if request.method == 'POST':
+        empeno = get_object_or_404(Empeno, pk=id_empeno)
+        cuotas_ids = request.POST.getlist('cuotas_seleccionadas')
+        cantidad_extra = int(request.POST.get('cantidad_extra', 0))
+        
+        # 1. Procesar cuotas existentes
+        cuotas_seleccionadas = Cuota.objects.filter(id_empeno=empeno, id_cuota__in=cuotas_ids)
+        
+        # Obtenemos el valor del interés de la primera cuota para las cuotas extra
+        primera_cuota = Cuota.objects.filter(id_empeno=empeno).first()
+        valor_interes_fijo = primera_cuota.interes if primera_cuota else Decimal('0.00')
+
+        for cuota in cuotas_seleccionadas:
+            if cuota.estado != 'Pagada':
+                # Sumamos capital, interes y mora para el total del pago
+                total_pago = cuota.capital + cuota.interes + cuota.mora
+                
+                Pago.objects.create(
+                    id_cuota=cuota,
+                    id_cliente=empeno.id_cliente,
+                    monto=total_pago,
+                    metodo_pago='Efectivo',
+                )
+                cuota.estado = 'Pagada'
+                cuota.save()
+
+        # 2. Procesar cuotas excedentes (Extra)
+        if cantidad_extra > 0:
+            for _ in range(cantidad_extra):
+                ultima = Cuota.objects.filter(id_empeno=empeno).order_by('-numero_cuota').first()
+                nuevo_num = (ultima.numero_cuota + 1) if ultima else 1
+                
+                # Calculamos la fecha programada (30 días después de la última)
+                fecha_base = ultima.fecha_programada if ultima else timezone.now().date()
+                nueva_fecha = fecha_base + timedelta(days=30)
+                
+                nueva_cuota = Cuota.objects.create(
+                    id_empeno=empeno,
+                    id_cliente=empeno.id_cliente,
+                    numero_cuota=nuevo_num,
+                    fecha_programada=nueva_fecha,
+                    capital=Decimal('0.00'),
+                    interes=valor_interes_fijo,
+                    mora=Decimal('0.00'),
+                    estado='Pagada'
+                )
+                
+                Pago.objects.create(
+                    id_cuota=nueva_cuota,
+                    id_cliente=empeno.id_cliente,
+                    monto=valor_interes_fijo,
+                    metodo_pago='Efectivo',
+                )
+
+        empeno.estado = 'Activo'
+        empeno.save()
+        _sincronizar_articulo(empeno)
+
+        messages.success(request, f"Pagos registrados exitosamente.")
+
+    return redirect('cuotas:listar')
+
+def agregar_cuota_manual(request, id_empeno):
+    empeno = get_object_or_404(Empeno, pk=id_empeno)
+    ultima_cuota = Cuota.objects.filter(id_empeno=empeno).order_by('-numero_cuota').first()
+    nuevo_numero = (ultima_cuota.numero_cuota + 1) if ultima_cuota else 1
+
+    Cuota.objects.create(
+        id_empeno=empeno,
+        numero_cuota=nuevo_numero,
+        valor_cuota=empeno.tasa_interes,
+        fecha_vencimiento=timezone.now() + timedelta(days=30),
+        estado='Pendiente'
+    ) # CORRECCIÓN: Falta cerrar paréntesis
+    
+    return redirect('cuotas:listar')
+
+def ver_cuotas(request, id_empeno):
+    if not (_requiere_admin(request) or _requiere_empleado(request)):
+        usuario_rol_id = request.session.get('usuario_rol_id') # CORRECCIÓN: Comillas
+        if usuario_rol_id != 3:
+            return redirect('usuarios:login')
+
+    verificar_vencidos()
+    empeno = get_object_or_404(Empeno, pk=id_empeno)
+    cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
+
+    return render(request, 'cuotas/detalle.html', {'empeno': empeno, 'cuotas': cuotas}) # CORRECCIÓN: Falta paréntesis
