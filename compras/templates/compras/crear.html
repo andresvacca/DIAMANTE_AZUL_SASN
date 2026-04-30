@@ -197,6 +197,30 @@
                 <input type="text" id="mc-direccion" class="auth-input" placeholder="Opcional">
             </div>
         </div>
+        <div class="auth-campo">
+                <label class="auth-label">Departamento de Expedición</label>
+                <select id="sel-departamento" class="auth-input" onchange="cargarMunicipios()">
+                    <option value="">— Seleccionar —</option>
+                    <option>AMAZONAS</option><option>ANTIOQUIA</option><option>ARAUCA</option>
+                    <option>ATLÁNTICO</option><option>BOLÍVAR</option><option>BOYACÁ</option>
+                    <option>CALDAS</option><option>CAQUETÁ</option><option>CASANARE</option>
+                    <option>CAUCA</option><option>CESAR</option><option>CHOCÓ</option>
+                    <option>CÓRDOBA</option><option>CUNDINAMARCA</option><option>GUAINÍA</option>
+                    <option>GUAVIARE</option><option>HUILA</option><option>LA GUAJIRA</option>
+                    <option>MAGDALENA</option><option>META</option><option>NARIÑO</option>
+                    <option>NORTE DE SANTANDER</option><option>PUTUMAYO</option><option>QUINDÍO</option>
+                    <option>RISARALDA</option><option>SAN ANDRÉS</option><option>SANTANDER</option>
+                    <option>SUCRE</option><option>TOLIMA</option><option>VALLE DEL CAUCA</option>
+                    <option>VAUPÉS</option><option>VICHADA</option>
+                </select>
+        </div>
+        
+        <div class="auth-campo">
+            <label class="auth-label">Municipio de Expedición</label>
+            <select id="sel-municipio" class="auth-input">
+                <option value="">— Selecciona departamento primero —</option>
+            </select>
+        </div>
 
         <hr style="border:none;border-top:1px solid rgba(74,122,181,0.15);margin:1rem 0;">
         <p style="font-size:0.82rem;color:#aaa;margin:0 0 0.75rem;">Acceso al sistema <span style="font-style:italic;">(opcional)</span></p>
