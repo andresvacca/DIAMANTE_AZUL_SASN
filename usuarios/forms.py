@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.hashers import make_password
 from .models import Usuario, Rol
 from clientes.models import Cliente
+from .validators import CustomPasswordValidator
+from django.core.exceptions import ValidationError
 
 
 class UsuarioForm(forms.ModelForm):
@@ -100,8 +102,20 @@ class RegistroForm(forms.Form):
         cleaned = super().clean()
         p1 = cleaned.get('password')
         p2 = cleaned.get('password2')
+
+        # Validación de coincidencia
         if p1 and p2 and p1 != p2:
             raise forms.ValidationError('Las contraseñas no coinciden.')
+
+        # Validación de tu clase personalizada
+        if p1:
+            validator = CustomPasswordValidator()
+            try:
+                validator.validate(p1)
+            except ValidationError as e:
+                # Esto pone el error justo debajo del campo de password
+                self.add_error('password', e)
+
         return cleaned
 
     def save(self):
