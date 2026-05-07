@@ -4,7 +4,7 @@ from .models import Cliente
 from .forms import ClienteForm, FiltroCliente
 from usuarios.views import _requiere_admin, _requiere_empleado
 from django.db.models import Q
-from usuarios.models import Rol
+from usuarios.models import Rol, Usuario
 import json
 from django.http import JsonResponse
 import requests
@@ -40,10 +40,10 @@ def crear_cliente(request):
     return render(request, 'clientes/crear.html', {'form': form})
 
 
-def editar_cliente(request, id_cliente):
+def editar_cliente(request, id_usuario):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
-    cliente = get_object_or_404(Cliente, pk=id_cliente)
+    cliente = get_object_or_404(Usuario, id_usuario=id_usuario)
     if request.method == 'POST':
         form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():

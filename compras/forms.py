@@ -2,6 +2,7 @@ from django import forms
 from clientes.models import Cliente
 from articulos.models import Articulos
 
+
 FORMA_PAGO_CHOICES = [
     ('Efectivo', 'Efectivo'),
     ('Transferencia', 'Transferencia'),
