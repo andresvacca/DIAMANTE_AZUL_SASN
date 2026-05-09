@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views # Importamos el views.py que acabamos de crear
 
+handler404 = 'diamante_azul.views.error_404_view'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'), 

@@ -4,10 +4,12 @@ from django.contrib.auth.hashers import check_password
 from .models import Usuario, Rol
 from contratos.models import Contrato
 from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuarios
+from django.contrib.auth.decorators import login_required
 
 
 
 # ─── Gestión CRUD de usuarios (panel admin) ───────────────────────────────────
+
 
 def listar_usuarios(request):
     if not _requiere_admin(request) or _requiere_empleado(request):
@@ -42,6 +44,7 @@ def crear_usuario(request):
     return render(request, 'usuarios/crear.html', {'form': form})
 
 
+
 def editar_usuario(request, id_usuario):
     if not _requiere_admin(request):
         return redirect('usuarios:login')
@@ -58,6 +61,7 @@ def editar_usuario(request, id_usuario):
     return render(request, 'usuarios/editar.html', {'form': form, 'usuario': usuario})
 
 
+
 def eliminar_usuario(request, id_usuario):
     if not _requiere_admin(request):
         return redirect('usuarios:login')
@@ -67,6 +71,7 @@ def eliminar_usuario(request, id_usuario):
         messages.success(request, 'Usuario eliminado correctamente.')
         return redirect('usuarios:listar')
     return render(request, 'usuarios/eliminar.html', {'usuario': usuario})
+
 
 def listar_contratos(request):
     rol_id = request.session.get('usuario_rol_id')
