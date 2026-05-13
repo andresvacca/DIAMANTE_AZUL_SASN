@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views # Importamos el views.py que acabamos de crear
 
+handler404 = 'diamante_azul.views.error_404_view'
+handler500 = 'diamante_azul.views.error_500_view'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'), 
@@ -15,4 +18,5 @@ urlpatterns = [
     path('compras/', include('compras.urls')),
     path('notificaciones/', include('notificaciones.urls')),
     path('cuadre/', include('cuadre.urls')),  # o la app donde pongas el cuadre
+    path('test-500/', views.error_500_view, name='test_500'),
 ]
