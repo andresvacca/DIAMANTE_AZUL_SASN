@@ -85,9 +85,7 @@
                     <div class="auth-field">
                         <label class="auth-label">{{ form.password.label }}</label>
                         {{ form.password }}
-                        {% if form.password.help_text %}
-                        <small style="color:#aaa;font-size:0.8rem;">{{ form.password.help_text }}</small>
-                        {% endif %}
+                        
                         {% if form.password.errors %}<span class="auth-error">{{ form.password.errors|join:", " }}</span>{% endif %}
                     </div>
 

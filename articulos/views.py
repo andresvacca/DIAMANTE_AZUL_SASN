@@ -194,7 +194,7 @@ def detalle_articulo(request, id_articulo):
         # Si hay empeño, buscamos su contrato y sus pagos
         from contratos.models import Contrato # Import local para evitar circularidad
         contrato = Contrato.objects.filter(id_empeno=empeno).first()
-        pagos = empeno.pago_set.all().order_by('-fecha_pago')
+        pagos = empeno.cuota_set.all().order_by('-fecha_programada')
 
     return render(request, 'articulos/detalle.html', {
         'articulo': articulo,
