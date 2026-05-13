@@ -1,14 +1,17 @@
 from django import forms
 from .models import Articulos
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
+from django.core.exceptions import ValidationError
 
 class ArticuloForm(forms.ModelForm):
-    """
-    Form para registrar y editar artículos.
-    Los campos con choices (categoria, estado, quilataje) se renderizan
-    automáticamente como <select> con las opciones del modelo.
-    """
+    
 
     class Meta:
+        nombre = forms.CharField(
+            label='Nombre del articulo'
+            
+        )
+        
         model = Articulos
         fields = ['nombre', 'descripcion', 'numero_serie', 'categoria', 'estado', 'precio_sugerido_venta', 'quilataje']
         labels = {
