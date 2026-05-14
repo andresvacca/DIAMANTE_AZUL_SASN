@@ -62,13 +62,22 @@ def listar_articulos(request):
 def crear_articulo(request):
     if request.method == 'POST':
         form = ArticuloForm(request.POST)
+        
         if form.is_valid():
             form.save()
             messages.success(request, 'Artículo registrado correctamente.')
             return redirect('articulos:listar')
+        
+        # Este bloque se ejecuta SI HAY ERRORES de validación
+        print("ERRORES:", form.errors.as_data()) # Para ver el fallo en la consola
         messages.error(request, 'Por favor corrige los errores del formulario.')
+    
     else:
+        # Este bloque se ejecuta la PRIMERA VEZ que entras (GET)
         form = ArticuloForm()
+    
+    # Este return DEBE estar al final, alineado con el primer 'if'
+    # Así siempre devuelve la página, ya sea con el form vacío o con errores
     return render(request, 'articulos/crear.html', {'form': form})
 
 
