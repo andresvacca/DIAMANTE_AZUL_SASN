@@ -11,6 +11,7 @@ from django.db.models import Q, Sum
 from cuotas.forms import FiltroCuota
 from datetime import timedelta
 from decimal import Decimal
+from datetime import datetime, timedelta
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def clean(self):
     cleaned_data = super().clean()
@@ -216,7 +217,12 @@ def crear_empeno(request):
         print("ERRORES:", form.errors)
         messages.error(request, 'Por favor corrige los errores del formulario.')
     else:
-        form = EmpenoForm()
+        fecha_vencimiento = datetime.now() + timedelta(days=31)
+        
+        
+        form = EmpenoForm(initial ={
+            'fecha_vencimiento': fecha_vencimiento.strftime('%Y-%m-%d')
+        })
 
     return render(request, 'empenos/crear.html', {'form': form})
 
