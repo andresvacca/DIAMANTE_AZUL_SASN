@@ -35,6 +35,11 @@ class Compra(models.Model):
         null=True,
         blank=True
     )
+    
+    forma_pago = models.CharField(
+        max_length=50,
+        null=True,
+        )
 
     class Meta:
         db_table = 'compra'

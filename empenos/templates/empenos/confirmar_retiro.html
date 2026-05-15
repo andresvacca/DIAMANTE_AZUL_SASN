@@ -1,0 +1,53 @@
+{% extends 'home/base.html' %}
+
+{% block content %}
+<div style="margin: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e1e4e8;">
+        
+        <div style="background-color: #2c3e50; padding: 15px 25px; color: white; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600;">📦 Control de Salida de Inventario</h3>
+            {% if tiene_cuotas_pendientes %}
+                <span style="background-color: #e74c3c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">DEUDA ACTIVA</span>
+            {% else %}
+                <span style="background-color: #27ae60; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">PAZ Y SALVO</span>
+            {% endif %}
+        </div>
+
+        <div style="padding: 25px; text-align: center;">
+            {% if tiene_cuotas_pendientes %}
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 3rem; color: #f39c12; margin-bottom: 10px;">⚠️</div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Entrega No Autorizada</h4>
+                    <p style="color: #7f8c8d; max-width: 400px; margin: 0 auto 20px;">
+                        El sistema detectó cuotas pendientes. El cliente debe estar al día para retirar el artículo físico de la bodega.
+                    </p>
+                </div>
+                <button disabled style="background-color: #d5dbdb; color: #7f8c8d; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: not-allowed; width: 100%; max-width: 300px;">
+                    Confirmar Entrega (Bloqueado)
+                </button>
+            {% else %}
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 3rem; color: #27ae60; margin-bottom: 10px;">✅</div>
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Listo para Entrega</h4>
+                    <p style="color: #7f8c8d; max-width: 400px; margin: 0 auto 20px;">
+                        Todos los pagos han sido verificados. Por favor, proceda a retirar el artículo <strong>{{ empeno.id_articulo.nombre }}</strong> de la caja fuerte y entréguelo al cliente.
+                    </p>
+                </div>
+                
+                <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            onclick="return confirm('¿Confirma que ya entregó el producto físico? Esta acción sacará el artículo del inventario activo.')"
+                            style="background-color: #27ae60; color: white; border: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; max-width: 350px; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);">
+                        🤝 CONFIRMAR ENTREGA FÍSICA
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 12px; border-top: 1px solid #e1e4e8; text-align: center;">
+            <small style="color: #95a5a6;">Solo personal autorizado puede procesar salidas de bodega.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

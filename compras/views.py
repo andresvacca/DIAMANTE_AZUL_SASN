@@ -58,14 +58,13 @@ def crear_compra(request):
                 id_articulo=data['id_articulo'],
                 precio_pagado=data['precio_pagado'],
                 precio_reventa=data['precio_reventa'],
-                forma_pago=data['forma_pago'],
                 id_factura_compra=factura,
-                estado='Completado'
+                estado='En Venta'
             )
 
             # 4. PASAR EL ARTÍCULO A "EN VENTA"
             articulo = data['id_articulo']
-            articulo.estado = 'En venta'
+            articulo.estado = 'En Venta'
             articulo.save()
             
             messages.success(request, 'Compra registrada y artículo puesto en venta.')

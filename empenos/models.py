@@ -19,7 +19,7 @@ class Empeno(models.Model):
     tasa_interes = models.DecimalField(max_digits=5, decimal_places=2)
     fecha_inicio = models.DateTimeField(auto_now_add=True)
     fecha_vencimiento = models.DateField()
-    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Activo')
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='Activo')
     monto_entregado = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_entrega = models.DateTimeField(auto_now_add=True)
     
