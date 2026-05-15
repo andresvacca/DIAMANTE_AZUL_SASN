@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/reporte-prestamos/', views.api_reporte_empenos, name='api_reporte_empenos'),
     path('panel-reportes/', views.pagina_reportes, name='pagina_reportes'),
     path('empeno/<int:id_empeno>/abono/', views.registrar_abono, name='registrar_abono'),
+    path('retirar/<int:empeno_id>/', views.retirar_empeno, name='retirar'),
 ]

@@ -11,6 +11,9 @@ from django.db.models import Q, Sum
 from cuotas.forms import FiltroCuota
 from datetime import timedelta
 from decimal import Decimal
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from django.db import transaction
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def clean(self):
     cleaned_data = super().clean()
@@ -57,19 +60,39 @@ def _sincronizar_articulo(empeno):
 
 
 def _generar_cuota(empeno):
-    """Crea automáticamente la cuota única de solo interés."""
+    """Genera múltiples cuotas de interés según el tipo de contrato."""
     monto = empeno.monto_prestado
-    interes = round(monto * empeno.tasa_interes / 100, 2)
-
-    Cuota.objects.create(
-        id_empeno=empeno,
-        numero_cuota=1,
-        fecha_programada=empeno.fecha_vencimiento,
-        capital=0,  # <--- Cambiado de 'monto' a 0
-        interes=interes,
-        mora=0,
-        estado='Pendiente',
-    )
+    interes_mensual = round(monto * empeno.tasa_interes / 100, 2)
+    
+    # 1. Definimos la duración según el tipo de contrato del contrato vinculado
+    # Accedemos a través de empeno.id_contrato que creaste en la vista 'crear_empeno'
+    tipo = empeno.id_contrato.tipo_contrato
+    
+    mapa_meses = {
+        'Normal': 3,             # 3 Meses
+        'Plazo Maximo': 4,       # 4 Meses
+        'Contrato sobre Oro': 1, # 1 Mes (ajusta según tu necesidad)
+    }
+    
+    # Obtenemos el número de meses, por defecto 3 si hay algún error
+    cantidad_cuotas = mapa_meses.get(tipo, 3)
+    
+    # 2. Bucle para crear cada cuota mensual
+    for i in range(1, cantidad_cuotas + 1):
+        # Calculamos la fecha programada sumando i meses a la fecha de inicio
+        # Si el empeño inició hoy, la cuota 1 vence en 1 mes, la 2 en 2 meses...
+        fecha_cuota = empeno.fecha_inicio + relativedelta(months=i)
+        
+        Cuota.objects.create(
+            id_empeno=empeno,
+            id_cliente=empeno.id_cliente, # Agregado para integridad
+            numero_cuota=i,
+            fecha_programada=fecha_cuota,
+            capital=Decimal('0.00'),
+            interes=interes_mensual,
+            mora=Decimal('0.00'),
+            estado='Pendiente',
+        )
 
 
 def verificar_vencidos():
@@ -152,22 +175,21 @@ def listar_empenos(request):
         'form': form
     })
 
+@transaction.atomic
 def crear_empeno(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
     if request.method == 'POST':
-        # 1. Copiamos los datos del POST para poder modificarlos
         data = request.POST.copy()
         
-        # 2. Lógica de automatización: Decidir el tipo según el valor
-        valor_str = data.get('valor_empeno', '0')
+        # 1. Lógica de automatización de tipo de contrato
+        valor_str = data.get('monto_prestado', '0') # Ajustado al nombre del campo en tu modelo
         try:
             valor = Decimal(valor_str)
         except:
             valor = Decimal('0')
 
-        # Si el tipo de contrato viene vacío (porque está oculto o disabled en el HTML)
         if not data.get('tipo_contrato'):
             if valor <= Decimal('500000'):
                 data['tipo_contrato'] = 'Normal'
@@ -176,50 +198,59 @@ def crear_empeno(request):
             else:
                 data['tipo_contrato'] = 'Contrato sobre Oro'
 
-        # 3. Ahora sí, creamos el form con los datos ya "parchados"
         form = EmpenoForm(data)
         
         if form.is_valid():
-            empeno = form.save()
+            # Creamos el objeto en memoria (sin guardar) para validar
+            empeno = form.save(commit=False)
+            articulo = empeno.id_articulo
+
+            # 2. Validación del tope del 40%
+            # Asumiendo que 'precio_sugerido_venta' está en el modelo Articulos
+            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.40')
+
+            if empeno.monto_prestado > tope_maximo:
+                messages.error(request, f"Error: El préstamo (${empeno.monto_prestado}) supera el 40% permitido (${tope_maximo})")
+                return render(request, 'empenos/crear.html', {'form': form})
             
-            # 4. Usamos el tipo que ya validamos en el form
-            tipo_elegido = form.cleaned_data.get('tipo_contrato')
+            # 3. CREACIÓN DEL CONTRATO PRIMERO
+            # Usamos el tipo que ya se parchó en la data del POST
+            tipo_elegido = data['tipo_contrato']
             
+            # Guardamos el empeño para tener un ID para el contrato
+            empeno.save() 
+
             nuevo_contrato = Contrato.objects.create(
                 id_empeno=empeno,
                 id_cliente=empeno.id_cliente,
                 id_articulo=empeno.id_articulo,
                 fecha_contrato=timezone.now().date(),
                 tipo_contrato=tipo_elegido,
-                estado_contrato='Disponible'
+                estado_contrato='Activo' # O 'Vigente'
             )
-            empeno = form.save(commit=False) # No guardamos en DB todavía
-            articulo = empeno.id_articulo
 
-            # Calculamos el 40%
-            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.40')
-
-            if empeno.monto_prestado > tope_maximo:
-                messages.error(request, f"Error: El préstamo no puede superar el 40% (${tope_maximo})")
-                return render(request, 'empenos/crear.html', {'form': form})
-            
+            # 4. VINCULACIÓN FINAL Y PROCESOS AUTOMÁTICOS
             empeno.id_contrato = nuevo_contrato
             empeno.save()
             
-            _sincronizar_articulo(empeno)
-            _generar_cuota(empeno)
+            _sincronizar_articulo(empeno) # Cambia estado del artículo a 'Empeñado'
+            _generar_cuota(empeno)      # Crea las 1, 3 o 4 cuotas según el tipo
             
-            messages.success(request, f'Empeño #{empeno.id_empeno} registrado y contrato {tipo_elegido} generado.')
-            return redirect('empenos:detalle', empeno.id_empeno)
+            messages.success(request, f'Empeño #{empeno.id_empeno} registrado con contrato {tipo_elegido}.')
+            return redirect('empenos:detalle', empeno.pk)
         
-        # Si llega aquí, es porque falló la validación (puedes ver por qué en consola)
-        print("ERRORES:", form.errors)
-        messages.error(request, 'Por favor corrige los errores del formulario.')
+        else:
+            print("ERRORES:", form.errors)
+            messages.error(request, 'Por favor corrige los errores del formulario.')
+            
     else:
-        form = EmpenoForm()
+        # Fecha sugerida de vencimiento inicial (un mes después)
+        fecha_vencimiento = timezone.now() + timedelta(days=31)
+        form = EmpenoForm(initial={
+            'fecha_vencimiento': fecha_vencimiento.date()
+        })
 
     return render(request, 'empenos/crear.html', {'form': form})
-
 
 def eliminar_empeno(request, id_empeno):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
@@ -550,17 +581,37 @@ def agregar_cuota_manual(request, id_empeno):
     return redirect('cuotas:listar')
 
 def ver_cuotas(request, id_empeno):
-    if not (_requiere_admin(request) or _requiere_empleado(request)):
-        usuario_rol_id = request.session.get('usuario_rol_id') # CORRECCIÓN: Comillas
-        if usuario_rol_id != 3:
-            return redirect('usuarios:login')
-
-    verificar_vencidos()
+    # ... tus validaciones de usuario ...
     empeno = get_object_or_404(Empeno, pk=id_empeno)
     cuotas = Cuota.objects.filter(id_empeno=empeno).order_by('numero_cuota')
 
-    return render(request, 'cuotas/detalle.html', {'empeno': empeno, 'cuotas': cuotas}) # CORRECCIÓN: Falta paréntesis
+    # VARIABLE CRUCIAL:
+    # Verifica si existe alguna cuota que no esté pagada.
+    tiene_pendientes = cuotas.filter(estado='Pendiente').exists()
 
+    return render(request, 'cuotas/detalle.html', {
+        'empeno': empeno,
+        'cuotas': cuotas,
+        'tiene_cuotas_pendientes': tiene_pendientes, # Se envía al HTML
+    })
+def retirar_empeno(request, empeno_id):
+    empeno = get_object_or_404(Empeno, pk=empeno_id)
+    
+    if request.method == 'POST':
+        # Seguridad final: no dejar retirar si hay deuda (aunque el botón se viera verde)
+        if Cuota.objects.filter(id_empeno=empeno, estado='Pendiente').exists(): 
+            messages.error(request, "Error: Hay deudas pendientes.")
+            return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)
 
+        # Actualizamos estados
+        empeno.estado = 'Retirado'
+        empeno.save()
+        
+        articulo = empeno.id_articulo
+        articulo.estado = 'Retirado'
+        articulo.save()
+        
+        messages.success(request, f"¡Éxito! {articulo.nombre} retirado de bodega.")
+        return redirect('empenos:listar')
 
-
+    return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)

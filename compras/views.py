@@ -31,6 +31,7 @@ def crear_compra(request):
         form = CompraForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
+            # Obtenemos el usuario de la sesión
             usuario_id = request.session.get('usuario_id')
             usuario = get_object_or_404(Usuario, pk=usuario_id)
 
@@ -51,6 +52,7 @@ def crear_compra(request):
             )
             
             # 3. Crear la compra vinculada
+            # IMPORTANTE: Verifica que 'id_factura_compra' sea el nombre en tu modelo
             Compra.objects.create(
                 id_cliente=data['id_cliente'],
                 id_articulo=data['id_articulo'],
@@ -59,13 +61,21 @@ def crear_compra(request):
                 id_factura_compra=factura,
                 estado='En Venta'
             )
+
+            # 4. PASAR EL ARTÍCULO A "EN VENTA"
+            articulo = data['id_articulo']
+            articulo.estado = 'En Venta'
+            articulo.save()
             
-            messages.success(request, 'Compra registrada y factura generada correctamente.')
+            messages.success(request, 'Compra registrada y artículo puesto en venta.')
             return redirect('compras:listar')
+        else:
+            # Si el formulario falla, esto te dirá por qué en la consola
+            print(form.errors) 
     else:
         form = CompraForm()
+        
     return render(request, 'compras/crear.html', {'form': form})
-
 # --- Vistas de Venta ---
 
 

@@ -61,13 +61,17 @@
             {% endif %}
 
             <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
-                <form method="POST">
+                <form method="POST" novalidate>
                     {% csrf_token %}
 
                     <div class="auth-field">
                         <label class="auth-label">Nombre del artículo *</label>
-                        <input type="text" name="nombre" class="auth-input" value="{{ form.nombre.value|default:'' }}" required placeholder="Ej: Anillo de oro">
-                        {% if form.nombre.errors %}<span class="auth-error">{{ form.nombre.errors|join:", " }}</span>{% endif %}
+                        <input type="text" name="nombre" class="auth-input" value="{{ form.nombre.value|default:'' }}"  placeholder="Ej: Anillo de oro">
+                        {% if form.nombre.errors %}
+                            <span class="auth-error" style="color:red; font-size:0.8rem;">
+                                {{ form.nombre.errors|join:", " }}
+                            </span>
+                        {% endif %}
                     </div>
 
                     <div class="auth-field">
@@ -85,7 +89,7 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                         <div class="auth-field">
                             <label class="auth-label">Categoría *</label>
-                            <select name="categoria" class="auth-input" required>
+                            <select name="categoria" class="auth-input" >
                                 <option value="">— Seleccionar —</option>
                                 {% for value, label in form.fields.categoria.choices %}
                                 <option value="{{ value }}" {% if form.categoria.value == value %}selected{% endif %}>{{ label }}</option>
@@ -96,7 +100,7 @@
 
                         <div class="auth-field">
                             <label class="auth-label">Estado *</label>
-                            <select name="estado" class="auth-input" required>
+                            <select name="estado" class="auth-input" >
                                 <option value="">— Seleccionar —</option>
                                 {% for value, label in form.fields.estado.choices %}
                                 <option value="{{ value }}" {% if form.estado.value == value %}selected{% endif %}>{{ label }}</option>
@@ -109,8 +113,8 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                         <div class="auth-field">
                             <label class="auth-label">Precio sugerido *</label>
-                            <input type="number" name="precio_sugerido_venta" class="auth-input" value="{{ form.precio_sugerido.value|default:'' }}" step="0.01" min="0" required placeholder="0.00">
-                            {% if form.precio_sugerido.errors %}<span class="auth-error">{{ form.precio_sugerido.errors|join:", " }}</span>{% endif %}
+                            <input type="number" name="precio_sugerido_venta" class="auth-input" value="{{ form.precio_sugerido_venta.value|default:'' }}" step="0.01" min="0"  placeholder="0.00">
+                            {% if form.precio_sugerido_venta.errors %}<span class="auth-error">{{ form.precio_sugerido_venta.errors|join:", " }}</span>{% endif %}
                         </div>
 
                         <div class="auth-field">

@@ -4,7 +4,7 @@ from .models import Usuario, Rol
 from clientes.models import Cliente
 from .validators import CustomPasswordValidator
 from django.core.exceptions import ValidationError
-
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 
 class UsuarioForm(forms.ModelForm):
     password = forms.CharField(
@@ -41,7 +41,11 @@ class UsuarioForm(forms.ModelForm):
 class RegistroForm(forms.Form):
     nombre = forms.CharField(
         label='Nombre completo',
-        max_length=100,
+        validators=[
+            MinLengthValidator(3 ,message= "Minimo 3 Caracteres"),
+            MaxLengthValidator(100, message= "Maximo 100 Caracteres")
+           
+        ],
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Tu nombre completo'})
     )
     email = forms.EmailField(
@@ -50,13 +54,28 @@ class RegistroForm(forms.Form):
     )
     documento_id = forms.CharField(
         label='Número de documento',
-        max_length=20,
+        validators=[
+          RegexValidator(
+              regex=r'^\d+$',
+              message= "El Documento solo debe tener numeros"
+           ),
+            MinLengthValidator(4, message="El teléfono debe tener minumo 4 dígitos."),
+            MaxLengthValidator(15, message="El teléfono no puede exceder los 15 dígitos."),
+        ],
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Cédula o documento'})
     )
     telefono = forms.CharField(
         label='Teléfono',
         max_length=20,
         required=False,
+        validators=[
+          RegexValidator(
+              regex=r'^\d+$',
+              message= "El telefono solo debe tener numeros"
+           ),
+            MinLengthValidator(10, message="El teléfono debe tener 10 dígitos."),
+            MaxLengthValidator(10, message="El teléfono no puede exceder los 10 dígitos."),
+        ],
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Opcional'})
     )
     direccion = forms.CharField(
@@ -67,13 +86,11 @@ class RegistroForm(forms.Form):
     departamento_expedicion = forms.CharField(
         label='Departamento de Expedición',
         max_length=100,
-        required=False,
         widget=forms.HiddenInput()
     )
     lugar_expedicion = forms.CharField(
         label='Municipio de Expedición',
         max_length=100,
-        required=False,
         widget=forms.HiddenInput()
     )
     password = forms.CharField(
@@ -85,6 +102,8 @@ class RegistroForm(forms.Form):
         label='Confirmar contraseña',
         widget=forms.PasswordInput(attrs={'class': 'auth-input', 'placeholder': 'Repite la contraseña'})
     )
+
+
 
     def clean_email(self):
         email = self.cleaned_data.get('email')

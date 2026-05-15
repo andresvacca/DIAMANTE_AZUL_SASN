@@ -66,6 +66,18 @@
                                 <a href="{% url 'empenos:editar' empeno.id_empeno %}" title="Editar" style="text-decoration:none; margin-right:8px;">✏️</a>
                                 <a href="{% url 'empenos:eliminar' empeno.id_empeno %}" title="Eliminar" style="text-decoration:none; margin-right:8px;">🗑️</a>
                                 <a href="{% url 'empenos:registrar_abono' empeno.id_empeno %}" title="Abono"  style="text-decoration:none; margin-right:8px;">💳</a>
+                                {% if tiene_cuotas_pendientes %}
+                                    <button class="btn btn-disabled" title="Debe pagar todas las cuotas primero" disabled>
+                                        🚫 Bloqueado: Cuotas Pendientes
+                                    </button>
+                                {% else %}
+                                    <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success">
+                                            ✅ Retirar Empeño
+                                        </button>
+                                    </form>
+                                {% endif %}
                                 {% endif %}
                                 
                                 {% if empeno.cuota_pendiente %}
