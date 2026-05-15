@@ -42,8 +42,12 @@ class RegistroForm(forms.Form):
     nombre = forms.CharField(
         label='Nombre completo',
         validators=[
+            RegexValidator(
+                regex=r'^[^0-9]+$',
+                message='El nombre no debe tener numeros'
+            ),
             MinLengthValidator(3 ,message= "Minimo 3 Caracteres"),
-            MaxLengthValidator(100, message= "Maximo 100 Caracteres")
+            MaxLengthValidator(100, message= "Maximo 100 Caracteres"),
            
         ],
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Tu nombre completo'})

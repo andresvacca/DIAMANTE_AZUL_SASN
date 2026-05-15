@@ -3,6 +3,7 @@ from .models import Empeno, Pago
 from contratos.models import Contrato
 from articulos.models import Articulos
 from decimal import Decimal
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 
 class EmpenoForm(forms.ModelForm):
     # --- CAMPOS CON VALIDACIÓN DE NEGATIVOS Y ESTILO ---

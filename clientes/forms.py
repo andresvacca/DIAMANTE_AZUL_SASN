@@ -2,35 +2,62 @@ from django import forms
 from django.contrib.auth.hashers import make_password
 from .models import Cliente
 from usuarios.models import Usuario, Rol
-
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 
 class ClienteForm(forms.ModelForm):
     email = forms.EmailField(
         label='Correo electrónico',
-        required=False,
         widget=forms.EmailInput(attrs={'class': 'auth-input', 'placeholder': 'correo@ejemplo.com'})
     )
     password = forms.CharField(
         label='Contraseña',
-        required=False,
         widget=forms.PasswordInput(attrs={'class': 'auth-input', 'placeholder': 'Dejar vacío si no tendrá acceso'}),
         help_text='Si se ingresa, se creará un usuario con acceso al sistema.'
+    )
+    
+    nombre = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'auth-input', 
+            'placeholder': 'Ingrese el nombre completo'
+        }),
+        label='Nombre Completo',
+        validators=[
+            RegexValidator(
+                regex = r'^[^0-9]+$',
+                message ='El nombre solo debe tener letras'
+            ),
+            MinLengthValidator(3 ,message= "Minimo 3 Caracteres"),
+            MaxLengthValidator(100, message= "Maximo 100 Caracteres"),
+            ],
+    )
+    
+    documento_id = forms.CharField(
+        label='Número de documento',
+        validators=[
+          RegexValidator(
+              regex=r'^\d+$',
+              message= "El Documento solo debe tener numeros"
+           ),
+            MinLengthValidator(4, message="El teléfono debe tener minumo 4 dígitos."),
+            MaxLengthValidator(15, message="El teléfono no puede exceder los 15 dígitos."),
+        ],
+        widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Cédula o documento'})
     )
 
     class Meta:
         model = Cliente
-        fields = ['documento_id', 'nombre', 'telefono', 'direccion', 'departamento_expedicion', 'lugar_expedicion']
+        fields = ['telefono', 'direccion', 'departamento_expedicion', 'lugar_expedicion']
         labels = {
-            'documento_id':           'Número de Documento',
-            'nombre':                 'Nombre Completo',
+            
+           # 'nombre':                 'Nombre Completo',
             'telefono':               'Teléfono',
             'direccion':              'Dirección',
             'departamento_expedicion':'Departamento de Expedición',
             'lugar_expedicion':       'Municipio de Expedición',
         }
         widgets = {
-            'documento_id':            forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Ej: 1234567890'}),
-            'nombre':                  forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Nombre completo'}),
+            
+            #'nombre':                  forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Nombre completo'}),
             'telefono':                forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Ej: 3001234567'}),
             'direccion':               forms.Textarea(attrs={'class': 'auth-input', 'rows': 3}),
             'departamento_expedicion': forms.HiddenInput(),
