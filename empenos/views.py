@@ -10,10 +10,11 @@ from contratos.models import Contrato
 from django.db.models import Q, Sum
 from cuotas.forms import FiltroCuota
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
+from articulos.models import Articulos
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def clean(self):
     cleaned_data = super().clean()
@@ -175,6 +176,9 @@ def listar_empenos(request):
         'form': form
     })
 
+
+# Asegúrate de importar tus modelos, formularios y funciones auxiliares (_generar_cuota, etc.)
+
 @transaction.atomic
 def crear_empeno(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
@@ -183,41 +187,63 @@ def crear_empeno(request):
     if request.method == 'POST':
         data = request.POST.copy()
         
-        # 1. Lógica de automatización de tipo de contrato
-        valor_str = data.get('monto_prestado', '0') # Ajustado al nombre del campo en tu modelo
+        # 1. Lógica de automatización de tipo de contrato e interés automático
+        valor_str = data.get('monto_prestado', '0')
+        articulo_id = data.get('id_articulo')
+        
+        
         try:
-            valor = Decimal(valor_str)
-        except:
-            valor = Decimal('0')
+            valor_prestado = Decimal(valor_str)
+        except (ValueError, TypeError, InvalidOperation):
+            valor_prestado = Decimal('0')
 
-        if not data.get('tipo_contrato'):
-            if valor <= Decimal('500000'):
-                data['tipo_contrato'] = 'Normal'
-            elif valor <= Decimal('2000000'):
-                data['tipo_contrato'] = 'Plazo Maximo'
-            else:
-                data['tipo_contrato'] = 'Contrato sobre Oro'
+        
+        if articulo_id and not data.get('tipo_contrato'):
+            try:
+                articulo= Articulos.objects.get(pk=articulo_id)
+                precio_sugerido = articulo.precio_sugerido_venta
+                
+                categoria_art = articulo.categoria
+                
+                tope_40_porc = precio_sugerido * Decimal('0.40')
+                tope_60_porc = precio_sugerido * Decimal('0.60')
+                    
+
+                if valor_prestado <= tope_40_porc and categoria_art != 'Oro':
+                    data['tipo_contrato'] = 'Normal'
+                elif valor_prestado <= tope_60_porc and categoria_art != 'Oro':
+                    data['tipo_contrato'] = 'Plazo Maximo'
+                elif valor_prestado <= tope_40_porc and categoria_art == 'Oro':
+                    data['tipo_contrato'] = 'Contrato sobre Oro'
+                elif valor_prestado <= tope_60_porc and categoria_art == 'Oro':
+                    data['tipo_contrato'] = 'Oro Maximo'
+            except Articulos.DoesNotExist:
+                pass
+        
+        
 
         form = EmpenoForm(data)
         
         if form.is_valid():
-            # Creamos el objeto en memoria (sin guardar) para validar
+            # Creamos el objeto en memoria (sin guardar en la DB aún)
             empeno = form.save(commit=False)
             articulo = empeno.id_articulo
 
-            # 2. Validación del tope del 40%
-            # Asumiendo que 'precio_sugerido_venta' está en el modelo Articulos
-            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.40')
+            # 2. VALIDACIÓN DEL TOPE MÁXIMO PERMITIDO (60% del valor sugerido)
+            # Ahora la matemática, el comentario y el mensaje de error coinciden al 60%
+            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.60')
 
             if empeno.monto_prestado > tope_maximo:
-                messages.error(request, f"Error: El préstamo (${empeno.monto_prestado}) supera el 40% permitido (${tope_maximo})")
+                messages.error(
+                    request, 
+                    f"Error: El préstamo (${empeno.monto_prestado:,.0f}) supera el 60% del valor comercial permitido (${tope_maximo:,.0f})."
+                )
                 return render(request, 'empenos/crear.html', {'form': form})
             
             # 3. CREACIÓN DEL CONTRATO PRIMERO
-            # Usamos el tipo que ya se parchó en la data del POST
             tipo_elegido = data['tipo_contrato']
             
-            # Guardamos el empeño para tener un ID para el contrato
+            # Guardamos el empeño para generar su ID único
             empeno.save() 
 
             nuevo_contrato = Contrato.objects.create(
@@ -226,25 +252,25 @@ def crear_empeno(request):
                 id_articulo=empeno.id_articulo,
                 fecha_contrato=timezone.now().date(),
                 tipo_contrato=tipo_elegido,
-                estado_contrato='Activo' # O 'Vigente'
+                estado_contrato='Activo'
             )
 
             # 4. VINCULACIÓN FINAL Y PROCESOS AUTOMÁTICOS
             empeno.id_contrato = nuevo_contrato
             empeno.save()
             
-            _sincronizar_articulo(empeno) # Cambia estado del artículo a 'Empeñado'
-            _generar_cuota(empeno)      # Crea las 1, 3 o 4 cuotas según el tipo
+            _sincronizar_articulo(empeno)  # Cambia estado del artículo a 'Empeñado'
+            _generar_cuota(empeno)        # Crea las cuotas según el tipo de contrato
             
             messages.success(request, f'Empeño #{empeno.id_empeno} registrado con contrato {tipo_elegido}.')
             return redirect('empenos:detalle', empeno.pk)
         
         else:
-            print("ERRORES:", form.errors)
+            print("ERRORES FORMULARIO:", form.errors)
             messages.error(request, 'Por favor corrige los errores del formulario.')
             
     else:
-        # Fecha sugerida de vencimiento inicial (un mes después)
+        # Configuración del formulario limpio (GET)
         fecha_vencimiento = timezone.now() + timedelta(days=31)
         form = EmpenoForm(initial={
             'fecha_vencimiento': fecha_vencimiento.date()

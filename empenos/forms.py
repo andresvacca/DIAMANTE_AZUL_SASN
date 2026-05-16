@@ -5,6 +5,7 @@ from articulos.models import Articulos
 from decimal import Decimal
 from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
 
+
 class EmpenoForm(forms.ModelForm):
     # --- CAMPOS CON VALIDACIÓN DE NEGATIVOS Y ESTILO ---
     monto_prestado = forms.DecimalField(
@@ -30,6 +31,7 @@ class EmpenoForm(forms.ModelForm):
         choices=Contrato.TIPO_CHOICES,
         label="Tipo de Contrato",
         widget=forms.Select(attrs={'class': 'auth-input', 'disabled': 'disabled'})
+        
     )
 
     class Meta:
@@ -88,6 +90,12 @@ class EmpenoForm(forms.ModelForm):
         # 2. Tu lógica de formato de fecha para la edición
         if self.instance and self.instance.fecha_vencimiento:
             self.initial['fecha_vencimiento'] = self.instance.fecha_vencimiento.strftime('%Y-%m-%d')
+            
+        if 'porcentaje_interes' in self.fields:
+            self.fields['porcentaje_interes'].widget.attrs.update({'max', 60})
+        
+        if 'tipo_contrato' in self.fields:
+            self.fields['tipo_contrato'].required = False
 
 
 class PagoForm(forms.ModelForm):
@@ -114,8 +122,7 @@ class FiltroEmpeno(forms.Form):
     )
 
 
-from django import forms
-from .models import Contrato
+
 
 
 class AbonoForm(forms.Form):
