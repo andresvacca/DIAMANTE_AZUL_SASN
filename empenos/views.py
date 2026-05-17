@@ -16,31 +16,6 @@ from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from articulos.models import Articulos
 # ── Helpers ──────────────────────────────────────────────────────────────────
-def clean(self):
-    cleaned_data = super().clean()
-    valor_empeno = cleaned_data.get('valor_empeno')
-    tipo_contrato = cleaned_data.get('tipo_contrato')
-
-    # Si el valor existe pero el tipo viene vacío desde el navegador
-    if valor_empeno and not tipo_contrato:
-        # Definimos la lógica de Diamante Azul
-        if valor_empeno <= Decimal('500000'):
-            # Usamos el nombre exacto que está en TIPO_CHOICES de tu modelo
-            nuevo_tipo = 'Normal'
-        elif valor_empeno > Decimal('500000') and valor_empeno <= Decimal('2000000'):
-            nuevo_tipo = 'Plazo Maximo'
-        else:
-            # Por ejemplo, para montos muy altos
-            nuevo_tipo = 'Contrato sobre Oro'
-        
-        # Asignamos el valor al diccionario de datos limpios
-        cleaned_data['tipo_contrato'] = nuevo_tipo
-        
-        # Muy importante: Si Django ya había marcado el error de "obligatorio", lo borramos
-        if 'tipo_contrato' in self._errors:
-            del self._errors['tipo_contrato']
-
-    return cleaned_data
 
 
 def _sincronizar_articulo(empeno):
@@ -187,50 +162,55 @@ def crear_empeno(request):
     if request.method == 'POST':
         data = request.POST.copy()
         
-        # 1. Lógica de automatización de tipo de contrato e interés automático
-        valor_str = data.get('monto_prestado', '0')
+        # 1. Capturamos el artículo seleccionado y el monto desde el POST
         articulo_id = data.get('id_articulo')
+        valor_str = data.get('monto_prestado', '0')
         
-        
+        # Convertimos el string del monto a Decimal de forma segura
         try:
             valor_prestado = Decimal(valor_str)
         except (ValueError, TypeError, InvalidOperation):
             valor_prestado = Decimal('0')
 
-        
+        # 2. Lógica de automatización de tipo de contrato e interés automático
         if articulo_id and not data.get('tipo_contrato'):
             try:
-                articulo= Articulos.objects.get(pk=articulo_id)
-                precio_sugerido = articulo.precio_sugerido_venta
+                # Buscamos el artículo en la base de datos para conocer su precio y categoría
+                articulo_obj = Articulos.objects.get(pk=articulo_id)
+                precio_sugerido = articulo_obj.precio_sugerido_venta
+                categoria_art = articulo_obj.categoria.strip().lower()
                 
-                categoria_art = articulo.categoria
-                
+                # Calculamos los topes dinámicos basados en el 40% y 60%
                 tope_40_porc = precio_sugerido * Decimal('0.40')
                 tope_60_porc = precio_sugerido * Decimal('0.60')
-                    
-
-                if valor_prestado <= tope_40_porc and categoria_art != 'Oro':
+                
+                # Evaluamos las condiciones según las reglas de negocio de Diamante Azul
+                if valor_prestado <= tope_40_porc and categoria_art != 'oro':
                     data['tipo_contrato'] = 'Normal'
-                elif valor_prestado <= tope_60_porc and categoria_art != 'Oro':
+                elif valor_prestado <= tope_60_porc and categoria_art != 'oro':
                     data['tipo_contrato'] = 'Plazo Maximo'
-                elif valor_prestado <= tope_40_porc and categoria_art == 'Oro':
+                elif valor_prestado <= tope_40_porc and categoria_art == 'oro':
                     data['tipo_contrato'] = 'Contrato sobre Oro'
-                elif valor_prestado <= tope_60_porc and categoria_art == 'Oro':
-                    data['tipo_contrato'] = 'Oro Maximo'
+                elif valor_prestado <= tope_60_porc and categoria_art == 'oro':
+                    data['tipo_contrato'] = 'Oro Maximo'  # Fuerza interés automático al 60%
+                    
             except Articulos.DoesNotExist:
-                pass
-        
-        
+                pass # Si el artículo no existe, el formulario se encargará de gestionarlo
 
+        # Pasamos los datos (ya modificados con el contrato automático) al formulario
         form = EmpenoForm(data)
         
         if form.is_valid():
-            # Creamos el objeto en memoria (sin guardar en la DB aún)
+            # 3. Creamos el objeto en memoria (Aún no se guarda en la base de datos)
             empeno = form.save(commit=False)
+            
+            # Guardamos el tipo de contrato calculado dentro del objeto empeño antes de guardar
+            tipo_elegido = data.get('tipo_contrato', 'Normal')
+            empeno.tipo_contrato = tipo_elegido
+            
             articulo = empeno.id_articulo
 
-            # 2. VALIDACIÓN DEL TOPE MÁXIMO PERMITIDO (60% del valor sugerido)
-            # Ahora la matemática, el comentario y el mensaje de error coinciden al 60%
+            # 4. VALIDACIÓN DEL TOPE MÁXIMO PERMITIDO (60% del valor sugerido)
             tope_maximo = articulo.precio_sugerido_venta * Decimal('0.60')
 
             if empeno.monto_prestado > tope_maximo:
@@ -240,37 +220,37 @@ def crear_empeno(request):
                 )
                 return render(request, 'empenos/crear.html', {'form': form})
             
-            # 3. CREACIÓN DEL CONTRATO PRIMERO
-            tipo_elegido = data['tipo_contrato']
-            
-            # Guardamos el empeño para generar su ID único
+            # 5. PRIMER Y ÚNICO GUARDADO INICIAL: El empeño ya sabe que tipo de contrato es
             empeno.save() 
 
+            # 6. CREACIÓN DEL CONTRATO ÚNICO ASOCIADO
             nuevo_contrato = Contrato.objects.create(
                 id_empeno=empeno,
                 id_cliente=empeno.id_cliente,
                 id_articulo=empeno.id_articulo,
                 fecha_contrato=timezone.now().date(),
                 tipo_contrato=tipo_elegido,
-                estado_contrato='Activo'
+                estado_contrato='Disponible'
             )
 
-            # 4. VINCULACIÓN FINAL Y PROCESOS AUTOMÁTICOS
+            # 7. VINCULACIÓN FINAL DEL CONTRATO AL EMPEÑO
             empeno.id_contrato = nuevo_contrato
             empeno.save()
             
+            # 8. PROCESOS AUTOMÁTICOS SECUNDARIOS
             _sincronizar_articulo(empeno)  # Cambia estado del artículo a 'Empeñado'
-            _generar_cuota(empeno)        # Crea las cuotas según el tipo de contrato
+            _generar_cuota(empeno)        # Genera las cuotas leyendo correctamente el nuevo contrato
             
             messages.success(request, f'Empeño #{empeno.id_empeno} registrado con contrato {tipo_elegido}.')
             return redirect('empenos:detalle', empeno.pk)
         
         else:
-            print("ERRORES FORMULARIO:", form.errors)
+            # Imprime en la consola del servidor los errores exactos si la validación falla
+            print("======= ERRORES FORMULARIO =======", form.errors)
             messages.error(request, 'Por favor corrige los errores del formulario.')
             
     else:
-        # Configuración del formulario limpio (GET)
+        # Configuración del formulario limpio para peticiones GET
         fecha_vencimiento = timezone.now() + timedelta(days=31)
         form = EmpenoForm(initial={
             'fecha_vencimiento': fecha_vencimiento.date()
