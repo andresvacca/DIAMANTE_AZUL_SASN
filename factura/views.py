@@ -1,22 +1,57 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
+from decimal import Decimal
 from .models import Factura, DetalleFactura
 from .forms import FacturaForm, DetalleFacturaForm, FiltroFactura
 from usuarios.views import _requiere_admin, _requiere_empleado
 
+# ==========================================================================
+# 🌟 MOTOR HELPER: GENERACIÓN AUTOMÁTICA DE COMPROBANTES DE CAJA
+# ==========================================================================
+def generar_factura_automatica(usuario, cliente, tipo_movimiento, monto, id_empeno=None, articulo=None, descripcion=""):
+    """
+    Registra de forma automatizada cualquier flujo de dinero de Diamante Azul
+    en la tabla de auditoría de facturas (Desembolsos, Cuotas, Abonos, Retiros).
+    """
+    # 1. Creamos la cabecera del movimiento
+    factura = Factura.objects.create(
+        id_cliente=cliente,
+        id_usuario=usuario,
+        total_neto=Decimal(str(monto)),
+        monto_pagado=Decimal(str(monto)),
+        metodo_pago='Efectivo',  # Por defecto caja general maneja efectivo, se puede cambiar
+        tipo_movimiento=tipo_movimiento,
+        id_empeno_asociado=id_empeno
+    )
+    
+    # 2. Creamos el detalle descriptivo del servicio o bien
+    DetalleFactura.objects.create(
+        id_factura=factura,
+        id_articulo=articulo,
+        descripcion_servicio=descripcion if not articulo else f"Artículo: {articulo.nombre}",
+        precio_venta=Decimal(str(monto))
+    )
+    
+    return factura
+
+
+# ==========================================================================
+# 📊 VISTAS PRINCIPALES DEL MÓDULO DE FACTURACIÓN
+# ==========================================================================
 
 def listar_facturas(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
     form = FiltroFactura(request.GET)
+    # Optimizamos agregando select_related para traer los datos del cliente y empleado de un solo golpe
     facturas = Factura.objects.select_related('id_cliente', 'id_usuario').order_by('-fecha_venta')
 
     if form.is_valid():
         q = form.cleaned_data.get('q')
         if q:
-            filtro = Q(id_cliente__nombre__icontains=q)
+            filtro = Q(id_cliente__nombre__icontains=q) | Q(tipo_movimiento__icontains=q)
             try:
                 filtro |= Q(id_factura=int(q))
             except ValueError:
@@ -27,6 +62,7 @@ def listar_facturas(request):
 
 
 def crear_factura(request):
+    """Maneja la venta directa tradicional de artículos en vitrina."""
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
@@ -34,67 +70,63 @@ def crear_factura(request):
         form = FacturaForm(request.POST)
         if form.is_valid():
             articulos_ids = request.POST.getlist('articulo[]')
-            precios       = request.POST.getlist('precio[]')
-            pares = [(a, p) for a, p in zip(articulos_ids, precios) if a and p]
+            precios = request.POST.getlist('precio[]')
 
-            if not pares:
+            if not articulos_ids:
                 messages.error(request, 'Debes agregar al menos un artículo a la factura.')
                 return render(request, 'factura/crear.html', {'form': form})
 
+            # Guardamos la cabecera como 'Venta Directa'
             factura = form.save(commit=False)
-            factura.total_neto = 0
+            factura.tipo_movimiento = 'Venta'
             factura.save()
 
-            total = 0
-            for art_id, precio in pares:
-                try:
-                    d = DetalleFactura.objects.create(
+            total = Decimal('0.00')
+            from articulos.models import Articulos  # Import local para evitar importación cíclica
+            
+            for art_id, precio_v in zip(articulos_ids, precios):
+                if art_id and precio_v:
+                    articulo = get_object_or_404(Articulos, pk=art_id)
+                    precio_dec = Decimal(precio_v)
+                    
+                    DetalleFactura.objects.create(
                         id_factura=factura,
-                        id_articulo_id=int(art_id),
-                        precio_venta=float(precio),
+                        id_articulo=articulo,
+                        descripcion_servicio=f"Venta Directa: {articulo.nombre}",
+                        precio_venta=precio_dec
                     )
-                    total += d.precio_venta
-                except Exception:
-                    pass
+                    total += precio_dec
 
             factura.total_neto = total
             factura.save()
-            messages.success(request, f'Factura #{factura.id_factura} creada correctamente.')
-            return redirect('factura:detalle', factura.id_factura)
 
-        messages.error(request, 'Por favor corrige los errores del formulario.')
+            messages.success(request, f'Factura de Venta #{factura.id_factura} generada con éxito.')
+            return redirect('factura:listar')
     else:
         form = FacturaForm()
 
-    # Pre-seleccionar al usuario logueado como vendedor
-    usuario_id = request.session.get('usuario_id')
-
-    from articulos.models import Articulos
-    articulos = Articulos.objects.all()
-    return render(request, 'factura/crear.html', {
-        'form': form,
-        'articulos': articulos,
-        'usuario_id': usuario_id,
-    })
+    return render(request, 'factura/crear.html', {'form': form})
 
 
 def detalle_factura(request, id_factura):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
-    factura  = get_object_or_404(
-        Factura.objects.select_related('id_cliente', 'id_usuario'), pk=id_factura
-    )
+    factura = get_object_or_404(Factura, pk=id_factura)
     detalles = DetalleFactura.objects.filter(id_factura=factura).select_related('id_articulo')
-    return render(request, 'factura/detalle.html', {'factura': factura, 'detalles': detalles})
+
+    return render(request, 'factura/detalle.html', {
+        'factura': factura,
+        'detalles': detalles
+    })
 
 
 def editar_factura(request, id_factura):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
-    factura  = get_object_or_404(Factura, pk=id_factura)
-    detalles = DetalleFactura.objects.filter(id_factura=factura).select_related('id_articulo')
+    factura = get_object_or_404(Factura, pk=id_factura)
+    detalles = DetalleFactura.objects.filter(id_factura=factura)
 
     if request.method == 'POST':
         form = FacturaForm(request.POST, instance=factura)
@@ -115,15 +147,13 @@ def eliminar_detalle(request, id_detalle):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
-    detalle    = get_object_or_404(DetalleFactura, pk=id_detalle)
-    factura    = detalle.id_factura
+    detalle = get_object_or_404(DetalleFactura, pk=id_detalle)
+    factura = detalle.id_factura
     factura_id = factura.id_factura
 
     if request.method == 'POST':
         detalle.delete()
-        total = sum(
-            d.precio_venta for d in DetalleFactura.objects.filter(id_factura=factura)
-        )
+        total = sum(d.precio_venta for d in DetalleFactura.objects.filter(id_factura=factura))
         factura.total_neto = total
         factura.save()
         messages.success(request, 'Artículo eliminado de la factura.')
@@ -138,7 +168,6 @@ def eliminar_factura(request, id_factura):
     factura = get_object_or_404(Factura, pk=id_factura)
     if request.method == 'POST':
         factura.delete()
-        messages.success(request, 'Factura eliminada correctamente.')
-        return redirect('factura:listar')
-
-    return render(request, 'factura/eliminar.html', {'factura': factura})
+        messages.success(request, 'Factura eliminada correctamente de los registros.')
+    
+    return redirect('factura:listar')
