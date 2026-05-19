@@ -4,6 +4,7 @@ from django.db.models import Q
 from decimal import Decimal
 from .models import Factura, DetalleFactura
 from .forms import FacturaForm, DetalleFacturaForm, FiltroFactura
+from django.core.paginator import Paginator
 from usuarios.views import _requiere_admin, _requiere_empleado
 
 # ==========================================================================
@@ -45,7 +46,6 @@ def listar_facturas(request):
         return redirect('usuarios:login')
 
     form = FiltroFactura(request.GET)
-    # Optimizamos agregando select_related para traer los datos del cliente y empleado de un solo golpe
     facturas = Factura.objects.select_related('id_cliente', 'id_usuario').order_by('-fecha_venta')
 
     if form.is_valid():
@@ -58,8 +58,15 @@ def listar_facturas(request):
                 pass
             facturas = facturas.filter(filtro)
 
-    return render(request, 'factura/listar.html', {'facturas': facturas, 'form': form})
+    # 🌟 CONTROL DE PAGINACIÓN AUTOMÁTICA
+    facturas_por_pagina = 10
+    paginator = Paginator(facturas, facturas_por_pagina)
+    
+    numero_pagina = request.GET.get('page')
+    page_obj = paginator.get_page(numero_pagina)
 
+    # Enviamos 'page_obj' mapeado bajo la clave 'facturas' para que no tengas que renombrar variables en tu bucle HTML
+    return render(request, 'factura/listar.html', {'facturas': page_obj, 'form': form})
 
 def crear_factura(request):
     """Maneja la venta directa tradicional de artículos en vitrina."""

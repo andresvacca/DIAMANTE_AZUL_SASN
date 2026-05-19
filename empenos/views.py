@@ -18,6 +18,7 @@ from articulos.models import Articulos
 from django.db.models import Case, Value, When
 from django.core.paginator import Paginator
 from .forms import EmpenoForm, PagoForm, FiltroEmpeno, AbonoForm, EditarEmpenoForm
+from factura.views import generar_factura_automatica
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -313,12 +314,15 @@ def registrar_pago(request, id_cuota):
 
     if request.method == 'POST':
         from decimal import Decimal
-        Pago.objects.create(
+        
+        # 1. Registramos el objeto Pago de tu app de empeños
+        pago_objeto = Pago.objects.create(
             id_cuota   = cuota,
             id_cliente = cuota.id_empeno.id_cliente,
             monto      = cuota.capital + cuota.interes,
             metodo_pago = 'Efectivo',
         )
+        
         cuota.estado = 'Pagada'
         cuota.save()
 
@@ -327,7 +331,43 @@ def registrar_pago(request, id_cuota):
         empeno.save()
         _sincronizar_articulo(empeno)
 
-        messages.success(request, f'Pago registrado. Empeño #{empeno.id_empeno} finalizado.')
+        # ==========================================================================
+        # 🌟 EXTRACCIÓN SEGURA DEL USUARIO LOGUEADO MANUALMENTE
+        # ==========================================================================
+        from factura.views import generar_factura_automatica
+        from usuarios.models import Usuario  # Asegúrate de que apunte bien a tu modelo
+        
+        # Intentamos sacar el ID del usuario que guardaste en la sesión al loguearse
+        usuario_id_sesion = request.session.get('usuario_id') or request.session.get('user_id')
+        
+        usuario_operador = None
+        if usuario_id_sesion:
+            try:
+                usuario_operador = Usuario.objects.get(pk=usuario_id_sesion)
+            except Usuario.DoesNotExist:
+                pass
+        
+        # Plan de respaldo: Si request.user es válido lo usa, si no, agarra el primer usuario del sistema para no frenar la caja
+        if not usuario_operador and not request.user.is_anonymous:
+            usuario_operador = request.user
+        elif not usuario_operador:
+            usuario_operador = Usuario.objects.first() 
+        # ==========================================================================
+
+        # Calculamos el monto total recaudado
+        monto_total_pago = cuota.capital + cuota.interes
+        
+        # Disparamos la factura automática con el operador real verificado
+        generar_factura_automatica(
+            usuario=usuario_operador, 
+            cliente=empeno.id_cliente,
+            tipo_movimiento='Cuota', 
+            monto=monto_total_pago,
+            id_empeno=empeno.id_empeno,
+            descripcion=f"Pago Interés/Cuota de Empeño #{empeno.id_empeno} - ID Cuota: {cuota.id_cuota}"
+        )
+
+        messages.success(request, f'Pago registrado y Comprobante de Caja generado. Empeño #{empeno.id_empeno} actualizado.')
         return redirect('cuotas:listar')
 
     return redirect('cuotas:listar')

@@ -129,6 +129,29 @@
                     </tbody>
                 </table>
             </div>
+            {% if facturas.has_other_pages %}
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 1.5rem; padding: 1rem 0;">
+                
+                {% if facturas.has_previous %}
+                    <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" style="padding: 0.5rem 0.75rem; background: #fff; border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">« Primera</a>
+                    <a href="?page={{ facturas.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" style="padding: 0.5rem 0.75rem; background: #fff; border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Anterior</a>
+                {% else %}
+                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Anterior</span>
+                {% endif %}
+
+                <span style="font-size: 0.9rem; color: #555; font-weight: 500; padding: 0 0.5rem;">
+                    Página <strong>{{ facturas.number }}</strong> de {{ facturas.paginator.num_pages }}
+                </span>
+
+                {% if facturas.has_next %}
+                    <a href="?page={{ facturas.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" style="padding: 0.5rem 0.75rem; background: #fff; border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Siguiente</a>
+                    <a href="?page={{ facturas.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" style="padding: 0.5rem 0.75rem; background: #fff; border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Última »</a>
+                {% else %}
+                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Siguiente</span>
+                {% endif %}
+
+            </div>
+            {% endif %}
 
             <div style="margin-top:1.5rem;">
                 <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
