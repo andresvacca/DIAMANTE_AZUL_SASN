@@ -159,3 +159,55 @@ class AbonoForm(forms.Form):
             )
 
         return monto_abono
+    
+    
+
+class EditarEmpenoForm(forms.ModelForm):
+    # REGLA 2 y 3: Inputs visualmente bloqueados (Readonly) pero con estilo de la app
+    monto_prestado = forms.DecimalField(
+        label="Monto Prestado ($)",
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'readonly': 'readonly', 'style': 'background-color: #e9ecef; color: #495057; pointer-events: none;'})
+    )
+    monto_entregado = forms.DecimalField(
+        label="Monto Entregado ($)",
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'readonly': 'readonly', 'style': 'background-color: #e9ecef; color: #495057; pointer-events: none;'})
+    )
+    tasa_interes = forms.DecimalField(
+        label="Tasa de Interés (%)",
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'readonly': 'readonly', 'style': 'background-color: #e9ecef; color: #2b6cb0; font-weight: bold; pointer-events: none;'})
+    )
+
+    class Meta:
+        model = Empeno
+        # Permitimos editar cliente, artículo, fecha de vencimiento y estado
+        fields = [
+            'id_cliente',
+            'id_articulo',
+            'monto_prestado',
+            'tasa_interes',
+            'fecha_vencimiento',
+            'monto_entregado',
+            'estado'
+        ]
+        widgets = {
+            'id_cliente': forms.Select(attrs={'class': 'auth-input'}),
+            # REGLA 1: El select del artículo queda deshabilitado para interacción directa del usuario
+            'id_articulo': forms.Select(attrs={'class': 'auth-input', 'style': 'pointer-events: none; background-color: #e9ecef;'}),
+            'estado': forms.Select(attrs={'class': 'auth-input'}),
+            'fecha_vencimiento': forms.DateInput(
+                attrs={'class': 'auth-input', 'type': 'date'},
+                format='%Y-%m-%d'
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # REGLA 1: Permitimos que el queryset del artículo incluya TODOS para que muestre el actual sin romperse
+        self.fields['id_articulo'].queryset = Articulos.objects.all()
+        
+        if self.instance and self.instance.fecha_vencimiento:
+            self.initial['fecha_vencimiento'] = self.instance.fecha_vencimiento.strftime('%Y-%m-%d')
+
+    def clean_id_articulo(self):
+        # Como el select está bloqueado, nos aseguramos de retornar el valor original del objeto si no viene en el POST
+        return self.instance.id_articulo

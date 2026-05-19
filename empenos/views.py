@@ -17,6 +17,7 @@ from django.db import transaction
 from articulos.models import Articulos
 from django.db.models import Case, Value, When
 from django.core.paginator import Paginator
+from .forms import EmpenoForm, PagoForm, FiltroEmpeno, AbonoForm, EditarEmpenoForm
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -405,16 +406,39 @@ def editar_empeno(request, id_empeno):
         return redirect('usuarios:login')
 
     empeno = get_object_or_404(Empeno, pk=id_empeno)
+    
+    # REGLAS 2 y 3: Capturamos los valores originales e inmutables directamente de la Base de Datos
+    monto_prestado_original = empeno.monto_prestado
+    monto_entregado_original = empeno.monto_entregado
+    articulo_original = empeno.id_articulo # Por si acaso se altera el POST
+
     if request.method == 'POST':
-        form = EmpenoForm(request.POST, instance=empeno)
+        form = EditarEmpenoForm(request.POST, instance=empeno)
         if form.is_valid():
-            empeno = form.save()
-            _sincronizar_articulo(empeno)
-            messages.success(request, 'Empeño actualizado correctamente.')
-            return redirect('empenos:detalle', empeno.id_empeno)
+            # Creamos el objeto en memoria sin impactar la DB todavía
+            empeno_editado = form.save(commit=False)
+            
+            # 🚨 BLINDAJE INMUTABLE: Forzamos la sobreescritura de los datos protegidos
+            empeno_editado.monto_prestado = monto_prestado_original
+            empeno_editado.monto_entregado = monto_entregado_original
+            empeno_editado.tasa_interes = Decimal('10.0') # REGLA 3: Siempre clavada en 10
+            
+            # REGLA 1: Si no se usó el botón de cambiar artículo, mantiene el original de forma segura
+            if not empeno_editado.id_articulo:
+                empeno_editado.id_articulo = articulo_original
+            
+            # Guardado físico en la base de datos
+            empeno_editado.save()
+            
+            # Sincronizamos el estado del artículo asociado
+            _sincronizar_articulo(empeno_editado)
+            
+            messages.success(request, f'Empeño #{empeno_editado.id_empeno} actualizado correctamente.')
+            return redirect('empenos:detalle', empeno_editado.id_empeno)
+        
         messages.error(request, 'Por favor corrige los errores del formulario.')
     else:
-        form = EmpenoForm(instance=empeno)
+        form = EditarEmpenoForm(instance=empeno)
 
     return render(request, 'empenos/editar.html', {'form': form, 'empeno': empeno})
 
