@@ -3,7 +3,7 @@ from django.contrib import messages
 from .models import Cliente
 from .forms import ClienteForm, FiltroCliente
 from usuarios.views import _requiere_admin, _requiere_empleado
-from django.db.models import Q
+from django.db.models import Q, Count
 from usuarios.models import Rol
 import json
 from django.http import JsonResponse
@@ -14,7 +14,12 @@ from django.db.models import ProtectedError
 def listar_clientes(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
+    
+    
     form = FiltroCliente(request.GET)
+    
+    
+    
     clientes = Cliente.objects.all().order_by('nombre')
     if form.is_valid():
         query = form.cleaned_data.get('q')
@@ -41,20 +46,31 @@ def crear_cliente(request):
 
 
 def editar_cliente(request, id_cliente):
-    if not (_requiere_admin(request) or _requiere_empleado(request)):
-        return redirect('usuarios:login')
     cliente = get_object_or_404(Cliente, pk=id_cliente)
-    if request.method == 'POST':
-        form = ClienteForm(request.POST, instance=cliente)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Cliente actualizado correctamente.')
-            return redirect('clientes:listar')
-        messages.error(request, 'Por favor corrige los errores del formulario.')
-    else:
-        form = ClienteForm(instance=cliente)
-    return render(request, 'clientes/editar.html', {'form': form, 'cliente': cliente})
+    usuario = cliente.id_usuario  
 
+    if request.method == 'POST':
+        # 📌 TRUCO MAESTRO: Copiamos los datos del POST para poder modificarlos
+        datos_post = request.POST.copy()
+        
+        # 🛠️ Forzamos que viajen los datos actuales de la BD si no vienen en el POST
+        if 'nombre' not in datos_post or not datos_post['nombre']:
+            datos_post['nombre'] = cliente.nombre
+        if 'documento_id' not in datos_post or not datos_post['documento_id']:
+            datos_post['documento_id'] = cliente.documento_id
+
+        # Pasamos los datos parchados al formulario
+        form = ClienteForm(datos_post, instance=cliente)
+
+        if form.is_valid():
+            form.save() 
+            messages.success(request, "Cliente actualizado con éxito.")
+            return redirect('clientes:listar') # Revisa si usas 'listar' o 'listar_clientes'
+    else:
+        correo_actual = usuario.email if usuario else ''
+        form = ClienteForm(instance=cliente, initial={'email': correo_actual})
+
+    return render(request, 'clientes/editar.html', {'form': form, 'cliente': cliente})
 
 def eliminar_cliente(request, id_cliente):
     cliente = get_object_or_404(Cliente, pk=id_cliente)
