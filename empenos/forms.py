@@ -122,9 +122,6 @@ class FiltroEmpeno(forms.Form):
     )
 
 
-
-
-
 class AbonoForm(forms.Form):
     # Definimos los campos con los widgets que ya diseñamos
     abonoCap = forms.DecimalField(

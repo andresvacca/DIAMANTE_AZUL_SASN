@@ -8,10 +8,8 @@ class ArticuloForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre del artículo",
         validators=[
-            RegexValidator(
-                regex=r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,50}$',
-                message="El nombre debe tener entre 3 y 50 letras y no contener números."
-            )
+            MinLengthValidator(5, message="El nombre debe tener al menos 5 caracteres"),
+            MaxLengthValidator(50, message="El nombre debe tener al menos 50 caracteres"),
         ],
         widget=forms.TextInput(attrs={'class': 'auth-input'})
     )
@@ -21,10 +19,6 @@ class ArticuloForm(forms.ModelForm):
         required=True,
         validators=[
             MinLengthValidator(5, message="La serie debe tener al menos 5 caracteres."),
-            RegexValidator(
-                regex=r'^[a-zA-Z0-9]+$',
-                message="La serie solo puede contener letras y números."
-            )
         ],
         widget=forms.TextInput(attrs={
             'class': 'auth-input',
@@ -54,6 +48,11 @@ class ArticuloForm(forms.ModelForm):
 
 # Artículos
 class FiltroArticuloForm(forms.Form):
+    buscar_id = forms.IntegerField(
+        required=False, label='Buscar',
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar Id.'})
+    )
+    
     q = forms.CharField(
         required=False, label='Buscar',
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar por nombre...'})

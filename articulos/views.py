@@ -28,10 +28,13 @@ def listar_articulos(request):
     form = FiltroArticuloForm(request.GET)
     
     if form.is_valid():
+        buscar_id = form.cleaned_data.get('buscar_id')
         q = form.cleaned_data.get('q')
         estado = form.cleaned_data.get('estado')
         categoria = form.cleaned_data.get('categoria')
-
+        
+        if buscar_id:
+            articulos = articulos.filter(id_articulo=buscar_id)
         # Filtros multicriterio
         if q:
             # Busca en nombre, descripción o número de serie
@@ -83,6 +86,10 @@ def crear_articulo(request):
 
 def editar_articulo(request, id_articulo):
     articulo = get_object_or_404(Articulos, pk=id_articulo)
+    if articulo.estado in ['Vendido', 'Retirado', 'Empeñado']:
+        messages.error(request, f"No se puede editar el articulo por motivos de seguridad  (estado: {articulo.estado})")
+        return redirect('articulos:listar')
+    
     if request.method == 'POST':
         form = ArticuloForm(request.POST, instance=articulo)
         if form.is_valid():
