@@ -5,6 +5,7 @@ from .models import Usuario, Rol
 from contratos.models import Contrato
 from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuarios
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
 
 
@@ -23,10 +24,17 @@ def listar_usuarios(request):
         if query:
             usuarios = usuarios.filter(nombre__icontains=query)
     
-    return render(request, 'usuarios/listar.html', {
-        'usuarios': usuarios,
-        'form': form
-    })
+    usuarios_por_pagina = 10
+    paginator = Paginator(usuarios, usuarios_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'usuarios'
+    return render(request, 'usuarios/listar.html', {'usuarios': page_obj, 'form': form})
 
 
 def crear_usuario(request):

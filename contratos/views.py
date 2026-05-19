@@ -6,6 +6,7 @@ from .forms import ContratoForm
 from .pdf import generar_pdf_contrato
 from empenos.models import Empeno
 from usuarios.models import Rol
+from django.core.paginator import Paginator
 
 
 def listar_contratos(request):
@@ -27,8 +28,17 @@ def listar_contratos(request):
     else:
         contratos = qs.filter(id_cliente__id_usuario=usuario_id)
 
+    contratos_por_pagina= 10
+    paginator = Paginator(contratos, contratos_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+
     return render(request, 'contratos/listar.html', {
-        'contratos': contratos,
+        'contratos': page_obj,
         'q':         request.GET.get('q', ''),
         'estado':    request.GET.get('estado', ''),
         'estados':   Contrato.ESTADO_CHOICES,

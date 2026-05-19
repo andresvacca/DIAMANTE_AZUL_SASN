@@ -141,7 +141,29 @@
                     </tbody>
                 </table>
             </div>
+            {% if usuarios.has_other_pages %}
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 1.5rem; padding: 1rem 0;">
+                
+                {% if usuarios.has_previous %}
+                    <a href="?page=1" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">« Primera</a>
+                    <a href="?page={{ usuarios.previous_page_number }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Anterior</a>
+                {% else %}
+                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Anterior</span>
+                {% endif %}
 
+                <span style="font-size: 0.9rem; color: #555; font-weight: 500; padding: 0 0.5rem;">
+                    Página <strong>{{ usuarios.number }}</strong> de {{ usuarios.paginator.num_pages }}
+                </span>
+
+                {% if usuarios.has_next %}
+                    <a href="?page={{ usuarios.next_page_number }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Siguiente</a>
+                    <a href="?page={{ usuarios.paginator.num_pages }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Última »</a>
+                {% else %}
+                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Siguiente</span>
+                {% endif %}
+
+            </div>
+            {% endif %}
             <div style="margin-top:1.5rem;">
                 <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
             </div>
