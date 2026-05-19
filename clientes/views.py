@@ -10,25 +10,37 @@ from django.http import JsonResponse
 import requests
 from django.http import JsonResponse
 from django.db.models import ProtectedError
+from empenos.models import Empeno
 
 def listar_clientes(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
-    
-    
+        
     form = FiltroCliente(request.GET)
+    clientes = Cliente.objects.annotate(total_empenos=Count('empeno')).order_by('id_cliente')
     
-    
-    
-    clientes = Cliente.objects.all().order_by('nombre')
     if form.is_valid():
+        buscar_id = form.cleaned_data.get('buscar_id')
         query = form.cleaned_data.get('q')
+        
+        if buscar_id:
+            clientes = clientes.filter(id_cliente=buscar_id)
         if query:
-            clientes = clientes.filter(
-                Q(nombre__icontains=query) | Q(documento_id__icontains=query)
-            )
+            query = query.strip()
+            
+            # Base del filtro multicriterio (Texto)
+            filtros = Q(nombre__icontains=query) | \
+                      Q(documento_id__icontains=query) | \
+                      Q(telefono__icontains=query) | \
+                      Q(direccion__icontains=query)
+            
+            # 🚀 INVESTIGAR POR ID: Si el empleado digita solo números, buscamos también por el ID exacto
+            if query.isdigit():
+                filtros |= Q(id_cliente=int(query))
+                
+            clientes = clientes.filter(filtros)
+            
     return render(request, 'clientes/listar.html', {'clientes': clientes, 'form': form})
-
 
 def crear_cliente(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
@@ -74,6 +86,13 @@ def editar_cliente(request, id_cliente):
 
 def eliminar_cliente(request, id_cliente):
     cliente = get_object_or_404(Cliente, pk=id_cliente)
+    
+    # 🔐 VALIDACIÓN DE SEGURIDAD EN EL BACKEND REAL:
+    # Filtramos en la tabla Empeno si existe algún registro con el id de este cliente
+    if Empeno.objects.filter(id_cliente=cliente).exists():
+        messages.error(request, 'Acción inválida: Este cliente posee empeños activos.')
+        return redirect('clientes:listar')
+
     if request.method == 'POST':
         try:
             usuario = cliente.id_usuario
@@ -85,6 +104,7 @@ def eliminar_cliente(request, id_cliente):
         except ProtectedError:
             messages.error(request, 'No se puede eliminar este cliente porque tiene empeños o pagos registrados.')
             return redirect('clientes:listar')
+            
     return render(request, 'clientes/eliminar.html', {'cliente': cliente})
 
 def crear_cliente_ajax(request):

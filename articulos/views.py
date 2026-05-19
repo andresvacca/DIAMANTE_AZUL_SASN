@@ -22,7 +22,7 @@ def listar_articulos(request):
     #     return redirect('usuarios:login')
 
     # 1. Iniciamos el queryset
-    articulos = Articulos.objects.all().order_by('-id_articulo')
+    articulos = Articulos.objects.all().order_by('-id_articulo')    
     
     # 2. Procesamos el formulario de filtro
     form = FiltroArticuloForm(request.GET)

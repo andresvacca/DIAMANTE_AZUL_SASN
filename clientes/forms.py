@@ -116,4 +116,15 @@ class ClienteForm(forms.ModelForm):
         return cliente
 
 class FiltroCliente(forms.Form):
-    q = forms.CharField(required=False, label='Buscar', widget=forms.TextInput(attrs={'placeholder': 'Nombre o Documento... '}))
+    buscar_id = forms.IntegerField(
+        required=False, label='Buscar',
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar Id.'})
+    )
+    q = forms.CharField(
+        required=False, 
+        label='Buscar',
+        widget=forms.TextInput(attrs={
+            'class': 'auth-input', # O la clase CSS que uses para tus buscadores
+            'placeholder': 'Buscar por nombre, documento, teléfono...'
+        })
+    )
