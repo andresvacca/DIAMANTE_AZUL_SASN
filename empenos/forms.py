@@ -96,6 +96,9 @@ class EmpenoForm(forms.ModelForm):
         
         if 'tipo_contrato' in self.fields:
             self.fields['tipo_contrato'].required = False
+            
+            
+        self.fields['id_articulo'].queryset = Articulos.objects.filter(estado='En venta')
 
 
 class PagoForm(forms.ModelForm):

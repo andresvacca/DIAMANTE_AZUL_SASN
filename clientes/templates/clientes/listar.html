@@ -52,6 +52,13 @@
                             <td style="padding:0.85rem 1rem;text-align:center;white-space:nowrap;">
                                 <a href="{% url 'clientes:editar' cliente.id_cliente %}" style="color:#4a7ab5;font-size:0.85rem;margin-right:0.75rem;text-decoration:none;font-weight:600;">✏️ Editar</a>
                                 <a href="{% url 'clientes:eliminar' cliente.id_cliente %}" style="color:#e74c3c;font-size:0.85rem;text-decoration:none;font-weight:600;">🗑️ Eliminar</a>
+                                {% if cliente.id_usuario %}
+                                    <a href="{% url 'usuarios:perfil_detalle' cliente.id_usuario.pk %}" class="btn" style="color:#4e5353;font-size:0.85rem;text-decoration:none;font-weight:600;">
+                                        👁️ Ver
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Sin usuario</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
