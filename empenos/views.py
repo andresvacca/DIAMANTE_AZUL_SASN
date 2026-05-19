@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from articulos.models import Articulos
+from django.db.models import Case, Value, When
+from django.core.paginator import Paginator
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -146,10 +148,17 @@ def listar_empenos(request):
     for empeno in empenos_list:
         empeno.cuota_pendiente = cuotas_pendientes.get(empeno.id_empeno)
 
-    return render(request, 'empenos/listar.html', {
-        'empenos': empenos_list,
-        'form': form
-    })
+    empenos_por_pagina = 10
+    paginator = Paginator(empenos, empenos_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'empenos'
+    return render(request, 'empenos/listar.html', {'empenos': page_obj, 'form': form})
 
 
 # Asegúrate de importar tus modelos, formularios y funciones auxiliares (_generar_cuota, etc.)
@@ -458,15 +467,15 @@ def registrar_abono(request, id_empeno):
     
 #CUOTAS
 def listar_cuotas(request):
-    verificar_vencidos()
+    verificar_vencidos() # Ejecuta tu rutina normal de revisión
 
     usuario_rol_id = request.session.get('usuario_rol_id')
     usuario_id = request.session.get('usuario_id')
 
     form = FiltroCuota(request.GET)
     
-
-    cuotas = Cuota.objects.select_related('id_empeno', 'id_cliente').order_by('estado', 'fecha_programada')
+    # 🎯 MEJORA: select_related optimizado para traer el artículo y cliente sin matar la BD
+    cuotas = Cuota.objects.select_related('id_empeno__id_articulo', 'id_cliente')
 
     # Filtro para Clientes (Rol 3)
     if usuario_rol_id == 3:
@@ -486,22 +495,34 @@ def listar_cuotas(request):
             cuotas = cuotas.filter(estado=estado)
         
         if q:
-            # Esto buscará coincidencias en el nombre del cliente 
-            # O filtrará para que el ID del empeño sea exactamente el que escribiste
             if q.isdigit():
-                # Si el usuario escribe solo números, filtramos SOLO por ese empeño
                 cuotas = cuotas.filter(id_empeno__id_empeno=q)
             else:
-                # Si escribe texto, busca por nombre de cliente
                 cuotas = cuotas.filter(id_cliente__nombre__icontains=q)
 
-        return render(request, 'cuotas/listar.html', {
-            'cuotas': cuotas,
-            'form': form,
-            'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
-            'total_pagadas': Cuota.objects.filter(estado='Pagada').count(),
-            'total_vencidas': Cuota.objects.filter(estado='Vencida').count(),
-        })
+    # 🎯 PRIORIZACIÓN INTELIGENTE DE ESTADOS:
+    # 1 = Pendiente (Arriba), 2 = Vencida, 3 = Pagada (Abajo)
+    cuotas = cuotas.annotate(
+        prioridad=Case(
+            When(estado='Pendiente', then=Value(1)),
+            When(estado='Vencida', then=Value(2)),
+            default=Value(3)
+        )
+    ).order_by('prioridad', 'fecha_programada') # Ordena por prioridad y luego por fecha más vieja
+
+    # 🥞 PAGINACIÓN DE 10 EN 10
+    paginator = Paginator(cuotas, 10)
+    numero_pagina = request.GET.get('page')
+    page_obj = paginator.get_page(numero_pagina)
+
+    # 🚨 CORRECCIÓN: El return render queda afuera de todos los condicionales, al ras de la función
+    return render(request, 'cuotas/listar.html', {
+        'cuotas': page_obj, # Enviamos el objeto paginado con el mismo nombre 'cuotas'
+        'form': form,
+        'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
+        'total_pagadas': Cuota.objects.filter(estado='Pagada').count(),
+        'total_vencidas': Cuota.objects.filter(estado='Vencida').count(),
+    })
     
     
 def pagar_multiples(request, id_empeno):

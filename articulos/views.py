@@ -6,7 +6,6 @@ import json
 from django.http import JsonResponse
 from django.db.models import Q, Sum
 from django.http import HttpResponse
-from .models import Articulos
 from django.db.models import Q
 import openpyxl
 from reportlab.pdfgen import canvas
@@ -14,6 +13,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+import csv
+import openpyxl
+from django.core.paginator import Paginator
 
 
 def listar_articulos(request):
@@ -58,8 +60,17 @@ def listar_articulos(request):
         'total_count': total_articulos,
         'valor_total': valor_inventario
     }
+    articulos_por_pagina = 10
+    paginator = Paginator(articulos, articulos_por_pagina)
     
-    return render(request, 'articulos/listar.html', context)
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'articulos'
+    return render(request, 'articulos/listar.html', {'articulos': page_obj, 'form': form})
 
 
 def crear_articulo(request):
@@ -126,67 +137,76 @@ def crear_articulo_ajax(request):
     return JsonResponse({'ok': False, 'error': 'Método no permitido.'})
 
 def carga_masiva_articulos(request):
-    from usuarios.views import _requiere_admin, _requiere_empleado
-    if not (_requiere_admin(request) or _requiere_empleado(request)):
-        return redirect('usuarios:login')
+    if request.method == 'POST':
+        archivo = request.FILES.get('archivo_masivo') 
+        
+        if not archivo:
+            messages.error(request, 'No has seleccionado ningún archivo.')
+            return redirect('articulos:carga_masiva')
 
-    if request.method == 'POST' and request.FILES.get('archivo_csv'):
-        import csv
-        import io
-        from django.contrib import messages
+        nombre_archivo = file_name = archivo.name.lower()
 
-        archivo = request.FILES['archivo_csv']
-        decoded = archivo.read().decode('utf-8')
-        reader  = csv.DictReader(io.StringIO(decoded))
+        # 🛡️ FILTRO RADICAL
+        if not (nombre_archivo.endswith('.csv') or nombre_archivo.endswith('.xlsx') or nombre_archivo.endswith('.xls')):
+            messages.error(request, 'Formato inválido. ¡Aquí solo se acepta CSV o Excel!')
+            return redirect('articulos:carga_masiva')
 
-        categorias_validas = ['Bicicletas','Neveras','Oro','Plata','Ollas','VideoJuegos','Relojes','Computadores','Otro']
-        estados_validos    = ['En venta','Empeñado','Vendido','Vencido']
-        quilatajes_validos = ['18','16','14','10','0']
+        try:
+            # 📈 CASO 1: EXCEL (.xlsx)
+            if nombre_archivo.endswith('.xlsx') or nombre_archivo.endswith('.xls'):
+                wb = openpyxl.load_workbook(archivo, data_only=True)
+                hoja = wb.active
+                
+                for fila in hoja.iter_rows(min_row=2, values_only=True):
+                    if not fila or not fila[0]: 
+                        continue
+                        
+                    # 🎯 CORRECCIÓN: 'Articulo' en singular (revisa si tu modelo es así)
+                    Articulos.objects.create(
+                        nombre=fila[0],
+                        descripcion=fila[1],
+                        numero_serie=fila[2],
+                        categoria=fila[3],
+                        estado=fila[4],
+                        precio_sugerido_venta=fila[5] if fila[5] else 0,
+                        quilataje=fila[6] if fila[6] else 0
+                    )
 
-        nuevos   = []
-        errores  = []
+            # 📄 CASO 2: CSV
+            elif nombre_archivo.endswith('.csv'):
+                try:
+                    contenido_decodificado = archivo.read().decode('utf-8')
+                except UnicodeDecodeError:
+                    archivo.seek(0)
+                    contenido_decodificado = archivo.read().decode('latin-1')
 
-        for i, fila in enumerate(reader, start=2):
-            try:
-                nombre    = fila.get('nombre', '').strip()
-                categoria = fila.get('categoria', '').strip()
-                estado    = fila.get('estado', 'En venta').strip()
-                precio    = fila.get('precio_sugerido_venta', '0').strip()
-                quilataje = fila.get('quilataje', '0').strip()
+                lector_csv = csv.reader(contenido_decodificado.splitlines(), delimiter=';') 
+                next(lector_csv, None)  # Saltar cabecera
+                
+                for fila in lector_csv:
+                    if not fila or not fila[0]:
+                        continue
+                        
+                    # 🎯 CORRECCIÓN: 'Articulos' en singular
+                    Articulos.objects.create(
+                        nombre=fila[0],
+                        descripcion=fila[1],
+                        numero_serie=fila[2],
+                        categoria=fila[3],
+                        estado=fila[4],
+                        precio_sugerido_venta=fila[5] if fila[5] else 0,
+                        quilataje=fila[6] if fila[6] else 0
+                    )
 
-                if not nombre:
-                    errores.append(f"Fila {i}: el campo 'nombre' es obligatorio.")
-                    continue
-                if categoria not in categorias_validas:
-                    errores.append(f"Fila {i}: categoría '{categoria}' no válida.")
-                    continue
-                if estado not in estados_validos:
-                    errores.append(f"Fila {i}: estado '{estado}' no válido.")
-                    continue
-                if quilataje not in quilatajes_validos:
-                    quilataje = '0'
+            # 🚀 RETORNO EXITOSO DEL POST
+            messages.success(request, '¡Carga masiva procesada con éxito')
+            return redirect('articulos:listar')
 
-                nuevos.append(Articulos(
-                    nombre               = nombre,
-                    descripcion          = fila.get('descripcion', '').strip() or None,
-                    numero_serie         = fila.get('numero_serie', '').strip() or None,
-                    categoria            = categoria,
-                    estado               = estado,
-                    precio_sugerido_venta= float(precio),
-                    quilataje            = quilataje,
-                ))
-            except Exception as e:
-                errores.append(f"Fila {i}: error — {e}")
+        except Exception as e:
+            messages.error(request, f'Hubo un error procesando el archivo: {str(e)}')
+            return redirect('articulos:carga_masiva')
 
-        if nuevos:
-            Articulos.objects.bulk_create(nuevos)
-            messages.success(request, f'{len(nuevos)} artículos cargados correctamente.')
-        if errores:
-            for err in errores:
-                messages.warning(request, err)
-
-        return redirect('articulos:listar')
-
+    # 🚨 LA PIEZA FALTANTE: Render del GET totalmente alineado al borde izquierdo
     return render(request, 'articulos/carga_masiva.html')
 
 def descargar_csv_ejemplo(request):

@@ -55,16 +55,17 @@
             {% if messages %}
             <div class="auth-messages">
                 {% for msg in messages %}
-                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+                <div class="auth-alert auth-alert-{{ msg.tags }}" style="margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500;">
+                    {{ msg }}
+                </div>
                 {% endfor %}
             </div>
             {% endif %}
 
-            <!-- Instrucciones -->
             <div style="background:rgba(74,122,181,0.06);border:1px solid rgba(74,122,181,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
-                <h3 style="margin:0 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Formato del CSV</h3>
-                <p style="font-size:0.88rem;color:#666;margin:0 0 0.75rem;">El archivo debe tener las siguientes columnas en este orden:</p>
-                <code style="display:block;background:#f8f9fa;padding:0.75rem;border-radius:8px;font-size:0.82rem;color:#333;line-height:1.6;">
+                <h3 style="margin:0 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Formato de Archivo Soportado</h3>
+                <p style="font-size:0.88rem;color:#666;margin:0 0 0.75rem;">El archivo (Excel o CSV) debe estructurarse con las siguientes columnas empezando desde la fila 2:</p>
+                <code style="display:block;background:#f8f9fa;padding:0.75rem;border-radius:8px;font-size:0.82rem;color:#333;line-height:1.6;overflow-x:auto;white-space:nowrap;">
                     nombre, descripcion, numero_serie, categoria, estado, precio_sugerido_venta, quilataje
                 </code>
                 <div style="margin-top:1rem;font-size:0.82rem;color:#666;">
@@ -73,21 +74,20 @@
                     <p style="margin:0;"><strong>Quilataje:</strong> 18, 16, 14, 10, 0 (usar 0 si no aplica)</p>
                 </div>
                 <a href="{% url 'articulos:descargar_csv_ejemplo' %}" style="display:inline-block;margin-top:1rem;color:#4a7ab5;font-size:0.85rem;font-weight:600;text-decoration:none;">
-                    ⬇️ Descargar CSV de ejemplo
+                    ⬇️ Descargar plantilla de ejemplo
                 </a>
             </div>
 
-            <!-- Formulario de carga -->
             <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" enctype="multipart/form-data" action="{% url 'articulos:carga_masiva' %}">
                     {% csrf_token %}
                     <div class="auth-field" style="margin-bottom:1.5rem;">
-                        <label class="auth-label">Archivo CSV *</label>
-                        <input type="file" name="archivo_csv" accept=".csv" class="auth-input" required>
+                        <label class="auth-label">Seleccionar Archivo (Excel o CSV) *</label>
+                        <input type="file" name="archivo_masivo" accept=".csv, .xlsx, .xls" class="auth-input" required>
                     </div>
                     <div style="display:flex;gap:1rem;">
-                        <button type="submit" class="btn-login" style="flex:1;padding:0.75rem;">📤 Cargar Artículos</button>
-                        <a href="{% url 'articulos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.75rem;">Cancelar</a>
+                        <button type="submit" class="btn-login" style="flex:1;padding:0.75rem;cursor:pointer;">📤 Cargar Artículos</button>
+                        <a href="{% url 'articulos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.75rem;text-decoration:none;">Cancelar</a>
                     </div>
                 </form>
             </div>

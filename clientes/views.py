@@ -11,6 +11,7 @@ import requests
 from django.http import JsonResponse
 from django.db.models import ProtectedError
 from empenos.models import Empeno
+from django.core.paginator import Paginator
 
 def listar_clientes(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
@@ -40,7 +41,17 @@ def listar_clientes(request):
                 
             clientes = clientes.filter(filtros)
             
-    return render(request, 'clientes/listar.html', {'clientes': clientes, 'form': form})
+    clientes_por_pagina = 10
+    paginator = Paginator(clientes, clientes_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'clientes'
+    return render(request, 'clientes/listar.html', {'clientes': page_obj, 'form': form})
 
 def crear_cliente(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
