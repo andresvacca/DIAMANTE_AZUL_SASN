@@ -3,27 +3,55 @@ from django.contrib import messages
 from .models import Cliente
 from .forms import ClienteForm, FiltroCliente
 from usuarios.views import _requiere_admin, _requiere_empleado
-from django.db.models import Q
+from django.db.models import Q, Count
 from usuarios.models import Rol
 import json
 from django.http import JsonResponse
 import requests
 from django.http import JsonResponse
 from django.db.models import ProtectedError
+from empenos.models import Empeno
+from django.core.paginator import Paginator
 
 def listar_clientes(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
+        
     form = FiltroCliente(request.GET)
-    clientes = Cliente.objects.all().order_by('nombre')
+    clientes = Cliente.objects.annotate(total_empenos=Count('empeno')).order_by('id_cliente')
+    
     if form.is_valid():
+        buscar_id = form.cleaned_data.get('buscar_id')
         query = form.cleaned_data.get('q')
+        
+        if buscar_id:
+            clientes = clientes.filter(id_cliente=buscar_id)
         if query:
-            clientes = clientes.filter(
-                Q(nombre__icontains=query) | Q(documento_id__icontains=query)
-            )
-    return render(request, 'clientes/listar.html', {'clientes': clientes, 'form': form})
-
+            query = query.strip()
+            
+            # Base del filtro multicriterio (Texto)
+            filtros = Q(nombre__icontains=query) | \
+                      Q(documento_id__icontains=query) | \
+                      Q(telefono__icontains=query) | \
+                      Q(direccion__icontains=query)
+            
+            # 🚀 INVESTIGAR POR ID: Si el empleado digita solo números, buscamos también por el ID exacto
+            if query.isdigit():
+                filtros |= Q(id_cliente=int(query))
+                
+            clientes = clientes.filter(filtros)
+            
+    clientes_por_pagina = 10
+    paginator = Paginator(clientes, clientes_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'clientes'
+    return render(request, 'clientes/listar.html', {'clientes': page_obj, 'form': form})
 
 def crear_cliente(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
@@ -41,23 +69,41 @@ def crear_cliente(request):
 
 
 def editar_cliente(request, id_cliente):
-    if not (_requiere_admin(request) or _requiere_empleado(request)):
-        return redirect('usuarios:login')
     cliente = get_object_or_404(Cliente, pk=id_cliente)
-    if request.method == 'POST':
-        form = ClienteForm(request.POST, instance=cliente)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Cliente actualizado correctamente.')
-            return redirect('clientes:listar')
-        messages.error(request, 'Por favor corrige los errores del formulario.')
-    else:
-        form = ClienteForm(instance=cliente)
-    return render(request, 'clientes/editar.html', {'form': form, 'cliente': cliente})
+    usuario = cliente.id_usuario  
 
+    if request.method == 'POST':
+        # 📌 TRUCO MAESTRO: Copiamos los datos del POST para poder modificarlos
+        datos_post = request.POST.copy()
+        
+        # 🛠️ Forzamos que viajen los datos actuales de la BD si no vienen en el POST
+        if 'nombre' not in datos_post or not datos_post['nombre']:
+            datos_post['nombre'] = cliente.nombre
+        if 'documento_id' not in datos_post or not datos_post['documento_id']:
+            datos_post['documento_id'] = cliente.documento_id
+
+        # Pasamos los datos parchados al formulario
+        form = ClienteForm(datos_post, instance=cliente)
+
+        if form.is_valid():
+            form.save() 
+            messages.success(request, "Cliente actualizado con éxito.")
+            return redirect('clientes:listar') # Revisa si usas 'listar' o 'listar_clientes'
+    else:
+        correo_actual = usuario.email if usuario else ''
+        form = ClienteForm(instance=cliente, initial={'email': correo_actual})
+
+    return render(request, 'clientes/editar.html', {'form': form, 'cliente': cliente})
 
 def eliminar_cliente(request, id_cliente):
     cliente = get_object_or_404(Cliente, pk=id_cliente)
+    
+    # 🔐 VALIDACIÓN DE SEGURIDAD EN EL BACKEND REAL:
+    # Filtramos en la tabla Empeno si existe algún registro con el id de este cliente
+    if Empeno.objects.filter(id_cliente=cliente).exists():
+        messages.error(request, 'Acción inválida: Este cliente posee empeños activos.')
+        return redirect('clientes:listar')
+
     if request.method == 'POST':
         try:
             usuario = cliente.id_usuario
@@ -69,6 +115,7 @@ def eliminar_cliente(request, id_cliente):
         except ProtectedError:
             messages.error(request, 'No se puede eliminar este cliente porque tiene empeños o pagos registrados.')
             return redirect('clientes:listar')
+            
     return render(request, 'clientes/eliminar.html', {'cliente': cliente})
 
 def crear_cliente_ajax(request):

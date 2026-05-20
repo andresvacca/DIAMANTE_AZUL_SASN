@@ -266,7 +266,35 @@
 <script>
     // --- FUNCIONES DE MODAL ---
     function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
-    function cerrarModal(id) { document.getElementById(id).classList.remove('activo'); }
+    function cerrarModal(id) { 
+        document.getElementById(id).classList.remove('activo'); 
+        limpiarErroresModal(id);
+    }
+
+    // Limpia mensajes de error previos al cerrar o reenviar
+    function limpiarErroresModal(idModal) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) {
+            contenedorMensaje.innerHTML = '';
+            contenedorMensaje.style.display = 'none';
+        }
+        // Quita bordes rojos si los hubiera
+        document.querySelectorAll(`#${idModal} .auth-input`).forEach(input => {
+            input.style.borderColor = '#ced4da';
+        });
+    }
+
+    // Muestra errores de forma estética dentro del modal
+    function mostrarErrorModal(idModal, mensaje) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) {
+            contenedorMensaje.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:0.75rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; border:1px solid #fca5a5; text-align:left;">⚠️ ${mensaje}</div>`;
+            contenedorMensaje.style.display = 'block';
+            contenedorMensaje.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            alert(mensaje);
+        }
+    }
 
     // --- AUTOMATIZACIÓN (Espejo y Defectos) ---
     document.addEventListener('DOMContentLoaded', function() {
@@ -294,49 +322,118 @@
             const mm = String(hoy.getMonth() + 1).padStart(2, '0');
             const dd = String(hoy.getDate()).padStart(2, '0');
             
-            // Ajustado a tu configuración de base de datos: DD-MM-YYYY
             fechaInput.value = `${dd}-${mm}-${yyyy}`;
         }
     });
 
-    // --- AJAX PARA CLIENTES ---
+    // --- AJAX PARA CLIENTES CON VALIDACIÓN ORIGINAL ---
     function guardarCliente() {
-        const documento = document.getElementById('mc-documento').value;
-        const nombre = document.getElementById('mc-nombre').value;
-        const telefono = document.getElementById('mc-telefono').value;
-        const direccion = document.getElementById('mc-direccion').value;
-        const email = document.getElementById('mc-email').value;
-        const password = document.getElementById('mc-password').value;
+    limpiarErroresModal('modal-cliente');
 
-        if(!documento || !nombre) return alert("Documento y nombre son requeridos.");
+    const documento = document.getElementById('mc-documento').value.trim();
+    const nombre = document.getElementById('mc-nombre').value.trim();
+    const telefono = document.getElementById('mc-telefono').value.trim();
+    const direccion = document.getElementById('mc-direccion').value.trim();
+    const email = document.getElementById('mc-email').value.trim();
+    const password = document.getElementById('mc-password').value; // Aquí no usamos .trim() porque los espacios pueden ser parte de una clave
 
-        fetch('{% url "clientes:crear_ajax" %}', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({ documento_id: documento, nombre, telefono, direccion, email, password })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if(data.ok) {
-                document.querySelectorAll('#modal-cliente input').forEach(input => input.value = '');
-                const select = document.getElementById('id_id_cliente');
-                const opt = new Option(data.nombre, data.id, true, true);
-                select.add(opt);
-                cerrarModal('modal-cliente');
-            } else { alert("Error: " + JSON.stringify(data.error)); }
-        });
+    // --- Validaciones de campos básicos ---
+    if (!documento) {
+        document.getElementById('mc-documento').style.borderColor = '#ef4444';
+        return mostrarErrorModal('modal-cliente', 'El número de documento es obligatorio.');
+    }
+    if (!/^\d+$/.test(documento)) {
+        document.getElementById('mc-documento').style.borderColor = '#ef4444';
+        return mostrarErrorModal('modal-cliente', 'El documento debe contener solo números.');
+    }
+    if (!nombre) {
+        document.getElementById('mc-nombre').style.borderColor = '#ef4444';
+        return mostrarErrorModal('modal-cliente', 'El nombre completo es obligatorio.');
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('mc-email').style.borderColor = '#ef4444';
+        return mostrarErrorModal('modal-cliente', 'Por favor ingresa un correo electrónico válido.');
     }
 
-    // --- AJAX PARA ARTÍCULOS ---
+    // 🚨 REGLAS DE CONTRASEÑA IDÉNTICAS AL BACKEND DE DJANGO:
+    if (email || password) {
+        if (!password) {
+            document.getElementById('mc-password').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-cliente', 'Si asignas un correo, debes establecer una contraseña para la cuenta.');
+        }
+        
+        // 1. Validación de Longitud Mínima (Django pide mínimo 8 caracteres por defecto)
+        if (password.length < 8) {
+            document.getElementById('mc-password').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-cliente', 'La contraseña debe tener al menos 8 caracteres, papá.');
+        }
+
+        // 2. Validación Numérica (Django rechaza claves que sean puramente números)
+        if (/^\d+$/.test(password)) {
+            document.getElementById('mc-password').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-cliente', 'La contraseña no puede ser totalmente numérica. Combina letras y números.');
+        }
+
+        // 3. Validación de Similitud básica (Evitar que la clave sea idéntica al nombre o al documento)
+        if (password.toLowerCase() === nombre.toLowerCase() || password === documento) {
+            document.getElementById('mc-password').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-cliente', 'La contraseña es muy similar al nombre o documento del cliente. ¡Seguridad primero!');
+        }
+    }
+
+    // 🚀 SI PASÓ TODO, DISPARA EL AJAX REAL:
+    fetch('{% url "clientes:crear_ajax" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({ documento_id: documento, nombre, telefono, direccion, email, password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.ok) {
+            document.querySelectorAll('#modal-cliente input').forEach(input => input.value = '');
+            const select = document.getElementById('id_id_cliente');
+            const opt = new Option(data.nombre, data.id, true, true);
+            select.add(opt);
+            cerrarModal('modal-cliente');
+        } else { 
+            let errorMsg = "";
+            for (const campo in data.error) {
+                errorMsg += `${data.error[campo]} `;
+            }
+            mostrarErrorModal('modal-cliente', errorMsg || "Error al procesar los datos en el servidor.");
+        }
+    });
+}
+
+    // --- AJAX PARA ARTÍCULOS CON VALIDACIÓN ORIGINAL ---
     function guardarArticulo() {
-        const nombre = document.getElementById('ma-nombre').value;
+        limpiarErroresModal('modal-articulo');
+
+        const nombre = document.getElementById('ma-nombre').value.trim();
         const categoria = document.getElementById('ma-categoria').value;
-        const precio = document.getElementById('ma-precio').value;
-        const descripcion = document.getElementById('ma-descripcion').value;
-        const serie = document.getElementById('ma-serie').value;
+        const precio = parseFloat(document.getElementById('ma-precio').value);
+        const descripcion = document.getElementById('ma-descripcion').value.trim();
+        const serie = document.getElementById('ma-serie').value.trim();
         const quilataje = document.getElementById('ma-quilataje').value;
 
-        if(!nombre || !categoria || !precio) return alert("Nombre, categoría y precio son requeridos.");
+        // 🚨 VALIDACIONES IDÉNTICAS AL FORMULARIO ORIGINAL:
+        if (!nombre) {
+            document.getElementById('ma-nombre').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'El nombre del artículo es obligatorio.');
+        }
+        if (!categoria) {
+            document.getElementById('ma-categoria').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'Debes seleccionar una categoría válida.');
+        }
+        if (isNaN(precio) || precio <= 0) {
+            document.getElementById('ma-precio').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'El precio sugerido debe ser un número mayor a cero.');
+        }
+        // Validación cruzada para joyería fina de Diamante Azul
+        if ((categoria === 'Oro' || categoria === 'Plata') && !quilataje) {
+            document.getElementById('ma-quilataje').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'Para metales preciosos (Oro/Plata) es obligatorio seleccionar el quilataje.');
+        }
 
         fetch('{% url "articulos:crear_ajax" %}', {
             method: 'POST',
@@ -347,20 +444,21 @@
         .then(data => {
             if(data.ok) {
                 document.querySelectorAll('#modal-articulo input, #modal-articulo textarea').forEach(input => input.value = '');
+                document.getElementById('ma-categoria').value = '';
+                document.getElementById('ma-quilataje').value = '';
                 const select = document.getElementById('id_id_articulo');
                 const opt = new Option(data.nombre, data.id, true, true);
                 select.add(opt);
                 cerrarModal('modal-articulo');
             } else { 
-                // En lugar de JSON.stringify, puedes intentar mostrar los mensajes más limpios
                 let errorMsg = "";
                 for (const campo in data.error) {
-                    errorMsg += `${campo}: ${data.error[campo]}\n`;
+                    errorMsg += `${data.error[campo]} `;
                 }
-                alert("Error al guardar:\n" + errorMsg); 
+                mostrarErrorModal('modal-articulo', errorMsg || "Error al registrar el artículo."); 
             }
-                    });
-                }
+        });
+    }
 </script>
 {% endblock %}
 {% endblock %}

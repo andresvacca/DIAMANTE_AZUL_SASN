@@ -68,6 +68,11 @@ class Cuota(models.Model):
     interes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     mora = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Pendiente')
+    
+    @property
+    def total_cuota(self):
+        """Suma el capital y el interés para dar el valor real de la cuota en caliente"""
+        return self.capital + self.interes
 
     class Meta:
         db_table = 'cuotas'

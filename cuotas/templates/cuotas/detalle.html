@@ -21,7 +21,7 @@
             </button>
         </div>
 
-        {# TABLA DE CUOTAS ACTUALIZADA #}
+        {# TABLA DE CUOTAS ORIGINAL #}
         <div style="background:var(--blanco); border-radius:12px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse;">
@@ -75,7 +75,8 @@
             <p style="margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem;">Empeño #{{ empeno.id_empeno }}</p>
         </div>
 
-        <form id="formPagarCuotas" method="POST" action="{% url 'cuotas:pagar_multiples' empeno.id_empeno %}" style="padding: 2rem;">
+        {# 🌟 PARCHE AQUÍ: Se cambió el tag de url problemático por la ruta estática manual #}
+        <form id="formPagarCuotas" method="POST" action="/empenos/pagar-multiples/{{ empeno.id_empeno }}/" style="padding: 2rem;">
             {% csrf_token %}
             
             <label style="display:block; margin-bottom:1rem; font-weight:600; color: #333;">Seleccione las cuotas a pagar:</label>
@@ -123,62 +124,63 @@
     </div>
 </div>
 
-{# PANEL DE CONTROL DE ENTREGA FÍSICA - DIAMANTE AZUL #}
-        <div style="margin-top: 2.5rem; background: var(--blanco); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--gris-claro);">
+{# PANEL DE CONTROL DE ENTREGA FÍSICA - DIAMANTE AZUL ORIGINAL #}
+<div style="max-width:1100px; margin: 2.5rem auto 0; background: var(--blanco); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--gris-claro);">
+    
+    {# Encabezado del Panel #}
+    <div style="background: #2c3e50; padding: 1.2rem 1.5rem; color: white; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px;">📦 CONTROL DE SALIDA DE BODEGA</h3>
+        {% if tiene_cuotas_pendientes %}
+            <span style="background: #e74c3c; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">ENTREGA BLOQUEADA</span>
+        {% else %}
+            <span style="background: #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">AUTORIZADO PARA RETIRO</span>
+        {% endif %}
+    </div>
+
+    <div style="padding: 2.5rem; text-align: center;">
+        {% if tiene_cuotas_pendientes %}
+            {# Caso: El cliente aún debe cuotas #}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🚫</div>
+                <h4 style="color: #34495e; font-weight: 700; margin-bottom: 10px;">Retiro No Permitido</h4>
+                <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">
+                    El sistema ha detectado <strong>cuotas pendientes</strong> en la tabla superior. El cliente debe estar a paz y salvo para que se habilite la entrega física del artículo.
+                </p>
+            </div>
+            <button disabled style="background: #d5dbdb; color: #7f8c8d; border: none; padding: 14px 40px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 320px; cursor: not-allowed; text-transform: uppercase; font-size: 0.85rem;">
+                Confirmar Entrega (Bloqueado)
+            </button>
+        {% else %}
+            {# Caso: Paz y Salvo total #}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🤝</div>
+                <h4 style="color: #2c3e50; font-weight: 700; margin-bottom: 10px;">Entrega Autorizada</h4>
+                <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">
+                    Se confirma el pago total de las cuotas. Proceda a entregar el artículo <strong>{{ empeno.id_articulo }}</strong> al cliente y confirme la salida en el botón de abajo.
+                </p>
+            </div>
             
-            {# Encabezado del Panel #}
-            <div style="background: #2c3e50; padding: 1.2rem 1.5rem; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px;">📦 CONTROL DE SALIDA DE BODEGA</h3>
-                {% if tiene_cuotas_pendientes %}
-                    <span style="background: #e74c3c; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">ENTREGA BLOQUEADA</span>
-                {% else %}
-                    <span style="background: #27ae60; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">AUTORIZADO PARA RETIRO</span>
-                {% endif %}
-            </div>
+            {# 🌟 PARCHE AQUÍ: Se cambió el tag de url por la ruta estática manual de retiro #}
+            <form action="/empenos/retirar/{{ empeno.id_empeno }}/" method="POST">
+                {% csrf_token %}
+                <button type="submit" 
+                        onclick="return confirm('¿Confirma que ya entregó el artículo físicamente? Al procesar, el estado cambiará a Retirado.')"
+                        class="btn-hero"
+                        style="background: #27ae60; border: none; padding: 16px 50px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 380px; font-size: 1rem; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);">
+                    CONFIRMAR ENTREGA FÍSICA
+                </button>
+            </form>
+        {% endif %}
+    </div>
 
-            <div style="padding: 2.5rem; text-align: center;">
-                {% if tiene_cuotas_pendientes %}
-                    {# Caso: El cliente aún debe cuotas #}
-                    <div style="margin-bottom: 1.5rem;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🚫</div>
-                        <h4 style="color: #34495e; font-weight: 700; margin-bottom: 10px;">Retiro No Permitido</h4>
-                        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">
-                            El sistema ha detectado <strong>cuotas pendientes</strong> en la tabla superior. El cliente debe estar a paz y salvo para que se habilite la entrega física del artículo.
-                        </p>
-                    </div>
-                    <button disabled style="background: #d5dbdb; color: #7f8c8d; border: none; padding: 14px 40px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 320px; cursor: not-allowed; text-transform: uppercase; font-size: 0.85rem;">
-                        Confirmar Entrega (Bloqueado)
-                    </button>
-                {% else %}
-                    {# Caso: Paz y Salvo total #}
-                    <div style="margin-bottom: 1.5rem;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🤝</div>
-                        <h4 style="color: #2c3e50; font-weight: 700; margin-bottom: 10px;">Entrega Autorizada</h4>
-                        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">
-                            Se confirma el pago total de las cuotas. Proceda a entregar el artículo <strong>{{ empeno.id_articulo }}</strong> al cliente y confirme la salida en el botón de abajo.
-                        </p>
-                    </div>
-                    
-                    <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit" 
-                                onclick="return confirm('¿Confirma que ya entregó el artículo físicamente? Al procesar, el estado cambiará a Retirado.')"
-                                class="btn-hero"
-                                style="background: #27ae60; border: none; padding: 16px 50px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 380px; font-size: 1rem; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);">
-                            CONFIRMAR ENTREGA FÍSICA
-                        </button>
-                    </form>
-                {% endif %}
-            </div>
+    {# Nota de seguridad #}
+    <div style="background: #f8f9fa; padding: 12px; border-top: 1px solid var(--gris-claro); text-align: center;">
+        <small style="color: #95a5a6; font-style: italic;">Solo personal con acceso a caja fuerte puede autorizar esta salida.</small>
+    </div>
+</div>
 
-            {# Nota de seguridad #}
-            <div style="background: #f8f9fa; padding: 12px; border-top: 1px solid var(--gris-claro); text-align: center;">
-                <small style="color: #95a5a6; font-style: italic;">Solo personal con acceso a caja fuerte puede autorizar esta salida.</small>
-            </div>
-        </div>
-
+{% block extra_js %}
 <script>
-
 function abrirModal() {
     document.getElementById('modalPagos').style.display = 'block';
 }
@@ -191,16 +193,14 @@ function actualizarTotalVisor() {
     const checks = document.querySelectorAll('.cuota-check');
     const inputExtra = document.getElementById('cantidad_extra');
     const visor = document.getElementById('total_visor');
-    const btn = document.getElementById('btnConfirmar'); // Buscamos el botón
+    const btn = document.getElementById('btnConfirmar');
     
-    // Obtenemos el interés de la primera cuota que envía Django
     let interesBase = parseFloat("{{ cuotas.0.interes|default:'0' }}".replace(',', '.'));
     let total = 0;
-    let haySeleccion = false; // Variable para rastrear si hay algo marcado
+    let haySeleccion = false;
 
     checks.forEach(check => {
         if (check.checked) {
-            // Convertimos el data-valor a número puro
             let v = check.getAttribute('data-valor').replace(/[$.]/g, '').replace(',', '.');
             total += parseFloat(v) || 0;
             haySeleccion = true;
@@ -217,7 +217,6 @@ function actualizarTotalVisor() {
         visor.innerText = '$' + Math.round(total).toLocaleString('es-CO');
     }
 
-    // Lógica para habilitar/deshabilitar el botón
     if (btn) {
         if (haySeleccion && total > 0) {
             btn.disabled = false;
@@ -231,28 +230,14 @@ function actualizarTotalVisor() {
     }
 }
 
-    // 3. Sumar excedentes (cantidad_extra * interés base)
-    let extraCount = parseInt(inputExtra.value) || 0;
-    if (extraCount > 0) {
-        total += (extraCount * valorInteresBase);
-        seleccionados += extraCount;
+// Cerrar modal si se hace clic fuera de la caja blanca
+window.onclick = function(event) {
+    let modal = document.getElementById('modalPagos');
+    if (event.target == modal) {
+        cerrarModal();
     }
-
-    // 4. Mostrar en el visor con formato Colombiano
-    visor.innerText = '$' + Math.round(total).toLocaleString('es-CO');
-
-    // 5. Activar/Desactivar botón
-    if (btn) {
-        btn.disabled = (seleccionados === 0);
-        btn.style.opacity = (seleccionados === 0) ? "0.5" : "1";
-    }
-
-    // Cerrar modal si se hace clic fuera de la caja blanca
-    window.onclick = function(event) {
-        let modal = document.getElementById('modalPagos');
-        if (event.target == modal) {
-            cerrarModal();
-        }
-    }
+}
 </script>
+{% endblock %}
+
 {% endblock %}

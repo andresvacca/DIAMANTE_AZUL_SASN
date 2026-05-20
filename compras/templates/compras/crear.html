@@ -212,14 +212,38 @@
 {% block extra_js %}
 <script src="{% static 'js/landing.js' %}"></script>
 <script>
+    // --- FUNCIONES DE MODAL ---
     function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
-    function cerrarModal(id) { document.getElementById(id).classList.remove('activo'); }
+    function cerrarModal(id) { 
+        document.getElementById(id).classList.remove('activo'); 
+        limpiarErroresModal(id);
+    }
 
-    function mostrarMensaje(idContenedor, texto, tipo) {
-        document.getElementById(idContenedor).innerHTML = `
-            <div style="padding:0.6rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.88rem;
-                background:${tipo === 'ok' ? '#d1fae5' : '#fee2e2'};
-                color:${tipo === 'ok' ? '#065f46' : '#991b1b'};">${texto}</div>`;
+    // Limpia mensajes de error previos y quita los bordes rojos
+    function limpiarErroresModal(idModal) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) {
+            contenedorMensaje.innerHTML = '';
+        }
+        document.querySelectorAll(`#${idModal} .auth-input`).forEach(input => {
+            input.style.borderColor = '#ced4da';
+        });
+    }
+
+    // Muestra errores de forma estética e inyectada (Clonado de Empeños)
+    function mostrarMensajeModal(idModal, texto, tipo) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) {
+            const background = tipo === 'ok' ? '#d1fae5' : '#fee2e2';
+            const color = tipo === 'ok' ? '#065f46' : '#b91c1c';
+            const border = tipo === 'ok' ? '#a7f3d0' : '#fca5a5';
+            const icono = tipo === 'ok' ? '✅' : '⚠️';
+
+            contenedorMensaje.innerHTML = `
+                <div style="padding:0.75rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; border:1px solid ${border}; background:${background}; color:${color}; text-align:left;">
+                    ${icono} ${texto}
+                </div>`;
+        }
     }
 
     function agregarOpcion(selectId, id, texto) {
@@ -229,15 +253,27 @@
         select.appendChild(option);
     }
 
+    // --- AJAX PARA CLIENTES (COMPRAS) ---
     function guardarCliente() {
+        limpiarErroresModal('modal-cliente');
+
         const documento = document.getElementById('mc-documento').value.trim();
         const nombre = document.getElementById('mc-nombre').value.trim();
         const telefono = document.getElementById('mc-telefono').value.trim();
         const direccion = document.getElementById('mc-direccion').value.trim();
 
-        if (!documento || !nombre) {
-            mostrarMensaje('modal-cliente-mensaje', 'Documento y nombre son obligatorios.', 'error');
-            return;
+        // 🚨 VALIDACIONES STRICTAS DEL MODELO:
+        if (!documento) {
+            document.getElementById('mc-documento').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-cliente', 'El número de documento es obligatorio.', 'error');
+        }
+        if (!/^\d+$/.test(documento)) {
+            document.getElementById('mc-documento').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-cliente', 'El documento debe contener únicamente números.', 'error');
+        }
+        if (!nombre) {
+            document.getElementById('mc-nombre').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-cliente', 'El nombre completo es obligatorio.', 'error');
         }
 
         fetch('{% url "clientes:crear_ajax" %}', {
@@ -249,22 +285,46 @@
         .then(data => {
             if (data.ok) {
                 agregarOpcion('id_id_cliente', data.id, data.nombre);
-                mostrarMensaje('modal-cliente-mensaje', '✅ Cliente creado correctamente.', 'ok');
-                setTimeout(() => cerrarModal('modal-cliente'), 1200);
+                mostrarMensajeModal('modal-cliente', 'Cliente creado correctamente.', 'ok');
+                setTimeout(() => {
+                    document.querySelectorAll('#modal-cliente input').forEach(input => input.value = '');
+                    cerrarModal('modal-cliente');
+                }, 1200);
             } else {
-                mostrarMensaje('modal-cliente-mensaje', data.error || 'Error al crear cliente.', 'error');
+                // Renderizado estético de errores devueltos por Django si la cédula ya existe, etc.
+                let errorMsg = "";
+                if (typeof data.error === 'object') {
+                    for (const campo in data.error) {
+                        errorMsg += `${data.error[campo]} `;
+                    }
+                } else {
+                    errorMsg = data.error;
+                }
+                mostrarMensajeModal('modal-cliente', errorMsg || 'Error al crear cliente.', 'error');
             }
         });
     }
 
+    // --- AJAX PARA ARTÍCULOS (COMPRAS) ---
     function guardarArticulo() {
+        limpiarErroresModal('modal-articulo');
+
         const nombre = document.getElementById('ma-nombre').value.trim();
         const categoria = document.getElementById('ma-categoria').value;
-        const precio = document.getElementById('ma-precio').value;
+        const precio = parseFloat(document.getElementById('ma-precio').value);
 
-        if (!nombre || !categoria || !precio) {
-            mostrarMensaje('modal-articulo-mensaje', 'Nombre, categoría y precio son obligatorios.', 'error');
-            return;
+        // 🚨 VALIDACIONES STRICTAS DEL MODELO:
+        if (!nombre) {
+            document.getElementById('ma-nombre').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-articulo', 'El nombre del artículo es obligatorio.', 'error');
+        }
+        if (!categoria) {
+            document.getElementById('ma-categoria').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-articulo', 'Debes seleccionar una categoría válida.', 'error');
+        }
+        if (isNaN(precio) || precio <= 0) {
+            document.getElementById('ma-precio').style.borderColor = '#ef4444';
+            return mostrarMensajeModal('modal-articulo', 'El precio sugerido debe ser un número mayor a cero.', 'error');
         }
 
         fetch('{% url "articulos:crear_ajax" %}', {
@@ -276,10 +336,22 @@
         .then(data => {
             if (data.ok) {
                 agregarOpcion('id_id_articulo', data.id, data.nombre);
-                mostrarMensaje('modal-articulo-mensaje', '✅ Artículo creado correctamente.', 'ok');
-                setTimeout(() => cerrarModal('modal-articulo'), 1200);
+                mostrarMensajeModal('modal-articulo', 'Artículo creado correctamente.', 'ok');
+                setTimeout(() => {
+                    document.querySelectorAll('#modal-articulo input').forEach(input => input.value = '');
+                    document.getElementById('ma-categoria').value = '';
+                    cerrarModal('modal-articulo');
+                }, 1200);
             } else {
-                mostrarMensaje('modal-articulo-mensaje', data.error || 'Error al crear artículo.', 'error');
+                let errorMsg = "";
+                if (typeof data.error === 'object') {
+                    for (const campo in data.error) {
+                        errorMsg += `${data.error[campo]} `;
+                    }
+                } else {
+                    errorMsg = data.error;
+                }
+                mostrarMensajeModal('modal-articulo', errorMsg || 'Error al crear artículo.', 'error');
             }
         });
     }

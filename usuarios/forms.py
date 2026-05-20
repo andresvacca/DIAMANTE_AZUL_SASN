@@ -42,8 +42,12 @@ class RegistroForm(forms.Form):
     nombre = forms.CharField(
         label='Nombre completo',
         validators=[
+            RegexValidator(
+                regex=r'^[^0-9]+$',
+                message='El nombre no debe tener numeros'
+            ),
             MinLengthValidator(3 ,message= "Minimo 3 Caracteres"),
-            MaxLengthValidator(100, message= "Maximo 100 Caracteres")
+            MaxLengthValidator(100, message= "Maximo 100 Caracteres"),
            
         ],
         widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Tu nombre completo'})
@@ -175,4 +179,15 @@ class LoginForm(forms.Form):
     password = forms.CharField(
         label='Contraseña',
         widget=forms.PasswordInput(attrs={'class': 'auth-input', 'placeholder': 'Tu contraseña'})
+    )
+    
+    
+class FiltroUsuario(forms.Form):
+    buscar_id = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar Id.'}))
+    q = forms.CharField(
+        required=False, 
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ej: nombre, correo o ID de usuario...',
+            'style': 'padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 8px; outline: none; flex: 1;'
+        })
     )

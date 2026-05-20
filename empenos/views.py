@@ -10,36 +10,16 @@ from contratos.models import Contrato
 from django.db.models import Q, Sum
 from cuotas.forms import FiltroCuota
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
+from articulos.models import Articulos
+from django.db.models import Case, Value, When
+from django.core.paginator import Paginator
+from .forms import EmpenoForm, PagoForm, FiltroEmpeno, AbonoForm, EditarEmpenoForm
+from factura.views import generar_factura_automatica
 # ── Helpers ──────────────────────────────────────────────────────────────────
-def clean(self):
-    cleaned_data = super().clean()
-    valor_empeno = cleaned_data.get('valor_empeno')
-    tipo_contrato = cleaned_data.get('tipo_contrato')
-
-    # Si el valor existe pero el tipo viene vacío desde el navegador
-    if valor_empeno and not tipo_contrato:
-        # Definimos la lógica de Diamante Azul
-        if valor_empeno <= Decimal('500000'):
-            # Usamos el nombre exacto que está en TIPO_CHOICES de tu modelo
-            nuevo_tipo = 'Normal'
-        elif valor_empeno > Decimal('500000') and valor_empeno <= Decimal('2000000'):
-            nuevo_tipo = 'Plazo Maximo'
-        else:
-            # Por ejemplo, para montos muy altos
-            nuevo_tipo = 'Contrato sobre Oro'
-        
-        # Asignamos el valor al diccionario de datos limpios
-        cleaned_data['tipo_contrato'] = nuevo_tipo
-        
-        # Muy importante: Si Django ya había marcado el error de "obligatorio", lo borramos
-        if 'tipo_contrato' in self._errors:
-            del self._errors['tipo_contrato']
-
-    return cleaned_data
 
 
 def _sincronizar_articulo(empeno):
@@ -170,10 +150,20 @@ def listar_empenos(request):
     for empeno in empenos_list:
         empeno.cuota_pendiente = cuotas_pendientes.get(empeno.id_empeno)
 
-    return render(request, 'empenos/listar.html', {
-        'empenos': empenos_list,
-        'form': form
-    })
+    empenos_por_pagina = 10
+    paginator = Paginator(empenos, empenos_por_pagina)
+    
+    # 2. Capturamos qué página está viendo el usuario desde la URL (ej: ?page=2)
+    numero_pagina = request.GET.get('page')
+    
+    # 3. Extraemos los registros que corresponden únicamente a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # 🚨 IMPORTANTE: Al HTML ahora le pasamos 'page_obj' en lugar de 'empenos'
+    return render(request, 'empenos/listar.html', {'empenos': page_obj, 'form': form})
+
+
+# Asegúrate de importar tus modelos, formularios y funciones auxiliares (_generar_cuota, etc.)
 
 @transaction.atomic
 def crear_empeno(request):
@@ -183,68 +173,95 @@ def crear_empeno(request):
     if request.method == 'POST':
         data = request.POST.copy()
         
-        # 1. Lógica de automatización de tipo de contrato
-        valor_str = data.get('monto_prestado', '0') # Ajustado al nombre del campo en tu modelo
+        # 1. Capturamos el artículo seleccionado y el monto desde el POST
+        articulo_id = data.get('id_articulo')
+        valor_str = data.get('monto_prestado', '0')
+        
+        # Convertimos el string del monto a Decimal de forma segura
         try:
-            valor = Decimal(valor_str)
-        except:
-            valor = Decimal('0')
+            valor_prestado = Decimal(valor_str)
+        except (ValueError, TypeError, InvalidOperation):
+            valor_prestado = Decimal('0')
 
-        if not data.get('tipo_contrato'):
-            if valor <= Decimal('500000'):
-                data['tipo_contrato'] = 'Normal'
-            elif valor <= Decimal('2000000'):
-                data['tipo_contrato'] = 'Plazo Maximo'
-            else:
-                data['tipo_contrato'] = 'Contrato sobre Oro'
+        # 2. Lógica de automatización de tipo de contrato e interés automático
+        if articulo_id and not data.get('tipo_contrato'):
+            try:
+                # Buscamos el artículo en la base de datos para conocer su precio y categoría
+                articulo_obj = Articulos.objects.get(pk=articulo_id)
+                precio_sugerido = articulo_obj.precio_sugerido_venta
+                categoria_art = articulo_obj.categoria.strip().lower()
+                
+                # Calculamos los topes dinámicos basados en el 40% y 60%
+                tope_40_porc = precio_sugerido * Decimal('0.40')
+                tope_60_porc = precio_sugerido * Decimal('0.60')
+                
+                # Evaluamos las condiciones según las reglas de negocio de Diamante Azul
+                if valor_prestado <= tope_40_porc and categoria_art != 'oro':
+                    data['tipo_contrato'] = 'Normal'
+                elif valor_prestado <= tope_60_porc and categoria_art != 'oro':
+                    data['tipo_contrato'] = 'Plazo Maximo'
+                elif valor_prestado <= tope_40_porc and categoria_art == 'oro':
+                    data['tipo_contrato'] = 'Contrato sobre Oro'
+                elif valor_prestado <= tope_60_porc and categoria_art == 'oro':
+                    data['tipo_contrato'] = 'Oro Maximo'  # Fuerza interés automático al 60%
+                    
+            except Articulos.DoesNotExist:
+                pass # Si el artículo no existe, el formulario se encargará de gestionarlo
 
+        # Pasamos los datos (ya modificados con el contrato automático) al formulario
         form = EmpenoForm(data)
         
         if form.is_valid():
-            # Creamos el objeto en memoria (sin guardar) para validar
+            # 3. Creamos el objeto en memoria (Aún no se guarda en la base de datos)
             empeno = form.save(commit=False)
+            
+            # Guardamos el tipo de contrato calculado dentro del objeto empeño antes de guardar
+            tipo_elegido = data.get('tipo_contrato', 'Normal')
+            empeno.tipo_contrato = tipo_elegido
+            
             articulo = empeno.id_articulo
 
-            # 2. Validación del tope del 40%
-            # Asumiendo que 'precio_sugerido_venta' está en el modelo Articulos
-            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.40')
+            # 4. VALIDACIÓN DEL TOPE MÁXIMO PERMITIDO (60% del valor sugerido)
+            tope_maximo = articulo.precio_sugerido_venta * Decimal('0.60')
 
             if empeno.monto_prestado > tope_maximo:
-                messages.error(request, f"Error: El préstamo (${empeno.monto_prestado}) supera el 40% permitido (${tope_maximo})")
+                messages.error(
+                    request, 
+                    f"Error: El préstamo (${empeno.monto_prestado:,.0f}) supera el 60% del valor comercial permitido (${tope_maximo:,.0f})."
+                )
                 return render(request, 'empenos/crear.html', {'form': form})
             
-            # 3. CREACIÓN DEL CONTRATO PRIMERO
-            # Usamos el tipo que ya se parchó en la data del POST
-            tipo_elegido = data['tipo_contrato']
-            
-            # Guardamos el empeño para tener un ID para el contrato
+            # 5. PRIMER Y ÚNICO GUARDADO INICIAL: El empeño ya sabe que tipo de contrato es
             empeno.save() 
 
+            # 6. CREACIÓN DEL CONTRATO ÚNICO ASOCIADO
             nuevo_contrato = Contrato.objects.create(
                 id_empeno=empeno,
                 id_cliente=empeno.id_cliente,
                 id_articulo=empeno.id_articulo,
                 fecha_contrato=timezone.now().date(),
                 tipo_contrato=tipo_elegido,
-                estado_contrato='Activo' # O 'Vigente'
+                estado_contrato='Disponible'
             )
 
-            # 4. VINCULACIÓN FINAL Y PROCESOS AUTOMÁTICOS
+            # 7. VINCULACIÓN FINAL DEL CONTRATO AL EMPEÑO
             empeno.id_contrato = nuevo_contrato
             empeno.save()
             
-            _sincronizar_articulo(empeno) # Cambia estado del artículo a 'Empeñado'
-            _generar_cuota(empeno)      # Crea las 1, 3 o 4 cuotas según el tipo
+            # 8. PROCESOS AUTOMÁTICOS SECUNDARIOS
+            _sincronizar_articulo(empeno)  # Cambia estado del artículo a 'Empeñado'
+            _generar_cuota(empeno)        # Genera las cuotas leyendo correctamente el nuevo contrato
             
             messages.success(request, f'Empeño #{empeno.id_empeno} registrado con contrato {tipo_elegido}.')
             return redirect('empenos:detalle', empeno.pk)
         
         else:
-            print("ERRORES:", form.errors)
+            # Imprime en la consola del servidor los errores exactos si la validación falla
+            print("======= ERRORES FORMULARIO =======", form.errors)
             messages.error(request, 'Por favor corrige los errores del formulario.')
             
     else:
-        # Fecha sugerida de vencimiento inicial (un mes después)
+        # Configuración del formulario limpio para peticiones GET
         fecha_vencimiento = timezone.now() + timedelta(days=31)
         form = EmpenoForm(initial={
             'fecha_vencimiento': fecha_vencimiento.date()
@@ -297,12 +314,15 @@ def registrar_pago(request, id_cuota):
 
     if request.method == 'POST':
         from decimal import Decimal
-        Pago.objects.create(
+        
+        # 1. Registramos el objeto Pago de tu app de empeños
+        pago_objeto = Pago.objects.create(
             id_cuota   = cuota,
             id_cliente = cuota.id_empeno.id_cliente,
             monto      = cuota.capital + cuota.interes,
             metodo_pago = 'Efectivo',
         )
+        
         cuota.estado = 'Pagada'
         cuota.save()
 
@@ -311,7 +331,43 @@ def registrar_pago(request, id_cuota):
         empeno.save()
         _sincronizar_articulo(empeno)
 
-        messages.success(request, f'Pago registrado. Empeño #{empeno.id_empeno} finalizado.')
+        # ==========================================================================
+        # 🌟 EXTRACCIÓN SEGURA DEL USUARIO LOGUEADO MANUALMENTE
+        # ==========================================================================
+        from factura.views import generar_factura_automatica
+        from usuarios.models import Usuario  # Asegúrate de que apunte bien a tu modelo
+        
+        # Intentamos sacar el ID del usuario que guardaste en la sesión al loguearse
+        usuario_id_sesion = request.session.get('usuario_id') or request.session.get('user_id')
+        
+        usuario_operador = None
+        if usuario_id_sesion:
+            try:
+                usuario_operador = Usuario.objects.get(pk=usuario_id_sesion)
+            except Usuario.DoesNotExist:
+                pass
+        
+        # Plan de respaldo: Si request.user es válido lo usa, si no, agarra el primer usuario del sistema para no frenar la caja
+        if not usuario_operador and not request.user.is_anonymous:
+            usuario_operador = request.user
+        elif not usuario_operador:
+            usuario_operador = Usuario.objects.first() 
+        # ==========================================================================
+
+        # Calculamos el monto total recaudado
+        monto_total_pago = cuota.capital + cuota.interes
+        
+        # Disparamos la factura automática con el operador real verificado
+        generar_factura_automatica(
+            usuario=usuario_operador, 
+            cliente=empeno.id_cliente,
+            tipo_movimiento='Cuota', 
+            monto=monto_total_pago,
+            id_empeno=empeno.id_empeno,
+            descripcion=f"Pago Interés/Cuota de Empeño #{empeno.id_empeno} - ID Cuota: {cuota.id_cuota}"
+        )
+
+        messages.success(request, f'Pago registrado y Comprobante de Caja generado. Empeño #{empeno.id_empeno} actualizado.')
         return redirect('cuotas:listar')
 
     return redirect('cuotas:listar')
@@ -390,16 +446,39 @@ def editar_empeno(request, id_empeno):
         return redirect('usuarios:login')
 
     empeno = get_object_or_404(Empeno, pk=id_empeno)
+    
+    # REGLAS 2 y 3: Capturamos los valores originales e inmutables directamente de la Base de Datos
+    monto_prestado_original = empeno.monto_prestado
+    monto_entregado_original = empeno.monto_entregado
+    articulo_original = empeno.id_articulo # Por si acaso se altera el POST
+
     if request.method == 'POST':
-        form = EmpenoForm(request.POST, instance=empeno)
+        form = EditarEmpenoForm(request.POST, instance=empeno)
         if form.is_valid():
-            empeno = form.save()
-            _sincronizar_articulo(empeno)
-            messages.success(request, 'Empeño actualizado correctamente.')
-            return redirect('empenos:detalle', empeno.id_empeno)
+            # Creamos el objeto en memoria sin impactar la DB todavía
+            empeno_editado = form.save(commit=False)
+            
+            # 🚨 BLINDAJE INMUTABLE: Forzamos la sobreescritura de los datos protegidos
+            empeno_editado.monto_prestado = monto_prestado_original
+            empeno_editado.monto_entregado = monto_entregado_original
+            empeno_editado.tasa_interes = Decimal('10.0') # REGLA 3: Siempre clavada en 10
+            
+            # REGLA 1: Si no se usó el botón de cambiar artículo, mantiene el original de forma segura
+            if not empeno_editado.id_articulo:
+                empeno_editado.id_articulo = articulo_original
+            
+            # Guardado físico en la base de datos
+            empeno_editado.save()
+            
+            # Sincronizamos el estado del artículo asociado
+            _sincronizar_articulo(empeno_editado)
+            
+            messages.success(request, f'Empeño #{empeno_editado.id_empeno} actualizado correctamente.')
+            return redirect('empenos:detalle', empeno_editado.id_empeno)
+        
         messages.error(request, 'Por favor corrige los errores del formulario.')
     else:
-        form = EmpenoForm(instance=empeno)
+        form = EditarEmpenoForm(instance=empeno)
 
     return render(request, 'empenos/editar.html', {'form': form, 'empeno': empeno})
 
@@ -452,15 +531,15 @@ def registrar_abono(request, id_empeno):
     
 #CUOTAS
 def listar_cuotas(request):
-    verificar_vencidos()
+    verificar_vencidos() # Ejecuta tu rutina normal de revisión
 
     usuario_rol_id = request.session.get('usuario_rol_id')
     usuario_id = request.session.get('usuario_id')
 
     form = FiltroCuota(request.GET)
     
-
-    cuotas = Cuota.objects.select_related('id_empeno', 'id_cliente').order_by('estado', 'fecha_programada')
+    # 🎯 MEJORA: select_related optimizado para traer el artículo y cliente sin matar la BD
+    cuotas = Cuota.objects.select_related('id_empeno__id_articulo', 'id_cliente')
 
     # Filtro para Clientes (Rol 3)
     if usuario_rol_id == 3:
@@ -480,22 +559,34 @@ def listar_cuotas(request):
             cuotas = cuotas.filter(estado=estado)
         
         if q:
-            # Esto buscará coincidencias en el nombre del cliente 
-            # O filtrará para que el ID del empeño sea exactamente el que escribiste
             if q.isdigit():
-                # Si el usuario escribe solo números, filtramos SOLO por ese empeño
                 cuotas = cuotas.filter(id_empeno__id_empeno=q)
             else:
-                # Si escribe texto, busca por nombre de cliente
                 cuotas = cuotas.filter(id_cliente__nombre__icontains=q)
 
-        return render(request, 'cuotas/listar.html', {
-            'cuotas': cuotas,
-            'form': form,
-            'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
-            'total_pagadas': Cuota.objects.filter(estado='Pagada').count(),
-            'total_vencidas': Cuota.objects.filter(estado='Vencida').count(),
-        })
+    # 🎯 PRIORIZACIÓN INTELIGENTE DE ESTADOS:
+    # 1 = Pendiente (Arriba), 2 = Vencida, 3 = Pagada (Abajo)
+    cuotas = cuotas.annotate(
+        prioridad=Case(
+            When(estado='Pendiente', then=Value(1)),
+            When(estado='Vencida', then=Value(2)),
+            default=Value(3)
+        )
+    ).order_by('prioridad', 'fecha_programada') # Ordena por prioridad y luego por fecha más vieja
+
+    # 🥞 PAGINACIÓN DE 10 EN 10
+    paginator = Paginator(cuotas, 10)
+    numero_pagina = request.GET.get('page')
+    page_obj = paginator.get_page(numero_pagina)
+
+    # 🚨 CORRECCIÓN: El return render queda afuera de todos los condicionales, al ras de la función
+    return render(request, 'cuotas/listar.html', {
+        'cuotas': page_obj, # Enviamos el objeto paginado con el mismo nombre 'cuotas'
+        'form': form,
+        'total_pendientes': Cuota.objects.filter(estado='Pendiente').count(),
+        'total_pagadas': Cuota.objects.filter(estado='Pagada').count(),
+        'total_vencidas': Cuota.objects.filter(estado='Vencida').count(),
+    })
     
     
 def pagar_multiples(request, id_empeno):

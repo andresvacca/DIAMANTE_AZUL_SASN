@@ -4,151 +4,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Empeño — Diamante Azul</title>
+    <title>Editar Empeño #{{ empeno.id_empeno }} — Diamante Azul</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}">
     <style>
-                /* Esto asegura que tanto inputs como selects se vean igual */
+        /* ==========================================================================
+           RESTRUCTURACIÓN DE DISEÑO - VISTA EDICIÓN
+           ========================================================================== */
+        
+        /* Asegura que el body use flex para empujar el footer o centrar contenido si es necesario */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f4f6f9;
+            margin: 0;
+        }
+
+        /* Centrado absoluto de la tarjeta en pantalla */
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 2rem 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Caja del formulario controlada y simétrica */
+        .auth-box {
+            max-width: 600px;
+            width: 100%;
+            padding: 2.5rem;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            box-sizing: border-box;
+        }
+
+        /* Ajustes de campos e inputs individuales */
+        .auth-field {
+            margin-bottom: 1.25rem;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        .auth-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #343a40;
+        }
+
         .auth-field input,
         .auth-field select,
         .auth-input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ced4da;
-            border-radius: 4px;
+            border-radius: 6px;
             background-color: #fff;
-            font-size: 1rem;
-            /* Muy importante para que el select no se vea pequeño */
+            font-size: 0.95rem;
             height: 3rem;
+            box-sizing: border-box;
             display: block;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .auth-field input:focus,
+        .auth-field select:focus {
+            outline: none;
+            border-color: #4a7ab5;
+        }
+
+        /* Grilla simétrica de doble columna */
+        .auth-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 580px) {
+            .auth-grid-2 {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+
+        /* Estilos Limpios para Modales AJAX */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.activo { display: flex; }
+        .modal-box {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+            box-sizing: border-box;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.75rem;
+        }
+        .modal-cerrar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 1;
+        }
+        .modal-cerrar:hover { color: #dc3545; }
+        
+        .auth-error {
+            color: #dc3545;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 4px;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
-    <a href="{% url 'home' %}" class="navbar-logo">
-        <svg viewBox="0 0 36 36" fill="none">
-            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
-            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
-            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+    <a href="{% url 'home' %}" class="navbar-logo" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <svg viewBox="0 0 36 36" fill="none" width="32" height="32" style="display: inline-block; vertical-align: middle;">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="2"/>
+            <path d="M18,6 L28,13 L18,22 L8,13 Z" fill="#4a7ab5" opacity="0.2"/>
+            <path d="M18,6 L28,13 L18,30 L8,13 Z" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <line x1="18" y1="6" x2="18" y2="30" stroke="#4a7ab5" stroke-width="1.5"/>
+            <line x1="8" y1="13" x2="28" y2="13" stroke="#4a7ab5" stroke-width="1.5"/>
         </svg>
-        <div>
-            <span class="logo-nombre">Diamante Azul</span>
-            <span class="logo-subtitulo">Casa de Empeño</span>
-        </div>
+        <span style="font-weight: 700; font-size: 1.25rem; color: #2d3748; letter-spacing: -0.5px;">Diamante Azul</span>
     </a>
-    <ul class="navbar-links" id="navbar-links">
-        <li><a href="{% url 'home' %}">Inicio</a></li>
-        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
-        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
-        <li><a href="{% url 'empenos:listar' %}" class="active">Empeños</a></li>
-        {% endif %}
-        {% if request.session.usuario_rol_id == 1 %}
-        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
-        {% endif %}
-    </ul>
-    <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
-            <span class="icono-sol">☀️</span>
-            <span class="icono-luna">🌙</span>
-        </button>
-        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
-        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
+    <div class="navbar-links">
+        <a href="{% url 'empenos:listar' %}" class="btn-clear">Volver al Listado</a>
     </div>
 </nav>
 
-<div class="dashboard-page">
-    <div class="dashboard-contenido">
-        {{ form.errors }}
-        <div style="max-width:680px;margin:0 auto;">
-            <div style="margin-bottom:1.5rem;">
-                <a href="{% url 'empenos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Empeños</a>
-                <h2 style="margin:0.5rem 0 0;">✏️ Editar Empeño <span style="color:#aaa;font-size:0.85em;">#{{ empeno.id_empeno }}</span></h2>
+<div class="auth-container">
+    <div class="auth-box">
+        <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.65rem; color: #1a202c;">📝 Editar Empeño #{{ empeno.id_empeno }}</h2>
+        <p class="auth-subtitle" style="margin-top: 0; margin-bottom: 2rem; color: #718096; font-size: 0.9rem; line-height: 1.4;">
+            Modifica la información general del contrato sin alterar los valores financieros protegidos.
+        </p>
+
+        {% if messages %}
+        <div class="auth-messages" style="margin-bottom: 1.25rem;">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}" style="padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.88rem; margin-bottom: 0.5rem;">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" id="form-editar-empeno">
+            {% csrf_token %}
+
+            <div class="auth-field">
+                <label class="auth-label">{{ form.id_cliente.label }} *</label>
+                {{ form.id_cliente }}
+                {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
             </div>
 
-            {% if messages %}
-            <div class="auth-messages">
-                {% for msg in messages %}
-                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
-                {% endfor %}
+            <div class="auth-field">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                    <label class="auth-label" style="margin: 0;">📦 Artículo Vinculado *</label>
+                    <button type="button" onclick="abrirModal('modal-articulo')" style="background: none; border: none; color: #4a7ab5; font-size: 0.85rem; cursor: pointer; font-weight: 600; padding: 0;">🔄 Cambiar Artículo</button>
+                </div>
+                {{ form.id_articulo }}
+                {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors|join:", " }}</span>{% endif %}
             </div>
-            {% endif %}
 
-            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
-                <form method="POST">
-                    {% csrf_token %}
+            <div class="auth-grid-2">
+                <div class="auth-field">
+                    <label class="auth-label">{{ form.monto_prestado.label }}</label>
+                    {{ form.monto_prestado }}
+                </div>
+                <div class="auth-field">
+                    <label class="auth-label">{{ form.monto_entregado.label }}</label>
+                    {{ form.monto_entregado }}
+                </div>
+            </div>
 
-                    <div class="auth-field">
-                        <label class="auth-label">{{ form.id_cliente.label }} *</label>
-                        {{ form.id_cliente }}
-                        {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
-                    </div>
+            <div class="auth-grid-2">
+                <div class="auth-field">
+                    <label class="auth-label">{{ form.tasa_interes.label }}</label>
+                    {{ form.tasa_interes }}
+                </div>
+                <div class="auth-field">
+                    <label class="auth-label">Fecha de Vencimiento *</label>
+                    {{ form.fecha_vencimiento }}
+                    {% if form.fecha_vencimiento.errors %}<span class="auth-error">{{ form.fecha_vencimiento.errors|join:", " }}</span>{% endif %}
+                </div>
+            </div>
 
-                    <div class="auth-field">
-                        <label class="auth-label">{{ form.id_articulo.label }} *</label>
-                        {{ form.id_articulo }}
-                        {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors|join:", " }}</span>{% endif %}
-                    </div>
+            <div class="auth-grid-2">
+                <div class="auth-field">
+                    <label class="auth-label">Tipo de Contrato</label>
+                    {{ form.tipo_contrato }}
+                </div>
+                <div class="auth-field">
+                    <label class="auth-label">Estado del Empeño *</label>
+                    {{ form.estado }}
+                    {% if form.estado.errors %}<span class="auth-error">{{ form.estado.errors|join:", " }}</span>{% endif %}
+                </div>
+            </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                        <div class="auth-field">
-                            <label class="auth-label">{{ form.monto_prestado.label }} *</label>
-                            {{ form.monto_prestado }}
-                            {% if form.monto_prestado.errors %}<span class="auth-error">{{ form.monto_prestado.errors|join:", " }}</span>{% endif %}
-                        </div>
-                        <div class="auth-field">
-                            <label class="auth-label">{{ form.monto_entregado.label }} *</label>
-                            {{ form.monto_entregado }}
-                            {% if form.monto_entregado.errors %}<span class="auth-error">{{ form.monto_entregado.errors|join:", " }}</span>{% endif %}
-                        </div>
-                    </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.75rem;">
+                <button type="submit" class="btn-login" style="flex: 1; padding: 0.7rem; height: 3rem; font-weight: 600; cursor: pointer;">Guardar Cambios</button>
+                <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="flex: 1; text-align: center; padding: 0.7rem; height: 3rem; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; font-weight: 600;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                        <div class="auth-field">
-                            <label class="auth-label">{{ form.tasa_interes.label }} *</label>
-                            {{ form.tasa_interes }}
-                            {% if form.tasa_interes.errors %}<span class="auth-error">{{ form.tasa_interes.errors|join:", " }}</span>{% endif %}
-                        </div>
-                        <div class="auth-field">
-                            <label class="auth-label">{{ form.fecha_vencimiento.label }} *</label>
-                            {{ form.fecha_vencimiento }}
-                            {% if form.fecha_vencimiento.errors %}<span class="auth-error">{{ form.fecha_vencimiento.errors|join:", " }}</span>{% endif %}
-                        </div>
-                    </div>
+{# ── MODAL NUEVO ARTÍCULO ── #}
+<div class="modal-overlay" id="modal-articulo">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0; font-size:1.2rem; color:#2d3748;">📦 Registrar y Vincular Artículo</h3>
+            <button class="modal-cerrar" onclick="cerrarModal('modal-articulo')">✕</button>
+        </div>
+        <div id="modal-articulo-mensaje"></div>
 
-
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                        <div class="auth-field">
-                            <label class="auth-label">{{ form.tipo_contrato.label }} *</label>
-                            {{ form.tipo_contrato }}
-                            {% if form.tipo_contrato.errors %}<span class="auth-error">{{ form.tipo_contrato.errors|join:", " }}</span>{% endif %}
-                        </div>
-                    </div>
-
-
-                    <div class="auth-field">
-                        <label class="auth-label">Estado</label>
-                        <select name="estado" class="auth-input">
-                            {% for value, label in form.fields.estado.choices %}
-                            <option value="{{ value }}" {% if empeno.estado == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                        <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cambios</button>
-                        <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
-                    </div>
-
-                </form>
+        <div class="auth-field">
+            <label class="auth-label">Nombre del Artículo *</label>
+            <input type="text" id="ma-nombre" class="auth-input">
+        </div>
+        <div class="auth-field">
+            <label class="auth-label">Descripción</label>
+            <textarea id="ma-descripcion" class="auth-input" rows="2" style="height:auto; padding:0.5rem; font-family:inherit;"></textarea>
+        </div>
+        
+        <div class="auth-grid-2">
+            <div class="auth-field">
+                <label class="auth-label">Categoría *</label>
+                <select id="ma-categoria" class="auth-input">
+                    <option value="">— Seleccionar —</option>
+                    <option value="Bicicletas">Bicicletas</option>
+                    <option value="Neveras">Neveras</option>
+                    <option value="Oro">Oro</option>
+                    <option value="Plata">Plata</option>
+                    <option value="VideoJuegos">Videojuegos</option>
+                    <option value="Relojes">Relojes</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Número de Serie</label>
+                <input type="text" id="ma-serie" class="auth-input">
+            </div>
+        </div>
+        
+        <div class="auth-grid-2" style="margin-bottom: 0.5rem;">
+            <div class="auth-field">
+                <label class="auth-label">Precio Sugerido Venta *</label>
+                <input type="number" id="ma-precio" class="auth-input" step="0.01">
+            </div>
+            <div class="auth-field">
+                <label class="auth-label">Quilataje</label>
+                <select id="ma-quilataje" class="auth-input">
+                    <option value="">— N/A —</option>
+                    <option value="10">10k</option>
+                    <option value="14">14k</option>
+                    <option value="18">18k</option>
+                    <option value="24">24k</option>
+                </select>
             </div>
         </div>
 
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <button type="button" onclick="guardarArticulo()" class="btn-login" style="flex:1;padding:0.7rem;height:3rem; cursor:pointer;">Guardar y Vincular</button>
+            <button type="button" onclick="cerrarModal('modal-articulo')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;height:3rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">Cancelar</button>
+        </div>
     </div>
 </div>
 
 <script src="{% static 'js/landing.js' %}"></script>
+<script>
+    function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
+    function cerrarModal(id) { 
+        document.getElementById(id).classList.remove('activo'); 
+        limpiarErroresModal(id);
+    }
+
+    function limpiarErroresModal(idModal) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) contenedorMensaje.innerHTML = '';
+        document.querySelectorAll(`#${idModal} .auth-input`).forEach(input => {
+            input.style.borderColor = '#ced4da';
+        });
+    }
+
+    function mostrarErrorModal(idModal, mensaje) {
+        const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
+        if (contenedorMensaje) {
+            contenedorMensaje.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:0.75rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; border:1px solid #fca5a5; text-align:left;">⚠️ ${mensaje}</div>`;
+        }
+    }
+
+    function guardarArticulo() {
+        limpiarErroresModal('modal-articulo');
+
+        const nombre = document.getElementById('ma-nombre').value.trim();
+        const category = document.getElementById('ma-categoria').value;
+        const precio = parseFloat(document.getElementById('ma-precio').value);
+        const descripcion = document.getElementById('ma-descripcion').value.trim();
+        const serie = document.getElementById('ma-serie').value.trim();
+        const quilataje = document.getElementById('ma-quilataje').value;
+
+        if (!nombre) {
+            document.getElementById('ma-nombre').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'El nombre del artículo es obligatorio.');
+        }
+        if (!category) {
+            document.getElementById('ma-categoria').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'Debes seleccionar una categoría válida.');
+        }
+        if (isNaN(precio) || precio <= 0) {
+            document.getElementById('ma-precio').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'El precio sugerido debe ser un número mayor a cero.');
+        }
+        if ((category === 'Oro' || category === 'Plata') && !quilataje) {
+            document.getElementById('ma-quilataje').style.borderColor = '#ef4444';
+            return mostrarErrorModal('modal-articulo', 'Para joyas de Oro o Plata el quilataje es obligatorio.');
+        }
+
+        fetch('{% url "articulos:crear_ajax" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ nombre, categoria: category, precio_sugerido_venta: precio, descripcion, numero_serie: serie, quilataje })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.ok) {
+                document.querySelectorAll('#modal-articulo input, #modal-articulo textarea').forEach(input => input.value = '');
+                document.getElementById('ma-categoria').value = '';
+                document.getElementById('ma-quilataje').value = '';
+                
+                const select = document.getElementById('id_id_articulo');
+                const opt = new Option(data.nombre, data.id, true, true);
+                select.add(opt);
+                
+                cerrarModal('modal-articulo');
+            } else { 
+                let errorMsg = "";
+                for (const campo in data.error) {
+                    errorMsg += `${data.error[campo]} `;
+                }
+                mostrarErrorModal('modal-articulo', errorMsg || "Error al registrar el artículo."); 
+            }
+        });
+    }
+</script>
 </body>
 </html>

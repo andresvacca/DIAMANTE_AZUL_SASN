@@ -3,8 +3,9 @@ from django.contrib import messages
 from django.contrib.auth.hashers import check_password
 from .models import Usuario, Rol
 from contratos.models import Contrato
-from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuarios
+from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuario
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
 
 
@@ -12,21 +13,50 @@ from django.contrib.auth.decorators import login_required
 
 
 def listar_usuarios(request):
-    if not _requiere_admin(request) or _requiere_empleado(request):
+    # 1. Control de acceso/seguridad idéntico al de clientes
+    if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
+        
+    # Inicializamos el formulario con los parámetros GET
+    form = FiltroUsuario(request.GET)
     
-    form = FiltroUsuarios(request.GET)
-    usuarios = Usuario.objects.select_related('id_rol').order_by('nombre')
+    # 🌟 CORREGIDO: Ordenamos por tu campo real 'id_usuario'
+    usuarios = Usuario.objects.all().order_by('id_usuario')
     
     if form.is_valid():
+        buscar_id = form.cleaned_data.get('buscar_id')
         query = form.cleaned_data.get('q')
+        
+        # Filtro A: Búsqueda directa por el id_usuario real si viene en el formulario
+        if buscar_id:
+            usuarios = usuarios.filter(id_usuario=buscar_id)
+            
+        # Filtro B: Búsqueda multicriterio por caja de texto abierta
         if query:
-            usuarios = usuarios.filter(nombre__icontains=query)
+            query = query.strip()
+            
+            # 🌟 CORREGIDO: Usando tus campos reales 'nombre' y 'email'
+            filtros = Q(nombre__icontains=query) | \
+                      Q(email__icontains=query)
+            
+            # 🚀 INVESTIGAR POR ID: Si digitan solo números en la barra principal, busca por id_usuario exacto
+            if query.isdigit():
+                filtros |= Q(id_usuario=int(query))
+                
+            usuarios = usuarios.filter(filtros)
+            
+    # Configuración del Paginador de Django (10 registros por pestaña)
+    usuarios_por_pagina = 10
+    paginator = Paginator(usuarios, usuarios_por_pagina)
     
-    return render(request, 'usuarios/listar.html', {
-        'usuarios': usuarios,
-        'form': form
-    })
+    # Capturamos la página actual de la petición GET (?page=X)
+    numero_pagina = request.GET.get('page')
+    
+    # Extraemos los usuarios correspondientes a esa página
+    page_obj = paginator.get_page(numero_pagina)
+    
+    # Retornamos el contexto idéntico
+    return render(request, 'usuarios/listar.html', {'usuarios': page_obj, 'form': form})
 
 
 def crear_usuario(request):

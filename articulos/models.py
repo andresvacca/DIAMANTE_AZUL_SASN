@@ -7,7 +7,7 @@ class Articulos(models.Model):
     ]
     ESTADO_CHOICES = [
         ('En venta','En venta'), ('Empeñado','Empeñado'),
-        ('Vendido','Vendido'), ('Vencido','Vencido'),
+        ('Vendido','Vendido'),('Retirado','Retirado'),
     ]
     QUILATAJE_CHOICES = [('18','18'),('16','16'),('14','14'),('10','10'),('0','0')]
 

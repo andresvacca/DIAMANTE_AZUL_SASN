@@ -45,7 +45,6 @@
 
 <div class="dashboard-page">
     <div class="dashboard-contenido">
-
         <div style="max-width:680px;margin:0 auto;">
             <div style="margin-bottom:1.5rem;">
                 <a href="{% url 'clientes:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Clientes</a>
@@ -61,11 +60,13 @@
             {% endif %}
 
             <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
-                <form method="POST" id="form-cliente">
+                <form method="POST" id="form-cliente" novalidate>
                     {% csrf_token %}
 
-                    {{ form.departamento_expedicion }}
-                    {{ form.lugar_expedicion }}
+                    <div style="display: none;">
+                        {{ form.departamento_expedicion }}
+                        {{ form.lugar_expedicion }}
+                    </div>
 
                     <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Datos del Cliente</h3>
 
@@ -94,7 +95,6 @@
                         </div>
                     </div>
 
-                    <!-- Lugar de expedición -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
                         <div class="auth-field">
                             <label class="auth-label">Departamento de Expedición</label>
@@ -122,42 +122,43 @@
                     </div>
 
                     <h3 style="margin:1.5rem 0 0.5rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Acceso al Sistema <span style="color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</span></h3>
-                    <p style="font-size:0.82rem;color:#aaa;margin:0 0 1rem;">Si completas estos campos, el cliente podrá iniciar sesión en el sistema.</p>
+                    <p style="font-size:0.82rem;color:#aaa;margin:0 0 1rem;">Si completas estos campos, el cliente podrá iniciar sesión.</p>
 
                     <div class="auth-field">
-                        <label class="auth-label">{{ form.email.label }}</label>
+                        <label class="auth-label">Correo Electrónico</label>
                         {{ form.email }}
-                        {% if form.email.errors %}<span class="auth-error">{{ form.email.errors|join:", " }}</span>{% endif %}
+                        {% if form.email.errors %}
+                            <span class="auth-error">⚠️ {{ form.email.errors|join:", " }}</span>
+                        {% endif %}
                     </div>
 
                     <div class="auth-field">
-                        <label class="auth-label">{{ form.password.label }}</label>
+                        <label class="auth-label">Contraseña de Acceso</label>
                         {{ form.password }}
-                        {% if form.password.help_text %}<small style="color:#aaa;font-size:0.8rem;">{{ form.password.help_text }}</small>{% endif %}
-                        {% if form.password.errors %}<span class="auth-error">{{ form.password.errors|join:", " }}</span>{% endif %}
+                        {% if form.password.errors %}
+                            <span class="auth-error">⚠️ {{ form.password.errors|join:", " }}</span>
+                        {% endif %}
                     </div>
 
                     <div style="display:flex;gap:1rem;margin-top:1.5rem;">
                         <button type="submit" class="btn-login" style="flex:1;padding:0.7rem;">Guardar Cliente</button>
                         <a href="{% url 'clientes:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.7rem;">Cancelar</a>
                     </div>
-
                 </form>
             </div>
         </div>
-
     </div>
 </div>
 
 <script src="{% static 'js/landing.js' %}"></script>
 <script>
-function cargarMunicipios() {
+function cargarMunicipios(municipioPreseleccionado = null) {
     const dep = document.getElementById('sel-departamento').value;
     const sel = document.getElementById('sel-municipio');
+    const inputDep = document.getElementById('id_departamento_expedicion');
+    const inputMuni = document.getElementById('id_lugar_expedicion');
 
-    // Guardar en los hidden inputs
-    document.getElementById('id_departamento_expedicion').value = dep;
-    document.getElementById('id_lugar_expedicion').value = '';
+    inputDep.value = dep;
 
     if (!dep) {
         sel.innerHTML = '<option value="">— Selecciona departamento primero —</option>';
@@ -176,8 +177,10 @@ function cargarMunicipios() {
                 const opt = document.createElement('option');
                 opt.value = m;
                 opt.textContent = m;
+                if (m === municipioPreseleccionado) opt.selected = true;
                 sel.appendChild(opt);
             });
+            inputMuni.value = sel.value;
         })
         .catch(() => {
             sel.disabled = false;
@@ -185,12 +188,20 @@ function cargarMunicipios() {
         });
 }
 
-// Sincronizar el select de municipio con el hidden input al cambiar
 document.getElementById('sel-municipio').addEventListener('change', function() {
     document.getElementById('id_lugar_expedicion').value = this.value;
 });
 
+// Lógica de recuperación de datos (en caso de error de validación)
+window.addEventListener('DOMContentLoaded', () => {
+    const valDep = document.getElementById('id_departamento_expedicion').value;
+    const valMuni = document.getElementById('id_lugar_expedicion').value;
 
+    if (valDep) {
+        document.getElementById('sel-departamento').value = valDep;
+        cargarMunicipios(valMuni);
+    }
+});
 </script>
 </body>
 </html>
