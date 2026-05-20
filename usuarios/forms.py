@@ -180,3 +180,14 @@ class LoginForm(forms.Form):
         label='Contraseña',
         widget=forms.PasswordInput(attrs={'class': 'auth-input', 'placeholder': 'Tu contraseña'})
     )
+    
+    
+class FiltroUsuario(forms.Form):
+    buscar_id = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar Id.'}))
+    q = forms.CharField(
+        required=False, 
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ej: nombre, correo o ID de usuario...',
+            'style': 'padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 8px; outline: none; flex: 1;'
+        })
+    )

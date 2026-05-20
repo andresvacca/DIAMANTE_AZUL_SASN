@@ -89,12 +89,29 @@
             </div>
 
             <div style="overflow-x:auto;">
-                <form method="GET" style="margin-bottom:1.2rem;">
-                    <div style="display:flex;gap:0.6rem;max-width:400px;">
-                    {{ form.q }}
-                    <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem;white-space:nowrap;">🔍 Buscar</button>
+                <div class="search-container" style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e1e8ed;">
+                    <form method="GET" action="" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; width: 120px;">
+                    <label style="font-size: 0.75rem; color: #4a7ab5; font-weight: 600; text-transform: uppercase;">ID Cliente</label>
+                        {{ form.buscar_id }}
                     </div>
-                </form>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.75rem; color: #4a7ab5; font-weight: 600; text-transform: uppercase;">Búsqueda General</label>
+                        {{ form.q }}
+                    </div>
+                        
+                        <button type="submit" class="btn-search" style="background-color: #3182ce; color: white; padding: 10px 25px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                            🔍 Buscar
+                        </button>
+                        
+                        {% if query %}
+                            <a href="{% url 'usuarios:listar' %}" class="btn-clear" style="background-color: #edf2f7; color: #4a5568; padding: 10px 20px; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center;">
+                                Limpiar Filtro
+                            </a>
+                        {% endif %}
+                    </form>
+                </div>
                 <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
                     <thead>
                         <tr style="background:rgba(74,122,181,0.12);">
