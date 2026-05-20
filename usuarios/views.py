@@ -6,7 +6,7 @@ from contratos.models import Contrato
 from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuario
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-
+from django.db.models import Q
 
 
 # ─── Gestión CRUD de usuarios (panel admin) ───────────────────────────────────
@@ -36,8 +36,8 @@ def listar_usuarios(request):
             query = query.strip()
             
             # 🌟 CORREGIDO: Usando tus campos reales 'nombre' y 'email'
-            filtros = Q(nombre__icontains=query) | \
-                      Q(email__icontains=query)
+            filtros =   Q(nombre__icontains=query) | \
+                        Q(email__icontains=query)
             
             # 🚀 INVESTIGAR POR ID: Si digitan solo números en la barra principal, busca por id_usuario exacto
             if query.isdigit():
