@@ -106,10 +106,10 @@ def eliminar_cliente(request, id_cliente):
 
     if request.method == 'POST':
         try:
-            usuario = cliente.id_usuario
+            usuario_objeto = cliente.id_usuario
             cliente.delete()
-            if usuario:
-                usuario.delete()
+            if usuario_objeto:
+                usuario_objeto.delete()
             messages.success(request, 'Cliente eliminado correctamente.')
             return redirect('clientes:listar')
         except ProtectedError:
