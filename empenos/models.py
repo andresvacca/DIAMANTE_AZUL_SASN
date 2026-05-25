@@ -1,6 +1,8 @@
 from django.db import models
 from contratos.models import Contrato
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from datetime import date
 
 class Empeno(models.Model):
     ESTADO_CHOICES = [
@@ -23,7 +25,18 @@ class Empeno(models.Model):
     monto_entregado = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_entrega = models.DateTimeField(auto_now_add=True)
     
+    
+    def clean(self):
+        """Reglas de negocio para evitar datos corruptos."""
+        if self.monto_prestado < 0:
+            raise ValidationError({'monto_prestado': "El monto no puede ser negativo."})
+        if self.tasa_interes < 0:
+            raise ValidationError({'tasa_interes': "La tasa no puede ser negativa."})
+    
+    
     def save(self, *args, **kwargs):
+        
+        self.full_clean()
         # 1. Guardamos el empeño primero para tener un ID generado
         super(Empeno, self).save(*args, **kwargs)
 
@@ -96,8 +109,27 @@ class Pago(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     metodo_pago = models.CharField(max_length=15, choices=METODO_CHOICES, default='Efectivo')
 
-    class Meta:
-        db_table = 'pagos'
-
-    def __str__(self):
-        return f"Pago {self.id_pago} - ${self.monto}"
+    def save(self, *args, **kwargs):
+        # 1. VALIDACIÓN DE SEGURIDAD: Bloqueo de pagos en empeños vendidos
+        # Recargamos la relación para asegurar que leemos el estado actual de la BD
+        if self.id_cuota.id_empeno.estado == 'Vendido':
+            raise Exception("No se pueden realizar pagos en empeños vendidos.")
+        
+        # 2. LÓGICA DE MORA: Si la fecha actual es mayor a la programada
+        hoy = date.today()
+        if hoy > self.id_cuota.fecha_programada:
+            # Se calcula un 10% de mora sobre el capital
+            self.id_cuota.mora = self.id_cuota.capital * 0.10
+            self.id_cuota.save()
+            
+        # 3. GUARDADO DEL PAGO
+        # Primero guardamos el registro del pago para que exista en la BD
+        super(Pago, self).save(*args, **kwargs)
+        
+        # 4. ACTUALIZACIÓN DE ESTADO DE LA CUOTA
+        # Verificamos si el monto cubrió lo adeudado (Capital + Interes)
+        if self.monto >= self.id_cuota.total_cuota:
+            self.id_cuota.estado = 'Pagada'
+            self.id_cuota.save()
+    
+    

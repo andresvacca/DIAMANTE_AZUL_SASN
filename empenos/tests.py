@@ -218,3 +218,86 @@ class EmpenoTest(TestCase):
         # Comprobamos que el método full_clean() lance el ValidationError
         with self.assertRaises(ValidationError):
             empeno_invalido.full_clean()
+            
+    
+    
+    def test_cambio_estado_cuota_al_pagar(self):
+        """Verifica que el estado de la cuota pase a 'Pagada' tras un pago suficiente."""
+        # 1. Creamos el pago
+        Pago.objects.create(
+            id_cuota=self.cuota,
+            id_cliente=self.cliente,
+            monto=self.cuota.total_cuota # Pago exacto
+        )
+        
+        # 2. Recargamos la cuota desde la base de datos para ver el cambio
+        self.cuota.refresh_from_db()
+        
+        # 3. Verificamos que el estado cambió
+        self.assertEqual(self.cuota.estado, 'Pagada')
+        
+        
+    def test_generacion_mora_por_pago_atrasado(self):
+        """Verifica que si se paga tarde, se calcule mora automáticamente."""
+        # 1. Ponemos la fecha de la cuota en el pasado (hace 10 días)
+        self.cuota.fecha_programada = date(2026, 5, 15)
+        self.cuota.save()
+        
+        # 2. Realizamos el pago
+        Pago.objects.create(
+            id_cuota=self.cuota,
+            id_cliente=self.cliente,
+            monto=self.cuota.total_cuota
+        )
+        
+        # 3. Recargamos la cuota
+        self.cuota.refresh_from_db()
+        
+        # 4. Verificamos que ahora exista una mora mayor a 0
+        self.assertGreater(self.cuota.mora, 0)
+        self.assertEqual(self.cuota.mora, 10.00) # 10% de 100 de capital
+        
+        
+    def test_bloqueo_pagos_empeno_vendido(self):
+        """Verifica que no se puedan registrar pagos si el empeño está 'Vendido'."""
+        # 1. Cambiamos el estado
+        self.empeno.estado = 'Vendido'
+        self.empeno.save()
+        
+        # 2. Creamos un nuevo pago
+        pago = Pago(
+            id_cuota=self.cuota,
+            id_cliente=self.cliente,
+            monto=100.00
+        )
+        
+        # 3. Probamos que el save() lance la excepción
+        with self.assertRaises(Exception) as cm:
+            pago.save()
+            
+        # 4. Verificamos el mensaje de error (opcional pero recomendado)
+        self.assertEqual(str(cm.exception), "No se pueden realizar pagos en empeños vendidos.")
+        
+        
+    def test_api_crear_empeno(self):
+        """Verifica que el endpoint de creación de empeños funcione."""
+        from django.urls import reverse
+        
+        # 1. Datos para enviar al servidor
+        datos = {
+            'id_cliente': self.cliente.pk,
+            'id_articulo': self.articulo.pk,
+            'monto_prestado': 500.00,
+            'tasa_interes': 5.00,
+            'monto_entregado': 500.00,
+            'fecha_vencimiento': '2026-12-25',
+            'estado': 'Activo'
+        }
+        
+        # 2. Hacemos una petición post a nuestra vista
+        # Ajusta 'empeno-create' al nombre que le pusiste en tu urls.py
+        response = self.client.post(reverse('empenos:crear'), datos, follow=True)
+        
+        # 3. Verificamos que la respuesta sea 201 (Created)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Empeno.objects.filter(monto_prestado=500.00).exists())
