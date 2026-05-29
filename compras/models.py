@@ -68,6 +68,18 @@ class VentaArticulo(models.Model):
         editable=False, # Evita que alguien lo edite manualmente en el Admin
         null=True
     )
+    
+    def clean(self):
+        """Validación de negocio antes de guardar."""
+        if self.precio_venta_final < self.id_compra.precio_pagado:
+            # Aquí podrías decidir si lanzar un error o solo un warning
+            pass 
+
+    def recalcular_utilidad(self):
+        """Útil para procesos de auditoría si se modifican datos históricos."""
+        if self.id_compra:
+            self.utilidad_generada = self.precio_venta_final - self.id_compra.precio_pagado
+            self.save(update_fields=['utilidad_generada'])
 
     def save(self, *args, **kwargs):
         # Lógica centralizada: El cálculo solo existe aquí
