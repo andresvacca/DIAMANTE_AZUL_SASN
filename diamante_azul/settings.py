@@ -1,4 +1,12 @@
 from pathlib import Path
+import os
+import pymysql
+
+# Intentar usar mysqlclient, si no está, usar PyMySQL
+try:
+    import MySQLdb
+except ImportError:
+    pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
