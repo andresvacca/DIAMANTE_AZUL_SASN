@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'notificaciones.apps.NotificacionesConfig',
     'cuadre',
     'home',
+
 ]
 
 MIDDLEWARE = [

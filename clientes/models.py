@@ -13,7 +13,7 @@ class Cliente(models.Model):
     departamento_expedicion = models.CharField(max_length=100, null=True, blank=True)
     id_usuario = models.OneToOneField(
         'usuarios.Usuario',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         db_column='id_usuario'
