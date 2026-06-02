@@ -7,6 +7,124 @@
     <title>Carga Masiva — Diamante Azul</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Estilos personalizados para potenciar el diseño de Carga Masiva */
+        .masiva-container {
+            max-width: 680px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .volver-link {
+            color: #4a7ab5;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+        .volver-link:hover {
+            color: #355d8c;
+        }
+
+        .card-masiva {
+            background: var(--card-bg, #fff);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 24px rgba(74, 122, 181, 0.08);
+            border: 1px solid rgba(74, 122, 181, 0.1);
+        }
+
+        /* Zona Dropzone Estilizada */
+        .dropzone-area {
+            border: 2px dashed rgba(74, 122, 181, 0.4);
+            padding: 2.5rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            background: rgba(74, 122, 181, 0.02);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .dropzone-area:hover {
+            background: rgba(74, 122, 181, 0.06);
+            border-color: #4a7ab5;
+        }
+        .dropzone-icon {
+            font-size: 2.5rem;
+            color: #4a7ab5;
+            margin-bottom: 1rem;
+        }
+        .dropzone-text {
+            font-size: 0.95rem;
+            color: var(--text-color, #333);
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        .dropzone-subtext {
+            font-size: 0.82rem;
+            color: #777;
+        }
+        
+        /* Ocultar input nativo pero dejarlo funcional */
+        .file-input-hidden {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Formato de columnas Badges */
+        .badge-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .column-badge {
+            background: #f0f4f9;
+            color: #355d8c;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(74, 122, 181, 0.15);
+        }
+
+        /* Alertas de Django unificadas */
+        .alert-wrapper {
+            margin-bottom: 1.5rem;
+        }
+        .alert-item {
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .alert-item-success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        .alert-item-error, .alert-item-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        .alert-item-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+    </style>
 </head>
 <body>
 
@@ -45,57 +163,111 @@
 
 <div class="dashboard-page">
     <div class="dashboard-contenido">
-
-        <div style="max-width:620px;margin:0 auto;">
-            <div style="margin-bottom:1.5rem;">
-                <a href="{% url 'articulos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Artículos</a>
-                <h2 style="margin:0.5rem 0 0;">📂 Carga Masiva de Artículos</h2>
+        <div class="masiva-container">
+            
+            <div style="margin-bottom: 2rem;">
+                <a href="{% url 'articulos:listar' %}" class="volver-link">
+                    <i class="fas fa-arrow-left"></i> Volver a Artículos
+                </a>
+                <h2 style="margin: 0.5rem 0 0; font-size: 1.75rem; font-weight: 700;">📂 Carga Masiva de Artículos</h2>
             </div>
 
             {% if messages %}
-            <div class="auth-messages">
+            <div class="alert-wrapper">
                 {% for msg in messages %}
-                <div class="auth-alert auth-alert-{{ msg.tags }}" style="margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500;">
-                    {{ msg }}
+                <div class="alert-item alert-item-{{ msg.tags }}">
+                    {% if msg.tags == 'success' %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif msg.tags == 'error' or msg.tags == 'danger' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                    {% endif %}
+                    <span>{{ msg }}</span>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
 
-            <div style="background:rgba(74,122,181,0.06);border:1px solid rgba(74,122,181,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
-                <h3 style="margin:0 0 0.75rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Formato de Archivo Soportado</h3>
-                <p style="font-size:0.88rem;color:#666;margin:0 0 0.75rem;">El archivo (Excel o CSV) debe estructurarse con las siguientes columnas empezando desde la fila 2:</p>
-                <code style="display:block;background:#f8f9fa;padding:0.75rem;border-radius:8px;font-size:0.82rem;color:#333;line-height:1.6;overflow-x:auto;white-space:nowrap;">
-                    nombre, descripcion, numero_serie, categoria, estado, precio_sugerido_venta, quilataje
-                </code>
-                <div style="margin-top:1rem;font-size:0.82rem;color:#666;">
-                    <p style="margin:0 0 0.3rem;"><strong>Categorías válidas:</strong> Bicicletas, Neveras, Oro, Plata, Ollas, VideoJuegos, Relojes, Computadores, Otro</p>
-                    <p style="margin:0 0 0.3rem;"><strong>Estados válidos:</strong> En venta, Empeñado, Vendido, Vencido</p>
-                    <p style="margin:0;"><strong>Quilataje:</strong> 18, 16, 14, 10, 0 (usar 0 si no aplica)</p>
+            <div style="background: rgba(74, 122, 181, 0.05); border: 1px solid rgba(74, 122, 181, 0.18); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+                <h3 style="margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #4a7ab5; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Formato de Plantilla Soportado
+                </h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted, #555); margin: 0 0 0.75rem;">
+                    El documento debe ser un archivo de texto separado por comas **(.csv)** y contener el orden exacto de las siguientes columnas:
+                </p>
+                
+                <div class="badge-grid">
+                    <span class="column-badge">nombre</span>
+                    <span class="column-badge">descripcion</span>
+                    <span class="column-badge">numero_serie</span>
+                    <span class="column-badge">categoria</span>
+                    <span class="column-badge">estado</span>
+                    <span class="column-badge">precio_sugerido_venta</span>
+                    <span class="column-badge">quilataje</span>
                 </div>
-                <a href="{% url 'articulos:descargar_csv_ejemplo' %}" style="display:inline-block;margin-top:1rem;color:#4a7ab5;font-size:0.85rem;font-weight:600;text-decoration:none;">
-                    ⬇️ Descargar plantilla de ejemplo
-                </a>
+
+                <div style="margin-top: 1.25rem; font-size: 0.82rem; color: var(--text-muted, #666); border-top: 1px solid rgba(74, 122, 181, 0.1); padding-top: 0.75rem; line-height: 1.5;">
+                    <p style="margin: 0 0 0.3rem;"><strong>Categorías permitidas:</strong> Bicicletas, Neveras, Oro, Plata, Ollas, VideoJuegos, Relojes, Computadores, Otro</p>
+                    <p style="margin: 0 0 0.3rem;"><strong>Estados válidos:</strong> En venta, Empeñado, Vendido, Retirado</p>
+                    <p style="margin: 0;"><strong>Quilataje:</strong> Usar valores permitidos (18, 16, 14, 10) o 0 si no corresponde a joyería.</p>
+                </div>
+                
+                <div style="margin-top: 1.25rem;">
+                    <a href="{% url 'articulos:descargar_csv_ejemplo' %}" style="color: #4a7ab5; font-size: 0.88rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <i class="fas fa-file-csv" style="font-size: 1.1rem;"></i> Descargar plantilla base (.csv)
+                    </a>
+                </div>
             </div>
 
-            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
+            <div class="card-masiva">
                 <form method="POST" enctype="multipart/form-data" action="{% url 'articulos:carga_masiva' %}">
                     {% csrf_token %}
-                    <div class="auth-field" style="margin-bottom:1.5rem;">
-                        <label class="auth-label">Seleccionar Archivo (Excel o CSV) *</label>
-                        <input type="file" name="archivo_masivo" accept=".csv, .xlsx, .xls" class="auth-input" required>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label class="auth-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Cargar Archivo de Inventario *</label>
+                        
+                        <div class="dropzone-area" id="dropzone">
+                            <i class="fas fa-cloud-upload-alt dropzone-icon"></i>
+                            <div class="dropzone-text" id="file-name-text">Arrastra tu archivo CSV aquí</div>
+                            <div class="dropzone-subtext" id="file-size-text">o haz clic para explorar en tu equipo</div>
+                            
+                            <input type="file" name="archivo_masivo" id="file-input" accept=".csv" class="file-input-hidden" required>
+                        </div>
                     </div>
-                    <div style="display:flex;gap:1rem;">
-                        <button type="submit" class="btn-login" style="flex:1;padding:0.75rem;cursor:pointer;">📤 Cargar Artículos</button>
-                        <a href="{% url 'articulos:listar' %}" class="btn-hero-secundario" style="flex:1;text-align:center;padding:0.75rem;text-decoration:none;">Cancelar</a>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn-login" style="flex: 2; padding: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-upload"></i> Procesar Inventario
+                        </button>
+                        <a href="{% url 'articulos:listar' %}" class="btn-hero-secundario" style="flex: 1; text-align: center; padding: 0.85rem; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            Cancelar
+                        </a>
                     </div>
                 </form>
             </div>
+            
         </div>
-
     </div>
 </div>
 
 <script src="{% static 'js/landing.js' %}"></script>
+<script>
+    // Pequeño script interactivo para mostrar el nombre del archivo seleccionado
+    const fileInput = document.getElementById('file-input');
+    const fileNameText = document.getElementById('file-name-text');
+    const fileSizeText = document.getElementById('file-size-text');
+    const dropzone = document.getElementById('dropzone');
+
+    fileInput.addEventListener('change', function(e) {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileNameText.textContent = "📄 " + file.name;
+            fileSizeText.textContent = "Tamaño: " + (file.size / 1024).toFixed(2) + " KB - Listo para subir";
+            dropzone.style.borderColor = "#28a745";
+            dropzone.style.background = "rgba(40, 167, 69, 0.02)";
+        }
+    });
+</script>
 </body>
 </html>

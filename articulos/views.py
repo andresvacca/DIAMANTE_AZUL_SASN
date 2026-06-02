@@ -136,87 +136,95 @@ def crear_articulo_ajax(request):
             return JsonResponse({'ok': False, 'error': errores})
     return JsonResponse({'ok': False, 'error': 'Método no permitido.'})
 
-def carga_masiva_articulos(request):
-    if request.method == 'POST':
-        archivo = request.FILES.get('archivo_masivo') 
-        
-        if not archivo:
-            messages.error(request, 'No has seleccionado ningún archivo.')
-            return redirect('articulos:carga_masiva')
-
-        nombre_archivo = file_name = archivo.name.lower()
-
-        # 🛡️ FILTRO RADICAL
-        if not (nombre_archivo.endswith('.csv') or nombre_archivo.endswith('.xlsx') or nombre_archivo.endswith('.xls')):
-            messages.error(request, 'Formato inválido. ¡Aquí solo se acepta CSV o Excel!')
-            return redirect('articulos:carga_masiva')
-
-        try:
-            # 📈 CASO 1: EXCEL (.xlsx)
-            if nombre_archivo.endswith('.xlsx') or nombre_archivo.endswith('.xls'):
-                wb = openpyxl.load_workbook(archivo, data_only=True)
-                hoja = wb.active
-                
-                for fila in hoja.iter_rows(min_row=2, values_only=True):
-                    if not fila or not fila[0]: 
-                        continue
-                        
-                    # 🎯 CORRECCIÓN: 'Articulo' en singular (revisa si tu modelo es así)
-                    Articulos.objects.create(
-                        nombre=fila[0],
-                        descripcion=fila[1],
-                        numero_serie=fila[2],
-                        categoria=fila[3],
-                        estado=fila[4],
-                        precio_sugerido_venta=fila[5] if fila[5] else 0,
-                        quilataje=fila[6] if fila[6] else 0
-                    )
-
-            # 📄 CASO 2: CSV
-            elif nombre_archivo.endswith('.csv'):
-                try:
-                    contenido_decodificado = archivo.read().decode('utf-8')
-                except UnicodeDecodeError:
-                    archivo.seek(0)
-                    contenido_decodificado = archivo.read().decode('latin-1')
-
-                lector_csv = csv.reader(contenido_decodificado.splitlines(), delimiter=';') 
-                next(lector_csv, None)  # Saltar cabecera
-                
-                for fila in lector_csv:
-                    if not fila or not fila[0]:
-                        continue
-                        
-                    # 🎯 CORRECCIÓN: 'Articulos' en singular
-                    Articulos.objects.create(
-                        nombre=fila[0],
-                        descripcion=fila[1],
-                        numero_serie=fila[2],
-                        categoria=fila[3],
-                        estado=fila[4],
-                        precio_sugerido_venta=fila[5] if fila[5] else 0,
-                        quilataje=fila[6] if fila[6] else 0
-                    )
-
-            # 🚀 RETORNO EXITOSO DEL POST
-            messages.success(request, '¡Carga masiva procesada con éxito')
-            return redirect('articulos:listar')
-
-        except Exception as e:
-            messages.error(request, f'Hubo un error procesando el archivo: {str(e)}')
-            return redirect('articulos:carga_masiva')
-
-    # 🚨 LA PIEZA FALTANTE: Render del GET totalmente alineado al borde izquierdo
-    return render(request, 'articulos/carga_masiva.html')
-
 def descargar_csv_ejemplo(request):
-    from django.http import HttpResponse
-    contenido = "nombre,descripcion,numero_serie,categoria,estado,precio_sugerido_venta,quilataje\n"
-    contenido += "Bicicleta Trek,Bicicleta de montaña azul,TRK-001,Bicicletas,En venta,350000,0\n"
-    response = HttpResponse(contenido, content_type='text/csv')
+    """
+    Genera y descarga dinámicamente el archivo CSV de ejemplo 
+    con la estructura exacta que requiere el sistema.
+    """
+    # Configurar la respuesta HTTP para la descarga de un archivo CSV
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="articulos_ejemplo.csv"'
+    
+    writer = csv.writer(response)
+    
+    # 1. Escribir los encabezados de las columnas (Fila 1)
+    writer.writerow(['nombre', 'descripcion', 'numero_serie', 'categoria', 'estado', 'precio_sugerido_venta', 'quilataje'])
+    
+    # 2. Escribir una fila de ejemplo para guiar al usuario (Fila 2)
+    writer.writerow(['Bicicleta Trek', 'Bicicleta de montaña azul', 'TRK-001', 'Bicicletas', 'En venta', '350000', '0'])
+    
     return response
 
+
+def carga_masiva_articulos(request):
+    if request.method == 'POST':
+        archivo_subido = request.FILES.get('archivo_masivo') # Sincronizado con tu nuevo HTML
+        
+        if not archivo_subido:
+            messages.error(request, 'Por favor, selecciona un archivo CSV para subir.')
+            return render(request, 'articulos/carga_masiva.html')
+        
+        try:
+            # 1. Leer y decodificar el contenido limpiando espacios en blanco extraños
+            contenido_bloque = archivo_subido.read().decode('utf-8', errors='ignore')
+            lineas = [linea.strip() for linea in contenido_bloque.splitlines() if linea.strip()]
+            
+            if not lineas:
+                messages.error(request, 'El archivo está vacío.')
+                return render(request, 'articulos/carga_masiva.html')
+
+            # 2. DETECTOR AUTOMÁTICO DE SEPARADORES (Coma , o Punto y coma ;)
+            try:
+                # Intenta adivinar si usa , o ; analizando las primeras líneas
+                dialecto = csv.Sniffer().sniff(contenido_bloque[:2048], delimiters=',;')
+                lector_csv = csv.reader(lineas, dialecto)
+            except Exception:
+                # Si falla el detector, por defecto usamos comas
+                lector_csv = csv.reader(lineas, delimiter=',')
+            
+            # Saltarse la primera línea de encabezados (nombre, descripcion...)
+            next(lector_csv, None)
+            
+            articulos_creados = 0
+            
+            for fila in lector_csv:
+                # Si por alguna razón la fila quedó vacía tras el procesado, la saltamos
+                if not fila or len(fila) == 0:
+                    continue
+                
+                # 🔥 EL BLINDAJE ABSOLUTO: Forzamos a que la lista tenga siempre mínimo 7 columnas
+                # Si viene mocha (ej. con 3 o 5 columnas), se rellena con None y NO se rompe
+                while len(fila) < 7:
+                    fila.append(None)
+                
+                # Validar que el campo obligatorio (nombre) contenga texto
+                if not fila[0] or str(fila[0]).strip() == '':
+                    continue
+
+                # 3. Mapeo e inserción segura en la base de datos de Diamante Azul
+                Articulos.objects.create(
+                    nombre=str(fila[0]).strip(),
+                    descripcion=str(fila[1]).strip() if fila[1] else None,
+                    numero_serie=str(fila[2]).strip() if fila[2] else None,
+                    categoria=str(fila[3]).strip() if fila[3] else 'Otro',
+                    estado=str(fila[4]).strip() if fila[4] else 'En venta',
+                    precio_sugerido_venta=float(fila[5]) if fila[5] and str(fila[5]).strip().replace('.','',1).isdigit() else 0,
+                    quilataje=str(fila[6]).strip() if fila[6] else '0'
+                )
+                articulos_creados += 1
+                
+            if articulos_creados > 0:
+                messages.success(request, f'¡Carga masiva exitosa! Se registraron {articulos_creados} artículos correctamente.')
+            else:
+                messages.warning(request, 'No se procesó ningún artículo válido. Verifica el formato.')
+                
+            return redirect('articulos:carga_masiva')
+
+        except Exception as e:
+            messages.error(request, f'Error crítico al procesar las columnas: {str(e)}')
+            return render(request, 'articulos/carga_masiva.html')
+
+    return render(request, 'articulos/carga_masiva.html')
 
 def detalle_articulo(request, id_articulo):
     articulo = get_object_or_404(Articulos, pk=id_articulo)
