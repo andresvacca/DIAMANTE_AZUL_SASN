@@ -34,4 +34,26 @@ class UsuarioTest(TestCase):
     def test_roles_helper(self):
         """Verifica que los métodos del modelo funcionen."""
         # Validamos que el usuario creado sea reconocido como Administrador
-        self.assertEqual(self.usuario.get_rol_nombre(), "Administrador")
+        self.assertEqual(self.usuario.get_rol_nombre(), "Administrador")        
+        
+    def test_editar_usuario_camino_feliz(self):
+        """Camino feliz: Un administrador modifica el nombre y rol de un usuario del sistema."""
+        session = self.client.session
+        session['usuario_rol_id'] = 1 
+        session.save()
+
+        from django.urls import reverse
+        # 🌟 CORREGIDO: Se cambió 'usuarios:editar_usuario' por 'usuarios:editar'
+        url = reverse('usuarios:editar', kwargs={'id_usuario': self.usuario.id_usuario})
+        
+        datos_cambio = {
+            'nombre': "Juan G. Vacca Modificado",
+            'email': "juanvacca@gmail.com",
+            'id_rol': self.rol_cliente.pk 
+        }
+        
+        response = self.client.post(url, datos_cambio, follow=True)
+        self.assertEqual(response.status_code, 200)
+        
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.nombre, "Juan G. Vacca Modificado")
