@@ -15,16 +15,26 @@
                 {% endif %}
             </div>
 
-            <form method="GET" style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-                <div style="flex:2;">
-                    {{ form.q }}
-                </div>
-                <div style="flex:1;">
-                    {{ form.estado }}
-                </div>
-                <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem;">Filtrar</button>
-                <a href="." class="btn-hero-secundario" style="padding:0.5rem 1.2rem; text-decoration: none; display: inline-flex; align-items: center;">Limpiar</a>
-            </form>
+            <div style="max-width:1100px; margin: 1rem 0 1.5rem 0;">
+                <form method="GET" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; background:rgba(74,122,181,0.05); padding:1.2rem; border-radius:12px; align-items:flex-end; width:100%; box-sizing:border-box;">
+                    
+                    <div style="flex:2; min-width:250px;">
+                        <label style="font-size:0.8rem; color:var(--azul-claro); font-weight:700; display:block; margin-bottom:0.4rem; letter-spacing:0.05em;">BUSCAR POR CLIENTE / ARTÍCULO / VALOR</label>
+                        {{ form.q }}
+                    </div>
+
+                    <div style="flex:1; min-width:180px;">
+                        <label style="font-size:0.8rem; color:var(--azul-claro); font-weight:700; display:block; margin-bottom:0.4rem; letter-spacing:0.05em;">ESTADO</label>
+                        {{ form.estado }}
+                    </div>
+
+                    <div style="display:flex; align-items:flex-end; gap:0.5rem; height:42px;">
+                        <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem; height:42px; font-weight:500;">Filtrar</button>
+                        <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="padding:0.5rem 1.2rem; height:42px; display:flex; align-items:center; text-decoration:none; font-weight:500; box-sizing:border-box;">Limpiar</a>
+                    </div>
+                    
+                </form>
+            </div>
 
             <div style="overflow-x:auto;">
                 <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">

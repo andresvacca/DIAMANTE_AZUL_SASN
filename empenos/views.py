@@ -130,7 +130,19 @@ def listar_empenos(request):
         q      = form.cleaned_data.get('q')
         estado = form.cleaned_data.get('estado')
         if q and usuario_rol_id != 3:
-            empenos = empenos.filter(id_cliente__nombre__icontains=q)
+    # 1. Creamos los filtros base para texto (Cliente y Artículo)
+                filtros = Q(id_cliente__nombre__icontains=q) | Q(id_articulo__nombre__icontains=q)
+                
+                # 2. Si el usuario escribió un número válido, también buscamos coincidencia en el monto prestado
+                # Quitamos los puntos o comas por si escriben "12.000" o "12,000"
+                q_limpio = q.replace('.', '').replace(',', '')
+                
+                if q_limpio.isdigit():
+                    # Usamos __exact o __gte/__lte según prefieras, __exact es ideal para buscar el monto exacto
+                    filtros |= Q(monto_prestado=int(q_limpio))
+                
+                # 3. Aplicamos todo el bloque de filtros agrupado
+                empenos = empenos.filter(filtros)
         if estado:
             empenos = empenos.filter(estado=estado)
 
