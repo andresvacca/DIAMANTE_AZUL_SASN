@@ -8,9 +8,119 @@
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <link rel="stylesheet" href="{% static 'css/landing.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Contenedor principal estilo barra moderna */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 20px;
+            background-color: #0b132b !important; /* Azul oscuro profundo */
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #1c2541;
+            margin-bottom: 25px;
+        }
+
+        /* Grupos de inputs (Label + Campo) */
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        /* Etiquetas de texto */
+        .filter-group label {
+            color: #4a7ab5 !important; /* Azul corporativo de Diamante Azul */
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+
+        /* Estilización de Inputs, Fechas y Selects */
+        .filter-bar input[type="date"],
+        .filter-bar select {
+            background-color: #1c2541 !important;
+            color: #f8fafc !important;
+            border: 1px solid #3a506b !important;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+            height: 42px; /* Forzamos altura uniforme */
+        }
+
+        /* Icono del calendario en inputs de fecha para que no se vea negro/invisible */
+        .filter-bar input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1); /* Lo vuelve blanco */
+            cursor: pointer;
+        }
+
+        /* Efecto Focus al hacer clic */
+        .filter-bar input[type="date"]:focus,
+        .filter-bar select:focus {
+            border-color: #4a7ab5 !important;
+            box-shadow: 0 0 0 3px rgba(74, 122, 181, 0.25) !important;
+        }
+
+        /* Contenedor de acciones (Botones) */
+        .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            height: 42px; /* Alineación perfecta con la altura de los inputs */
+        }
+
+        /* Botón Generar Reporte */
+        .btn-submit {
+            background-color: #4a7ab5 !important;
+            color: #ffffff !important;
+            border: none !important;
+            padding: 0 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .btn-submit:hover {
+            background-color: #3b6394 !important;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.97);
+        }
+
+        /* Enlace Limpiar Filtros */
+        .btn-link {
+            color: #94a3b8 !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .btn-link:hover {
+            color: #ef4444 !important; /* Rojo suave de advertencia al limpiar */
+            text-decoration: underline !important;
+        }
+    </style>
 </head>
 <body>
-
 
 <nav class="navbar">
     <a href="{% url 'home' %}" class="navbar-logo">
@@ -70,58 +180,21 @@
         {% endif %}
     </div>
 </nav>
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros de Reporte</h5>
-    </div>
-    <div class="card-body">
-        <form method="GET" action="{% url 'empenos:pagina_reportes' %}" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">Desde:</label>
-                <input type="date" name="fecha_inicio" class="form-control" value="{{ filtros_previos.fecha_inicio }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">Hasta:</label>
-                <input type="date" name="fecha_fin" class="form-control" value="{{ filtros_previos.fecha_fin }}">
-            </div>
 
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">Tipo de Contrato:</label>
-                <select name="tipo_contrato" class="form-control">
-                    <option value="">-- Todos los Tipos --</option>
-                    {% for valor, etiqueta in tipos_contrato %}
-                        <option value="{{ valor }}" {% if filtros_previos.tipo_contrato == valor %}selected{% endif %}>
-                            {{ etiqueta }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+<!-- ... NAVBAR ... (Déjalo quieto arriba) -->
 
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">Nombre del Cliente:</label>
-                <input type="text" name="cliente_nombre" class="form-control" placeholder="Ej: Juan Perez" value="{{ filtros_previos.cliente_nombre }}">
-            </div>
 
-            <div class="col-12 text-right mt-3">
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="fas fa-search"></i> Generar Reporte
-                </button>
-                <a href="{% url 'empenos:pagina_reportes' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-sync-alt"></i> Limpiar Filtros
-                </a>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- 🚀 REORGANIZACIÓN DE LA ESTRUCTURA -->
 <div class="dashboard-page">
     <div class="dashboard-contenido">
-        <div style="max-width:1100px;margin:0 auto;">
+        <div style="max-width:1100px; margin:0 auto; padding: 0 1rem;">
             
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <!-- 1. EL TÍTULO VA PRIMERO -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem; margin-top: 1rem;">
                 <h2 style="margin:0;">📊 Reportes Financieros</h2>
                 <button onclick="window.print()" class="btn-login" style="padding:0.5rem 1.2rem; background:#4a7ab5;">Imprimir Reporte</button>
             </div>
-
+            <!-- 3. LA GRÁFICA / CONTENIDO -->
             <div style="background:var(--card-bg,#fff); padding:2rem; border-radius:12px; box-shadow:0 2px 12px rgba(74,122,181,0.08); margin-bottom:2rem;">
                 <h3 style="color:#4a7ab5; margin-bottom:1.5rem; font-size:1.1rem; text-transform:uppercase; letter-spacing:0.05em;">Inversión por Tipo de Contrato</h3>
                 <div style="position: relative; height:400px; width:100%;">
@@ -132,9 +205,12 @@
             <div style="margin-top:1.5rem;">
                 <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario">← Volver a Empeños</a>
             </div>
+
         </div>
     </div>
 </div>
+
+<!-- ... EL RESTO DE TUS SCRIPTS ... -->
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -178,7 +254,7 @@
 
 <script src="{% static 'js/landing.js' %}"></script>
 <script>
-// Actualizar badge de notificaciones cada 30 segundos
+    // Actualizar badge de notificaciones cada 30 segundos
     setInterval(() => {
         fetch('/notificaciones/conteo/')
             .then(r => r.json())

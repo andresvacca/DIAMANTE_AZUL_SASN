@@ -115,13 +115,22 @@ class PagoForm(forms.ModelForm):
         }
 
 class FiltroEmpeno(forms.Form):
-    q = forms.CharField(required=False, label='Buscar', 
-                        widget=forms.TextInput(attrs={'placehorder': 'Nombre, Valor o Estado...'}))
+    q = forms.CharField(
+        required=False, 
+        label='Buscar', 
+        widget=forms.TextInput(attrs={
+            'class': 'auth-input',  # <-- Esto le da el diseño oscuro idéntico al select
+            'placeholder': 'Buscar cliente, artículo o monto...'
+        })
+    )
     
     estado = forms.ChoiceField(
-        required=False, label='Estado',
+        required=False, 
+        label='Estado',
         choices=[("", 'Todos')] + Empeno.ESTADO_CHOICES,
-        widget=forms.Select(attrs={'class': 'auth-input'})
+        widget=forms.Select(attrs={
+            'class': 'auth-input'  # <-- Tu select ya lo tiene bien
+        })
     )
 
 
