@@ -182,12 +182,27 @@ class LoginForm(forms.Form):
     )
     
     
+from django import forms
+
 class FiltroUsuario(forms.Form):
-    buscar_id = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar Id.'}))
-    q = forms.CharField(
-        required=False, 
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Ej: nombre, correo o ID de usuario...',
-            'style': 'padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 8px; outline: none; flex: 1;'
-        })
+    buscar_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'auth-input', 'placeholder': 'Id...'})
     )
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'auth-input', 'placeholder': 'Buscar...'})
+    )
+    
+    # Declaramos el campo sin opciones fijas
+    rol = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'auth-input'})
+    )
+
+    # 🚀 LA MAGIA: Recibe la lista de roles desde la vista al cargarse
+    def __init__(self, *args, **kwargs):
+        roles_choices = kwargs.pop('roles_choices', [])
+        super().__init__(*args, **kwargs)
+        # Combinamos la opción por defecto con los roles reales del sistema
+        self.fields['rol'].choices = [('', 'Todos')] + roles_choices
