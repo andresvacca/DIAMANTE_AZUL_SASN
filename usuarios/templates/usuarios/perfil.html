@@ -54,12 +54,6 @@
         </button>
 
         {% if request.session.usuario_id %}
-        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
-            <span style="font-size:1.2rem;">🔔</span>
-            {% if notif_count > 0 %}
-            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
-            {% endif %}
-        </a>
         <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
         <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
             <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>

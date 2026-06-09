@@ -7,6 +7,7 @@ from .forms import UsuarioForm, RegistroForm, LoginForm, FiltroUsuario
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from clientes.models import Cliente
 
 
 # ─── Gestión CRUD de usuarios (panel admin) ───────────────────────────────────
@@ -17,46 +18,50 @@ def listar_usuarios(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
         
-    # Inicializamos el formulario con los parámetros GET
-    form = FiltroUsuario(request.GET)
+    # 🚀 LLAMADA DIRECTA A ROL: Traemos los roles para el select en formato (id, nombre)
+    # Ajusta 'id_rol' si la clave primaria de tu tabla Rol se llama de otra manera (ej: 'id')
+    lista_roles = [(rol.id_rol, rol.nombre) for rol in Rol.objects.all()]
     
-    # 🌟 CORREGIDO: Ordenamos por tu campo real 'id_usuario'
+    # Inicializamos el formulario pasándole los parámetros GET y la lista de roles
+    form = FiltroUsuario(request.GET, roles_choices=lista_roles)
+    
+    # Ordenamos por tu campo real 'id_usuario'
     usuarios = Usuario.objects.all().order_by('id_usuario')
     
     if form.is_valid():
         buscar_id = form.cleaned_data.get('buscar_id')
         query = form.cleaned_data.get('q')
+        rol_filtrado = form.cleaned_data.get('rol')
         
-        # Filtro A: Búsqueda directa por el id_usuario real si viene en el formulario
+        # Filtro A: Búsqueda directa por id_usuario
         if buscar_id:
             usuarios = usuarios.filter(id_usuario=buscar_id)
             
-        # Filtro B: Búsqueda multicriterio por caja de texto abierta
+        # Filtro B: Búsqueda multicriterio (Texto o Cédula/ID numérico)
         if query:
             query = query.strip()
+            filtros = Q(nombre__icontains=query) | Q(email__icontains=query)
             
-            # 🌟 CORREGIDO: Usando tus campos reales 'nombre' y 'email'
-            filtros =   Q(nombre__icontains=query) | \
-                        Q(email__icontains=query)
-            
-            # 🚀 INVESTIGAR POR ID: Si digitan solo números en la barra principal, busca por id_usuario exacto
             if query.isdigit():
                 filtros |= Q(id_usuario=int(query))
                 
             usuarios = usuarios.filter(filtros)
             
-    # Configuración del Paginador de Django (10 registros por pestaña)
+        # Filtro C: Filtrado por Rol seleccionado
+        if rol_filtrado:
+            usuarios = usuarios.filter(id_rol_id=rol_filtrado)
+
+    # 📊 Configuración del Paginador (10 registros por pestaña)
     usuarios_por_pagina = 10
     paginator = Paginator(usuarios, usuarios_por_pagina)
-    
-    # Capturamos la página actual de la petición GET (?page=X)
     numero_pagina = request.GET.get('page')
-    
-    # Extraemos los usuarios correspondientes a esa página
     page_obj = paginator.get_page(numero_pagina)
     
-    # Retornamos el contexto idéntico
-    return render(request, 'usuarios/listar.html', {'usuarios': page_obj, 'form': form})
+    context = {
+        'form': form,
+        'usuarios': page_obj,
+    }
+    return render(request, 'usuarios/listar.html', context)
 
 
 def crear_usuario(request):
@@ -93,14 +98,30 @@ def editar_usuario(request, id_usuario):
 
 
 def eliminar_usuario(request, id_usuario):
-    if not _requiere_admin(request):
-        return redirect('usuarios:login')
-    usuario = get_object_or_404(Usuario, pk=id_usuario)
+    # 1. Obtenemos el usuario por su ID real
+    usuario = get_object_or_404(Usuario, id_usuario=id_usuario)
+    
+    # 2. 🔒 EL BLINDAJE: Buscamos si este usuario ya está registrado como cliente
+    # Ajusta 'id_usuario' si el campo ForeignKey dentro de tu modelo Cliente se llama distinto
+    cliente_asociado = Cliente.objects.filter(id_usuario=usuario).exists()
+    
+    if cliente_asociado:
+        # Si existe, disparamos un mensaje de error y cancelamos la operación
+        messages.error(
+            request, 
+            f"Seguridad: El usuario '{usuario.nombre}' (Correo: {usuario.email}) no se puede eliminar "
+            f"porque tiene un perfil de cliente activo y validado en el sistema."
+        )
+        return redirect('usuarios:listar')
+
+    # 3. Si no tiene cliente asociado, procedemos con el flujo normal de eliminación
     if request.method == 'POST':
         usuario.delete()
-        messages.success(request, 'Usuario eliminado correctamente.')
+        messages.success(request, f"Usuario '{usuario.nombre}' eliminado correctamente.")
         return redirect('usuarios:listar')
-    return render(request, 'usuarios/eliminar.html', {'usuario': usuario})
+        
+    # Por si manejas una plantilla de confirmación antes del POST
+    return render(request, 'usuarios/confirmar_eliminar.html', {'usuario': usuario})
 
 
 def listar_contratos(request):
