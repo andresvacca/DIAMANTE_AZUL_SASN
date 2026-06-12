@@ -9,7 +9,8 @@ class Empeno(models.Model):
         ('Activo', 'Activo'),
         ('En venta', 'En venta'),
         ('Vencido', 'Vencido'),
-        ('Vendido', 'Vendido')
+        ('Vendido', 'Vendido'),
+        ('Retirado', 'Retirado'),
     ]
 
     id_empeno = models.AutoField(primary_key=True)

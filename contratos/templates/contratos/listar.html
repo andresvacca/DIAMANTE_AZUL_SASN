@@ -4,117 +4,324 @@
 {% block title %}Contratos — Diamante Azul{% endblock %}
 
 {% block content %}
-<div class="dashboard-page">
-    <div class="dashboard-contenido">
+<style>
+    /* ==========================================================================
+       SUITE VISUAL REFINADA - MÓDULO CONTRATOS DIAMANTE AZUL
+       ========================================================================== */
+    
+    .dashboard-page {
+        /* Ajustado a 140px para dar espacio al Navbar fijo y evitar cortes */
+        padding: 140px 1.5rem 4rem 1.5rem;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+    }
 
+    .dashboard-container {
+        max-width: 1100px;
+        width: 100%;
+    }
+
+    /* Paneles con Efecto Cristal Metálico */
+    .glass-panel {
+        background: rgba(20, 26, 40, 0.4);
+        border-radius: 16px;
+        padding: 1.75rem 2rem;
+        border: 1px solid rgba(74, 122, 181, 0.15);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1.5rem;
+        box-sizing: border-box;
+    }
+
+    /* Sistema Unificado de Controles y Form Inputs */
+    .auth-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(74, 122, 181, 0.25) !important;
+        border-radius: 10px !important;
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        color: #fff !important;
+        font-size: 0.95rem;
+        height: 3rem; /* Altura idéntica garantizada */
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .auth-input:focus {
+        outline: none;
+        border-color: #63b3ed !important;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+    }
+
+    select.auth-input {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2363b3ed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+        padding-right: 2.5rem;
+    }
+
+    /* Alertas Estilizadas */
+    .auth-alert {
+        padding: 1rem 1.25rem;
+        border-radius: 10px;
+        margin-bottom: 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-left: 4px solid transparent;
+    }
+    .auth-alert-success { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #34d399; }
+    .auth-alert-error, .auth-alert-danger { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #f87171; }
+    .auth-alert-warning { background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #fbbf24; }
+
+    /* Botonera Premium - Altura corregida a 3rem con box-sizing */
+    .btn-action-primary {
+        background: #4a7ab5;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-action-primary:hover { background: #3b659c; }
+    .btn-action-primary:active { transform: scale(0.98); }
+
+    .btn-action-secondary {
+        background: rgba(74, 122, 181, 0.1);
+        color: #63b3ed;
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+    .btn-action-secondary:hover { background: rgba(74, 122, 181, 0.2); color: #fff; }
+
+    /* Estructura de Tablas de Auditoría */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid rgba(74, 122, 181, 0.12);
+        background: rgba(20, 26, 40, 0.2);
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .premium-table th {
+        background: rgba(74, 122, 181, 0.1);
+        padding: 1.1rem 1rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #63b3ed;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(74, 122, 181, 0.15);
+    }
+
+    .premium-table td {
+        padding: 1.1rem 1rem;
+        border-top: 1px solid rgba(74, 122, 181, 0.06);
+        color: #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .premium-table tr:hover td {
+        background: rgba(74, 122, 181, 0.04);
+    }
+
+    /* Badges de Estado Dinámicos */
+    .badge-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-disponible { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .status-activo { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+    .status-vencido { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .status-default { background: rgba(113, 128, 150, 0.15); color: #cbd5e0; border: 1px solid rgba(113, 128, 150, 0.2); }
+
+    /* Enlaces Rápidos de Control de Registros */
+    .link-view { color: #63b3ed; text-decoration: none; font-weight: 600; margin-right: 0.85rem; transition: color 0.15s; }
+    .link-view:hover { color: #90cdf4; text-decoration: underline; }
+    
+    .link-pdf { color: #34d399; text-decoration: none; font-weight: 600; transition: color 0.15s; }
+    .link-pdf:hover { color: #6ee7b7; text-decoration: underline; }
+
+    /* Paginación Arquitectónica */
+    .paginator-btn {
+        padding: 0.5rem 1rem;
+        background: rgba(20, 26, 40, 0.5);
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 8px;
+        color: #63b3ed;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    .paginator-btn:hover { background: rgba(74, 122, 181, 0.15); color: #fff; }
+    
+    .paginator-disabled {
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        color: #718096;
+        font-size: 0.85rem;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="dashboard-page">
+    <div class="dashboard-container">
+
+        <!-- Mensajes del Sistema Flotantes -->
         {% if messages %}
-        <div class="auth-messages" style="max-width:1100px;margin:0 auto 1.5rem;">
+        <div class="auth-messages">
             {% for msg in messages %}
             <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
             {% endfor %}
         </div>
         {% endif %}
+
+        <!-- Barra de Consultas de Auditoría (Filtros) -->
         {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-            <form method="GET" style="display:flex;gap:0.75rem;margin-bottom:1.2rem;flex-wrap:wrap;">
-                <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre de cliente..." class="auth-input" style="flex:2;min-width:200px;">
-                <select name="estado" class="auth-input" style="flex:1;min-width:160px;">
-                    <option value="">— Todos los estados —</option>
+        <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
+            <form method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 2; min-width: 240px;">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre de cliente..." class="auth-input">
+                </div>
+                <div style="flex: 1; min-width: 180px;">
+                    <select name="estado" class="auth-input">
+                        <option value="">— Todos los estados —</option>
                         {% for val, label in estados %}
-                    <option value="{{ val }}" {% if estado == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-            </select>
-            <button type="submit" class="btn-login" style="padding:0.5rem 1.2rem;white-space:nowrap;">🔍 Filtrar</button>
-            <a href="{% url 'contratos:listar' %}" class="btn-hero-secundario" style="padding:0.5rem 1rem;white-space:nowrap;">Limpiar</a>
-        </form>
+                        <option value="{{ val }}" {% if estado == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="submit" class="btn-action-primary">🔍 Filtrar</button>
+                    <a href="{% url 'contratos:listar' %}" class="btn-action-secondary">Limpiar</a>
+                </div>
+            </form>
+        </div>
         {% endif %}
 
-        <div style="max-width:1100px;margin:0 auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                <h2 style="margin:0;">📋 Contratos</h2>
-                {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-                <a href="{% url 'contratos:crear' %}" class="btn-login" style="padding:0.5rem 1.2rem;">+ Nuevo Contrato</a>
-                {% endif %}
+        <!-- Encabezado de la Sección -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; margin-top: 0.5rem;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.75rem; font-weight: 600; color: #fff; letter-spacing: -0.5px;">📋 Contratos Vigentes</h2>
             </div>
+            {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+            <a href="{% url 'contratos:crear' %}" class="btn-action-primary">+ Nuevo Contrato</a>
+            {% endif %}
+        </div>
 
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;background:var(--card-bg,#fff);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                    <thead>
-                        <tr style="background:rgba(74,122,181,0.12);">
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">#</th>
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Cliente</th>
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Artículo</th>
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Tipo</th>
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Fecha</th>
-                            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Estado</th>
-                            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for contrato in contratos %}
-                        <tr style="border-top:1px solid rgba(74,122,181,0.1);transition:background 0.15s;" onmouseover="this.style.background='rgba(74,122,181,0.04)'" onmouseout="this.style.background=''">
-                            <td style="padding:0.85rem 1rem;font-size:0.85rem;color:#888;">{{ contrato.id_contrato }}</td>
-                            <td style="padding:0.85rem 1rem;font-weight:600;">{{ contrato.id_cliente }}</td>
-                            <td style="padding:0.85rem 1rem;">{{ contrato.id_articulo }}</td>
-                            <td style="padding:0.85rem 1rem;">
-                                <span style="background:rgba(74,122,181,0.12);color:#4a7ab5;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;">
-                                    {{ contrato.tipo_contrato|default:"—" }}
-                                </span>
-                            </td>
-                            <td style="padding:0.85rem 1rem;font-size:0.9rem;">{{ contrato.fecha_contrato }}</td>
-                            <td style="padding:0.85rem 1rem;">
-                                <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
-                                    {% if contrato.estado_contrato == 'Disponible' %}background:#d1fae5;color:#065f46;
-                                    {% elif contrato.estado_contrato == 'Vencido' %}background:#fee2e2;color:#991b1b;
-                                    {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
-                                    {{ contrato.estado_contrato|default:"—" }}
-                                </span>
-                            </td>
-                            <td style="padding:0.85rem 1rem;text-align:center;white-space:nowrap;">
-                                <a href="{% url 'contratos:detalle' contrato.id_contrato %}" style="color:#4a7ab5;font-size:0.85rem;margin-right:0.5rem;text-decoration:none;font-weight:600;">🔍 Ver</a>
-                                <a href="{% url 'contratos:descargar_pdf' contrato.id_contrato %}" style="color:#27ae60;font-size:0.85rem;margin-right:0.5rem;text-decoration:none;font-weight:600;">📄 PDF</a>
-                                <a href="{% url 'contratos:eliminar' contrato.id_contrato %}" style="color:#e74c3c;font-size:0.85rem;text-decoration:none;font-weight:600;"></a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" style="padding:2.5rem;text-align:center;color:#aaa;">
-                                No hay contratos registrados.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% if contratos.has_other_pages %}
-            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 1.5rem; padding: 1rem 0;">
-                
-                {% if contratos.has_previous %}
-                    <a href="?page=1" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">« Primera</a>
-                    <a href="?page={{ contratos.previous_page_number }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Anterior</a>
-                {% else %}
-                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Anterior</span>
-                {% endif %}
+        <!-- Tabla Principal de Registros -->
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">Folio</th>
+                        <th>Cliente</th>
+                        <th>Artículo</th>
+                        <th>Tipo Contrato</th>
+                        <th>Fecha Registro</th>
+                        <th>Estado</th>
+                        <th style="text-align: center; width: 140px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrato in contratos %}
+                    <tr>
+                        <td style="font-family: monospace; color: #a0aec0; font-size: 0.85rem;">#{{ contrato.id_contrato }}</td>
+                        <td style="font-weight: 600; color: #fff;">{{ contrato.id_cliente }}</td>
+                        <td style="color: #cbd5e0;">{{ contrato.id_articulo }}</td>
+                        <td>
+                            <span style="background: rgba(74, 122, 181, 0.15); color: #90cdf4; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                {{ contrato.tipo_contrato|default:"—" }}
+                            </span>
+                        </td>
+                        <td style="font-size: 0.85rem; color: #a0aec0;">{{ contrato.fecha_contrato|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge-status {% if contrato.estado_contrato == 'Disponible' %}status-disponible{% elif contrato.estado_contrato == 'Activo' %}status-activo{% elif contrato.estado_contrato == 'Vencido' %}status-vencido{% else %}status-default{% endif %}">
+                                {{ contrato.estado_contrato|default:"—" }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="{% url 'contratos:detalle' contrato.id_contrato %}" class="link-view">🔍 Ver</a>
+                            <a href="{% url 'contratos:descargar_pdf' contrato.id_contrato %}" class="link-pdf">📄 PDF</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding: 4rem 2rem; text-align: center; color: #718096;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📁</div>
+                            <p style="margin: 0; font-size: 1rem; font-weight: 500;">No existen folios de contratos registrados bajo este criterio.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-                <span style="font-size: 0.9rem; color: #555; font-weight: 500; padding: 0 0.5rem;">
-                    Página <strong>{{ contratos.number }}</strong> de {{ contratos.paginator.num_pages }}
-                </span>
-
-                {% if contratos.has_next %}
-                    <a href="?page={{ contratos.next_page_number }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Siguiente</a>
-                    <a href="?page={{ contratos.paginator.num_pages }}" style="padding: 0.5rem 0.75rem; background: var(--card-bg, #fff); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Última »</a>
-                {% else %}
-                    <span style="padding: 0.5rem 0.75rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; color: #9ca3af; font-size: 0.85rem; cursor: not-allowed;">Siguiente</span>
-                {% endif %}
-
-            </div>
+        <!-- Módulo de Paginación Fluida -->
+        {% if contratos.has_other_pages %}
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 2rem; padding: 0.5rem 0;">
+            
+            {% if contratos.has_previous %}
+                <a href="?page=1{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}" class="paginator-btn">« Primera</a>
+                <a href="?page={{ contratos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}" class="paginator-btn">Anterior</a>
+            {% else %}
+                <span class="paginator-disabled">Anterior</span>
             {% endif %}
 
-            <div style="margin-top:1.5rem;">
-                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
-            </div>
+            <span style="font-size: 0.88rem; color: #a0aec0; font-weight: 500; padding: 0 0.75rem;">
+                Página <strong style="color: #fff;">{{ contratos.number }}</strong> de {{ contratos.paginator.num_pages }}
+            </span>
+
+            {% if contratos.has_next %}
+                <a href="?page={{ contratos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}" class="paginator-btn">Siguiente</a>
+                <a href="?page={{ contratos.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}" class="paginator-btn">Última »</a>
+            {% else %}
+                <span class="paginator-disabled">Siguiente</span>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+        <!-- Enlace de Retorno Contextual -->
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'home' %}" class="btn-action-secondary" style="height: 2.75rem; padding: 0 1.25rem;">← Regresar al Inicio</a>
         </div>
 
     </div>
 </div>
 {% endblock %}
-

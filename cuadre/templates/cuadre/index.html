@@ -1,182 +1,281 @@
+{% extends 'home/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuadre de Caja — Diamante Azul</title>
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
-</head>
-<body>
 
-<nav class="navbar">
-    <a href="{% url 'home' %}" class="navbar-logo">
-        <svg viewBox="0 0 36 36" fill="none">
-            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
-            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
-            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
-        </svg>
-        <div>
-            <span class="logo-nombre">Diamante Azul</span>
-            <span class="logo-subtitulo">Casa de Empeño</span>
-        </div>
-    </a>
+{% block title %}Cuadre de Caja — Diamante Azul{% endblock %}
 
-    <ul class="navbar-links" id="navbar-links">
-        <li><a href="{% url 'home' %}">Inicio</a></li>
+{% block content %}
+<style>
+    /* ==========================================================================
+       REDISEÑO DE CAJA - SUITE TRASLÚCIDA DIAMANTE AZUL
+       ========================================================================== */
+    
+    .dashboard-page {
+        padding: 40px 1.5rem 4rem 1.5rem;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+    }
 
-        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
-        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
-        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
-        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
-        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
-        {% endif %}
+    .dashboard-container {
+        max-width: 1100px;
+        width: 100%;
+    }
 
-        {% if request.session.usuario_rol_id == 1 %}
-        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
-        {% endif %}
+    /* Paneles con Efecto Cristal de la Suite */
+    .glass-panel {
+        background: rgba(20, 26, 40, 0.4);
+        border-radius: 16px;
+        padding: 1.75rem 2rem;
+        border: 1px solid rgba(74, 122, 181, 0.15);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1.5rem;
+        box-sizing: border-box;
+    }
 
-        {% if request.session.usuario_rol_id == 3 %}
-        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
-        {% endif %}
-    </ul>
+    /* Inputs Integrados */
+    .auth-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        font-size: 0.82rem;
+        color: #a0aec0;
+        letter-spacing: 0.03em;
+    }
 
-    <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
-            <span class="icono-sol">☀️</span>
-            <span class="icono-luna">🌙</span>
-        </button>
+    .auth-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(74, 122, 181, 0.25) !important;
+        border-radius: 10px !important;
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        color: #fff !important;
+        font-size: 0.95rem;
+        height: 3rem;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
 
-        {% if request.session.usuario_id %}
-        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
-            <span style="font-size:1.2rem;">🔔</span>
-            {% if notif_count > 0 %}
-            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
-            {% endif %}
-        </a>
-        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
-        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
-            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
-        </a>
-        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
-        {% endif %}
-    </div>
-</nav>
+    .auth-input:focus {
+        outline: none;
+        border-color: #63b3ed !important;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+    }
+
+    /* Rejillas Adaptables */
+    .grid-resumen {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-stat {
+        background: rgba(20, 26, 40, 0.35);
+        border-radius: 14px;
+        padding: 1.5rem;
+        border: 1px solid rgba(74, 122, 181, 0.12);
+        backdrop-filter: blur(8px);
+        transition: transform 0.2s;
+    }
+    .card-stat:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Componentes de Tablas Premium */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(74, 122, 181, 0.12);
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .premium-table th {
+        background: rgba(74, 122, 181, 0.1);
+        padding: 1rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #63b3ed;
+        font-weight: 600;
+    }
+
+    .premium-table td {
+        padding: 1rem;
+        border-top: 1px solid rgba(74, 122, 181, 0.08);
+        color: #e2e8f0;
+    }
+
+    .premium-table tr:hover td {
+        background: rgba(74, 122, 181, 0.04);
+    }
+
+    /* Selectores de Botones de Filtro */
+    .btn-consultar {
+        background: #4a7ab5;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-consultar:hover { background: #3b659c; }
+
+    .btn-hoy {
+        background: rgba(74, 122, 181, 0.1);
+        color: #63b3ed;
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+    .btn-hoy:hover { background: rgba(74, 122, 181, 0.2); }
+
+    @media (max-width: 850px) {
+        .grid-resumen { grid-template-columns: 1fr; gap: 1rem; }
+    }
+</style>
 
 <div class="dashboard-page">
-    <div class="dashboard-contenido">
-        <div style="max-width:1000px;margin:0 auto;">
+    <div class="dashboard-container">
 
-            <div style="margin-bottom:1.5rem;">
-                <a href="{% url 'home' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver al inicio</a>
-                <h2 style="margin:0.5rem 0 0;">💰 Cuadre de Caja</h2>
-            </div>
-
-            <!-- Filtro de fechas -->
-            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:1.5rem 2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.5rem;">
-                <form method="GET" style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
-                    <div class="auth-field" style="flex:1;min-width:160px;">
-                        <label class="auth-label">Fecha Inicio</label>
-                        <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="auth-input">
-                    </div>
-                    <div class="auth-field" style="flex:1;min-width:160px;">
-                        <label class="auth-label">Fecha Fin</label>
-                        <input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="auth-input">
-                    </div>
-                    <button type="submit" class="btn-login" style="padding:0.65rem 1.5rem;">🔍 Consultar</button>
-                    <a href="{% url 'cuadre_caja:index' %}" class="btn-hero-secundario" style="padding:0.65rem 1rem;">Hoy</a>
-                </form>
-            </div>
-
-            <!-- Tarjetas resumen -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.25rem 1.5rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #10b981;">
-                    <p style="margin:0 0 0.3rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Pagos Recibidos</p>
-                    <p style="margin:0;font-size:1.5rem;font-weight:700;font-family:monospace;color:#065f46;">${{ total_pagos|floatformat:0 }}</p>
-                    <p style="margin:0.2rem 0 0;font-size:0.8rem;color:#aaa;">{{ cantidad_pagos }} pago{{ cantidad_pagos|pluralize }}</p>
-                </div>
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.25rem 1.5rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #ef4444;">
-                    <p style="margin:0 0 0.3rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Préstamos Entregados</p>
-                    <p style="margin:0;font-size:1.5rem;font-weight:700;font-family:monospace;color:#991b1b;">${{ total_prestamos|floatformat:0 }}</p>
-                    <p style="margin:0.2rem 0 0;font-size:0.8rem;color:#aaa;">{{ cantidad_empenos }} empeño{{ cantidad_empenos|pluralize }}</p>
-                </div>
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.25rem 1.5rem;box-shadow:0 2px 10px rgba(74,122,181,0.07);border-left:4px solid #4a7ab5;">
-                    <p style="margin:0 0 0.3rem;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Facturas Generadas</p>
-                    <p style="margin:0;font-size:1.5rem;font-weight:700;font-family:monospace;">${{ total_facturas|floatformat:0 }}</p>
-                    <p style="margin:0.2rem 0 0;font-size:0.8rem;color:#aaa;">{{ cantidad_facturas }} factura{{ cantidad_facturas|pluralize }}</p>
-                </div>
-            </div>
-
-            <!-- Balance neto -->
-            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);margin-bottom:1.5rem;">
-                <h4 style="margin:0 0 1.25rem;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Balance del Período</h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;">
-                    <div style="text-align:center;padding:1rem;background:rgba(16,185,129,0.06);border-radius:10px;">
-                        <p style="margin:0 0 0.3rem;font-size:0.82rem;color:#888;">Total Entradas</p>
-                        <p style="margin:0;font-size:1.4rem;font-weight:700;font-family:monospace;color:#065f46;">${{ entradas|floatformat:0 }}</p>
-                        <p style="margin:0.2rem 0 0;font-size:0.75rem;color:#aaa;">Pagos + Facturas</p>
-                    </div>
-                    <div style="text-align:center;padding:1rem;background:rgba(239,68,68,0.06);border-radius:10px;">
-                        <p style="margin:0 0 0.3rem;font-size:0.82rem;color:#888;">Total Salidas</p>
-                        <p style="margin:0;font-size:1.4rem;font-weight:700;font-family:monospace;color:#991b1b;">${{ salidas|floatformat:0 }}</p>
-                        <p style="margin:0.2rem 0 0;font-size:0.75rem;color:#aaa;">Préstamos entregados</p>
-                    </div>
-                    <div style="text-align:center;padding:1rem;border-radius:10px;
-                        {% if balance >= 0 %}background:rgba(16,185,129,0.08);{% else %}background:rgba(239,68,68,0.08);{% endif %}">
-                        <p style="margin:0 0 0.3rem;font-size:0.82rem;color:#888;">Balance Neto</p>
-                        <p style="margin:0;font-size:1.6rem;font-weight:700;font-family:monospace;
-                            {% if balance >= 0 %}color:#065f46;{% else %}color:#991b1b;{% endif %}">
-                            {% if balance >= 0 %}+{% endif %}${{ balance|floatformat:0 }}
-                        </p>
-                        <p style="margin:0.2rem 0 0;font-size:0.75rem;color:#aaa;">Entradas - Salidas</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detalle de pagos -->
-            {% if detalle_pagos %}
-            <div style="background:var(--card-bg,#fff);border-radius:16px;padding:2rem;box-shadow:0 2px 16px rgba(74,122,181,0.1);">
-                <h4 style="margin:0 0 1rem;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Detalle de Pagos Recibidos</h4>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="background:rgba(74,122,181,0.08);">
-                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Fecha</th>
-                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Cliente</th>
-                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Empeño</th>
-                                <th style="padding:0.7rem 1rem;text-align:right;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Monto</th>
-                                <th style="padding:0.7rem 1rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Método</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pago in detalle_pagos %}
-                            <tr style="border-top:1px solid rgba(74,122,181,0.1);">
-                                <td style="padding:0.7rem 1rem;font-size:0.85rem;">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
-                                <td style="padding:0.7rem 1rem;font-weight:600;">{{ pago.id_cliente.nombre }}</td>
-                                <td style="padding:0.7rem 1rem;font-size:0.85rem;color:#888;font-family:monospace;">#{{ pago.id_cuota.id_empeno.id_empeno }}</td>
-                                <td style="padding:0.7rem 1rem;text-align:right;font-family:monospace;font-weight:700;color:#065f46;">${{ pago.monto }}</td>
-                                <td style="padding:0.7rem 1rem;font-size:0.85rem;">{{ pago.metodo_pago }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endif %}
-
+        <!-- Encabezado de Contexto -->
+        <div style="margin-bottom: 2rem;">
+            <a href="{% url 'home' %}" style="color: #63b3ed; text-decoration: none; font-size: 0.88rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+                <span>←</span> Volver al inicio
+            </a>
+            <h2 style="margin: 0.5rem 0 0; font-size: 1.75rem; font-weight: 600; color: #fff; letter-spacing: -0.5px;">💰 Cuadre de Caja</h2>
         </div>
+
+        <!-- Panel de Filtro Operativo -->
+        <div class="glass-panel">
+            <form method="GET" style="display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap;">
+                <div class="auth-field" style="flex: 1; min-width: 200px;">
+                    <label class="auth-label">Fecha Apertura / Inicio</label>
+                    <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="auth-input">
+                </div>
+                <div class="auth-field" style="flex: 1; min-width: 200px;">
+                    <label class="auth-label">Fecha Cierre / Fin</label>
+                    <input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="auth-input">
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="submit" class="btn-consultar">🔍 Consultar</button>
+                    <a href="{% url 'cuadre_caja:index' %}" class="btn-hoy">Hoy</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bloques de Métricas de Transacciones -->
+        <div class="grid-resumen">
+            <div class="card-stat" style="border-left: 4px solid #10b981;">
+                <p style="margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: #a0aec0; font-weight: 600; letter-spacing: 0.05em;">Pagos Recibidos</p>
+                <p style="margin: 0; font-size: 1.65rem; font-weight: 700; font-family: monospace; color: #34d399;">${{ total_pagos|floatformat:0 }}</p>
+                <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #718096;">{{ cantidad_pagos }} transacción{{ cantidad_pagos|pluralize:"es" }}</p>
+            </div>
+            
+            <div class="card-stat" style="border-left: 4px solid #f87171;">
+                <p style="margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: #a0aec0; font-weight: 600; letter-spacing: 0.05em;">Préstamos Otorgados</p>
+                <p style="margin: 0; font-size: 1.65rem; font-weight: 700; font-family: monospace; color: #f87171;">${{ total_prestamos|floatformat:0 }}</p>
+                <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #718096;">{{ cantidad_empenos }} contrato{{ cantidad_empenos|pluralize }} de empeño</p>
+            </div>
+            
+            <div class="card-stat" style="border-left: 4px solid #63b3ed;">
+                <p style="margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: #a0aec0; font-weight: 600; letter-spacing: 0.05em;">Facturación de Saldos</p>
+                <p style="margin: 0; font-size: 1.65rem; font-weight: 700; font-family: monospace; color: #63b3ed;">${{ total_facturas|floatformat:0 }}</p>
+                <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #718096;">{{ cantidad_facturas }} folio{{ cantidad_facturas|pluralize }} emitido{{ cantidad_facturas|pluralize }}</p>
+            </div>
+        </div>
+
+        <!-- Balance Integral Consolidador -->
+        <div class="glass-panel" style="padding: 2rem;">
+            <h4 style="margin: 0 0 1.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #63b3ed; font-weight: 700;">Balance Flujo de Efectivo</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+                
+                <div style="text-align: center; padding: 1.25rem; background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 12px;">
+                    <p style="margin: 0 0 0.3rem; font-size: 0.82rem; color: #a0aec0;">Total Entradas</p>
+                    <p style="margin: 0; font-size: 1.45rem; font-weight: 700; font-family: monospace; color: #34d399;">${{ entradas|floatformat:0 }}</p>
+                    <p style="margin: 0.3rem 0 0; font-size: 0.72rem; color: #718096;">(Pagos + Facturas Recaudadas)</p>
+                </div>
+                
+                <div style="text-align: center; padding: 1.25rem; background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 12px;">
+                    <p style="margin: 0 0 0.3rem; font-size: 0.82rem; color: #a0aec0;">Total Salidas</p>
+                    <p style="margin: 0; font-size: 1.45rem; font-weight: 700; font-family: monospace; color: #f87171;">${{ salidas|floatformat:0 }}</p>
+                    <p style="margin: 0.3rem 0 0; font-size: 0.72rem; color: #718096;">(Desembolsos por Empeño)</p>
+                </div>
+                
+                <div style="text-align: center; padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(74, 122, 181, 0.15);
+                    {% if balance >= 0 %}background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.2);{% else %}background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2);{% endif %}">
+                    <p style="margin: 0 0 0.3rem; font-size: 0.82rem; color: #e2e8f0; font-weight: 500;">Balance Neto en Caja</p>
+                    <p style="margin: 0; font-size: 1.6rem; font-weight: 700; font-family: monospace;
+                        {% if balance >= 0 %}color: #34d399;{% else %}color: #f87171;{% endif %}">
+                        {% if balance >= 0 %}+{% endif %}${{ balance|floatformat:0 }}
+                    </p>
+                    <p style="margin: 0.3rem 0 0; font-size: 0.72rem; color: #a0aec0;">Disponible Operativo Real</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Reporte de Auditoría de Pagos Recibidos -->
+        {% if detalle_pagos %}
+        <div class="glass-panel" style="padding: 2rem;">
+            <h4 style="margin: 0 0 1.25rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #63b3ed; font-weight: 700;">Libro Diario - Auditoría de Pagos</h4>
+            <div class="table-container">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha de Ejecución</th>
+                            <th>Cliente Titular</th>
+                            <th>Folio Empeño</th>
+                            <th style="text-align: right;">Monto Liquidado</th>
+                            <th>Vía de Recaudo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in detalle_pagos %}
+                        <tr>
+                            <td style="font-size: 0.85rem; color: #a0aec0;">{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+                            <td style="font-weight: 600; color: #fff;">{{ pago.id_cliente.nombre }}</td>
+                            <td style="color: #63b3ed; font-family: monospace;">#{{ pago.id_cuota.id_empeno.id_empeno }}</td>
+                            <td style="text-align: right; font-family: monospace; font-weight: 700; color: #34d399;">${{ pago.monto }}</td>
+                            <td>
+                                <span style="background: rgba(74, 122, 181, 0.15); color: #90cdf4; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                    {{ pago.metodo_pago }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </div>
+{% endblock %}
 
-<script src="{% static 'js/landing.js' %}"></script>
+{% block extra_js %}
 <script>
-// Actualizar badge de notificaciones cada 30 segundos
+    // El script mantiene el polling asíncronico si no está integrado de forma global en base.html
     setInterval(() => {
         fetch('/notificaciones/conteo/')
             .then(r => r.json())
@@ -194,5 +293,4 @@
             }).catch(() => {});
     }, 30000);
 </script>
-</body>
-</html>
+{% endblock %}

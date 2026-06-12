@@ -1,53 +1,140 @@
 {% extends 'home/base.html' %}
+{% load static %}
+
+{% block title %}Salida de Inventario — Diamante Azul{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos del Contenedor de Seguridad de Inventario */
+    .boveda-card {
+        background: rgba(20, 26, 40, 0.4); 
+        border-radius: 12px; 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25); 
+        overflow: hidden; 
+        border: 1px solid rgba(74, 122, 181, 0.15);
+        max-width: 650px;
+        margin: 0 auto;
+    }
+    .boveda-header {
+        background: rgba(74, 122, 181, 0.1); 
+        padding: 18px 25px; 
+        border-bottom: 1px solid rgba(74, 122, 181, 0.15);
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+    }
+    .badge-estado {
+        padding: 4px 12px; 
+        border-radius: 20px; 
+        font-size: 0.75rem; 
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .badge-alerta {
+        background: rgba(220, 53, 69, 0.15); 
+        color: #ff6b6b; 
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    .badge-exito {
+        background: rgba(46, 204, 113, 0.15); 
+        color: #2ecc71; 
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+    .btn-boveda-disabled {
+        background-color: rgba(255, 255, 255, 0.03); 
+        color: #4a5568; 
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 14px 30px; 
+        border-radius: 8px; 
+        font-weight: bold; 
+        cursor: not-allowed; 
+        width: 100%; 
+        font-size: 0.95rem;
+    }
+    .btn-boveda-success {
+        background-color: #2ecc71; 
+        color: #fff; 
+        border: none; 
+        padding: 14px 40px; 
+        border-radius: 8px; 
+        font-weight: 700; 
+        cursor: pointer; 
+        width: 100%; 
+        font-size: 0.95rem; 
+        transition: all 0.2s ease; 
+        box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+    }
+    .btn-boveda-success:hover {
+        background-color: #27ae60;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 15px rgba(46, 204, 113, 0.3);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="margin: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <div style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e1e4e8;">
+<div class="dashboard-page" style="padding: 20px; padding-top: 100px; width: 100%; box-sizing: border-box;">
+    
+    <div class="boveda-card">
         
-        <div style="background-color: #2c3e50; padding: 15px 25px; color: white; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600;">📦 Control de Salida de Inventario</h3>
+        <div class="boveda-header">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #fff; letter-spacing: 0.02em; display: flex; align-items: center; gap: 8px;">
+                📦 Control de Salida de Inventario
+            </h3>
             {% if tiene_cuotas_pendientes %}
-                <span style="background-color: #e74c3c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">DEUDA ACTIVA</span>
+                <span class="badge-estado badge-alerta">Deuda Activa</span>
             {% else %}
-                <span style="background-color: #27ae60; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">PAZ Y SALVO</span>
+                <span class="badge-estado badge-exito">Paz y Salvo</span>
             {% endif %}
         </div>
 
-        <div style="padding: 25px; text-align: center;">
+        <div style="padding: 35px 25px; text-align: center;">
             {% if tiene_cuotas_pendientes %}
-                <div style="margin-bottom: 20px;">
-                    <div style="font-size: 3rem; color: #f39c12; margin-bottom: 10px;">⚠️</div>
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Entrega No Autorizada</h4>
-                    <p style="color: #7f8c8d; max-width: 400px; margin: 0 auto 20px;">
-                        El sistema detectó cuotas pendientes. El cliente debe estar al día para retirar el artículo físico de la bodega.
+                <div style="margin-bottom: 25px;">
+                    <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 2px 8px rgba(246,173,85,0.2));">⚠️</div>
+                    <h4 style="color: #f6ad55; margin: 0 0 12px 0; font-size: 1.25rem; font-weight: 600;">Entrega No Autorizada</h4>
+                    <p style="color: #a0aec0; max-width: 440px; margin: 0 auto; font-size: 0.95rem; line-height: 1.5;">
+                        El sistema detectó saldos pendientes de liquidación. El cliente debe cancelar todas las cuotas de rendimiento vigentes antes de extraer el artículo físico de la bodega central.
                     </p>
                 </div>
-                <button disabled style="background-color: #d5dbdb; color: #7f8c8d; border: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; cursor: not-allowed; width: 100%; max-width: 300px;">
-                    Confirmar Entrega (Bloqueado)
-                </button>
+                <div style="max-width: 350px; margin: 0 auto;">
+                    <button disabled class="btn-boveda-disabled">
+                        🔒 Confirmar Entrega (Bloqueado)
+                    </button>
+                </div>
             {% else %}
-                <div style="margin-bottom: 20px;">
-                    <div style="font-size: 3rem; color: #27ae60; margin-bottom: 10px;">✅</div>
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Listo para Entrega</h4>
-                    <p style="color: #7f8c8d; max-width: 400px; margin: 0 auto 20px;">
-                        Todos los pagos han sido verificados. Por favor, proceda a retirar el artículo <strong>{{ empeno.id_articulo.nombre }}</strong> de la caja fuerte y entréguelo al cliente.
+                <div style="margin-bottom: 25px;">
+                    <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 2px 8px rgba(46,204,113,0.2));">✅</div>
+                    <h4 style="color: #2ecc71; margin: 0 0 12px 0; font-size: 1.25rem; font-weight: 600;">Despacho Autorizado</h4>
+                    <p style="color: #cbd5e0; max-width: 460px; margin: 0 auto; font-size: 0.95rem; line-height: 1.5;">
+                        Todos los pagos correspondientes al empeño han sido saldados de manera exitosa. Proceda a retirar la prenda <strong style="color: #63b3ed; font-weight: 600;">{{ empeno.id_articulo }}</strong> de la caja de resguardo para su debida devolución.
                     </p>
                 </div>
                 
-                <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST">
+                <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST" style="max-width: 380px; margin: 0 auto;">
                     {% csrf_token %}
                     <button type="submit" 
-                            onclick="return confirm('¿Confirma que ya entregó el producto físico? Esta acción sacará el artículo del inventario activo.')"
-                            style="background-color: #27ae60; color: white; border: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; max-width: 350px; font-size: 1rem; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);">
+                            onclick="return confirm('¿Confirma la entrega física del artículo? Esta operación dará por finalizado el contrato y actualizará el inventario de resguardo.')"
+                            class="btn-boveda-success">
                         🤝 CONFIRMAR ENTREGA FÍSICA
                     </button>
                 </form>
             {% endif %}
         </div>
 
-        <div style="background-color: #f8f9fa; padding: 12px; border-top: 1px solid #e1e4e8; text-align: center;">
-            <small style="color: #95a5a6;">Solo personal autorizado puede procesar salidas de bodega.</small>
+        <div style="background: rgba(0, 0, 0, 0.15); padding: 14px; border-top: 1px solid rgba(74, 122, 181, 0.1); text-align: center;">
+            <small style="color: #718096; font-size: 0.8rem; letter-spacing: 0.02em;">
+                🛡️ Protocolo de Seguridad Diamante Azul S.A.S — Uso exclusivo de operarios de bodega.
+            </small>
         </div>
     </div>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+        <a href="{% url 'empenos:detalle' empeno.id_empeno %}" style="color: #4a7ab5; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: color 0.2s;" onmouseover="this.style.color='#63b3ed'" onmouseout="this.style.color='#4a7ab5'">
+            ← Cancelar y volver al detalle del empeño
+        </a>
+    </div>
+
 </div>
 {% endblock %}

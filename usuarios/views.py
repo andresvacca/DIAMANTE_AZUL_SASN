@@ -121,7 +121,7 @@ def eliminar_usuario(request, id_usuario):
         return redirect('usuarios:listar')
         
     # Por si manejas una plantilla de confirmación antes del POST
-    return render(request, 'usuarios/confirmar_eliminar.html', {'usuario': usuario})
+    return render(request, 'usuarios/eliminar.html', {'usuario': usuario})
 
 
 def listar_contratos(request):
