@@ -1,121 +1,208 @@
+{% extends 'home/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Venta — Diamante Azul</title>
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
-</head>
-<body>
 
-<nav class="navbar">
-    <a href="{% url 'home' %}" class="navbar-logo">
-        <svg viewBox="0 0 36 36" fill="none">
-            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
-            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
-            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
-        </svg>
-        <div>
-            <span class="logo-nombre">Diamante Azul</span>
-            <span class="logo-subtitulo">Casa de Empeño</span>
-        </div>
-    </a>
-    <ul class="navbar-links" id="navbar-links">
-        <li><a href="{% url 'home' %}">Inicio</a></li>
-        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
-        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
-        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
-        <li><a href="{% url 'compras:listar' %}" class="active">Compras</a></li>
-        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
-        {% endif %}
-        {% if request.session.usuario_rol_id == 1 %}
-        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
-        {% endif %}
-    </ul>
-    <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
-            <span class="icono-sol">☀️</span>
-            <span class="icono-luna">🌙</span>
-        </button>
-        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
-        <a href="{% url 'usuarios:logout' %}" class="btn-login">Cerrar Sesión</a>
-    </div>
-</nav>
+{% block title %}Registrar Venta — Diamante Azul{% endblock %}
+
+{% block content %}
+<style>
+    /* ==========================================================================
+       FORMULARIO DE VENTAS - SUITE VISUAL DIAMANTE AZUL
+       ========================================================================== */
+    
+    .dashboard-page {
+        /* Espaciado de 140px garantizado para evitar colisiones con el navbar */
+        padding: 140px 1.5rem 4rem 1.5rem;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+    }
+
+    .dashboard-container {
+        max-width: 600px;
+        width: 100%;
+    }
+
+    /* Caja Informativa Flotante */
+    .summary-panel {
+        background: rgba(74, 122, 181, 0.08);
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(5px);
+    }
+
+    /* Panel de Cristal para Formulario */
+    .glass-panel {
+        background: rgba(20, 26, 40, 0.4);
+        border-radius: 16px;
+        padding: 2rem;
+        border: 1px solid rgba(74, 122, 181, 0.15);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Estilización Forzada para Inputs del Form de Django */
+    .glass-panel input[type="text"],
+    .glass-panel input[type="number"],
+    .glass-panel select,
+    .glass-panel textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(74, 122, 181, 0.25) !important;
+        border-radius: 10px !important;
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        color: #fff !important;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .glass-panel input:focus,
+    .glass-panel select:focus,
+    .glass-panel textarea:focus {
+        outline: none;
+        border-color: #63b3ed !important;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1) !important;
+    }
+
+    .glass-panel textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Etiquetas de Formulario */
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.45rem;
+        font-size: 0.9rem;
+        color: #e2e8f0;
+    }
+
+    /* Errores de Validación */
+    .auth-error {
+        color: #f87171;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: block;
+        margin-top: 0.35rem;
+    }
+
+    /* Botonera Premium */
+    .btn-action-primary {
+        background: #4a7ab5;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-action-primary:hover { background: #3b659c; }
+    .btn-action-primary:active { transform: scale(0.98); }
+
+    .btn-action-secondary {
+        background: rgba(74, 122, 181, 0.1);
+        color: #63b3ed;
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-action-secondary:hover { background: rgba(74, 122, 181, 0.2); color: #fff; }
+</style>
 
 <div class="dashboard-page">
-    <div class="dashboard-contenido">
-        <div style="max-width:600px;margin:0 auto;">
+    <div class="dashboard-container">
 
-            <div style="margin-bottom:1.5rem;">
-                <h2 style="margin:0 0 0.25rem;">💰 Registrar Venta</h2>
-                <p style="color:#888;margin:0;font-size:0.9rem;">Compra #{{ compra.id_compra }} — {{ compra.id_articulo }}</p>
-            </div>
+        <div style="margin-bottom: 1.75rem;">
+            <h2 style="margin: 0 0 0.35rem 0; font-size: 1.75rem; font-weight: 600; color: #fff; letter-spacing: -0.5px;">
+                💰 Registrar Venta
+            </h2>
+            <p style="color: #a0aec0; margin: 0; font-size: 0.9rem;">
+                Procesando Compra <span style="font-family: monospace; color: #63b3ed; font-weight: 600;">#{{ compra.id_compra }}</span> — {{ compra.id_articulo }}
+            </p>
+        </div>
 
-            <!-- Resumen del artículo -->
-            <div style="background:rgba(74,122,181,0.06);border:1px solid rgba(74,122,181,0.2);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Artículo</p>
-                        <p style="margin:0;font-weight:600;">{{ compra.id_articulo }}</p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Precio de Reventa Sugerido</p>
-                        <p style="margin:0;font-family:monospace;font-weight:700;color:#4a7ab5;">${{ compra.precio_reventa }}</p>
-                    </div>
+        <div class="summary-panel">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">Artículo para Venta</p>
+                    <p style="margin: 0; font-weight: 600; color: #fff; font-size: 1rem;">{{ compra.id_articulo }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0 0 0.25rem 0; font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.05em;">Reventa Sugerida</p>
+                    <p style="margin: 0; font-family: monospace; font-weight: 700; color: #63b3ed; font-size: 1.1rem;">${{ compra.precio_reventa }}</p>
                 </div>
             </div>
-
-            {% if messages %}
-            <div class="auth-messages" style="margin-bottom:1.2rem;">
-                {% for msg in messages %}
-                <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:2rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                <form method="post">
-                    {% csrf_token %}
-
-                    <div style="margin-bottom:1.2rem;">
-                        <label style="display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;">Cliente que compra</label>
-                        {{ form.id_cliente }}
-                        {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors.0 }}</span>{% endif %}
-                    </div>
-
-                    <div style="margin-bottom:1.2rem;">
-                        <label style="display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;">Valor de venta</label>
-                        {{ form.valor_total }}
-                        {% if form.valor_total.errors %}<span class="auth-error">{{ form.valor_total.errors.0 }}</span>{% endif %}
-                    </div>
-
-                    <div style="margin-bottom:1.2rem;">
-                        <label style="display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;">Forma de pago</label>
-                        {{ form.forma_pago }}
-                        {% if form.forma_pago.errors %}<span class="auth-error">{{ form.forma_pago.errors.0 }}</span>{% endif %}
-                    </div>
-
-                    <div style="margin-bottom:1.5rem;">
-                        <label style="display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;">Observaciones</label>
-                        {{ form.observaciones }}
-                        {% if form.observaciones.errors %}<span class="auth-error">{{ form.observaciones.errors.0 }}</span>{% endif %}
-                    </div>
-
-                    <div style="display:flex;gap:1rem;">
-                        <button type="submit" class="btn-login" style="padding:0.6rem 1.5rem;">💰 Confirmar Venta</button>
-                        <a href="{% url 'compras:detalle' compra.id_compra %}" class="btn-hero-secundario">Cancelar</a>
-                    </div>
-                </form>
-            </div>
-
         </div>
+
+        {% if messages %}
+        <div class="auth-messages" style="margin-bottom: 1.25rem;">
+            {% for msg in messages %}
+            <div class="auth-alert auth-alert-{{ msg.tags }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="glass-panel">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="form-label">Cliente Comprador</label>
+                    {{ form.id_cliente }}
+                    {% if form.id_cliente.errors %}
+                        <span class="auth-error">⚠️ {{ form.id_cliente.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="form-label">Valor de Venta Real ($)</label>
+                    {{ form.valor_total }}
+                    {% if form.valor_total.errors %}
+                        <span class="auth-error">⚠️ {{ form.valor_total.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="form-label">Forma de Pago</label>
+                    {{ form.forma_pago }}
+                    {% if form.forma_pago.errors %}
+                        <span class="auth-error">⚠️ {{ form.forma_pago.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.75rem;">
+                    <label class="form-label">Observaciones de la Transacción</label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}
+                        <span class="auth-error">⚠️ {{ form.observaciones.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <button type="submit" class="btn-action-primary">💰 Confirmar Venta</button>
+                    <a href="{% url 'compras:detalle' compra.id_compra %}" class="btn-action-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
-
-<script src="{% static 'js/landing.js' %}"></script>
-</body>
-</html>
+{% endblock %}

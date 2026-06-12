@@ -1,162 +1,288 @@
+{% extends 'home/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle Contrato — Diamante Azul</title>
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
-</head>
-<body>
 
-<nav class="navbar">
-    <a href="{% url 'home' %}" class="navbar-logo">
-        <svg viewBox="0 0 36 36" fill="none">
-            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
-            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
-            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
-        </svg>
-        <div>
-            <span class="logo-nombre">Diamante Azul</span>
-            <span class="logo-subtitulo">Casa de Empeño</span>
-        </div>
-    </a>
+{% block title %}Detalle Contrato — Diamante Azul{% endblock %}
 
-    <ul class="navbar-links" id="navbar-links">
-        <li><a href="{% url 'home' %}">Inicio</a></li>
+{% block content %}
+<style>
+    /* ==========================================================================
+       SUITE VISUAL REFINADA - DETALLE DE CONTRATOS DIAMANTE AZUL
+       ========================================================================== */
+    
+    .dashboard-page {
+        /* Espaciado de 140px para evitar que el navbar fijo obstruya el contenido */
+        padding: 140px 1.5rem 4rem 1.5rem;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+    }
 
-        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
-        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
-        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
-        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
-        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
-        {% endif %}
+    .dashboard-container {
+        max-width: 900px;
+        width: 100%;
+    }
 
-        {% if request.session.usuario_rol_id == 1 %}
-        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
-        {% endif %}
+    /* Paneles con Efecto Cristal Metálico */
+    .glass-panel {
+        background: rgba(20, 26, 40, 0.4);
+        border-radius: 16px;
+        padding: 1.75rem 2rem;
+        border: 1px solid rgba(74, 122, 181, 0.15);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1.5rem;
+        box-sizing: border-box;
+    }
 
-        {% if request.session.usuario_rol_id == 3 %}
-        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
-        {% endif %}
-    </ul>
+    /* Grid de Contenedores de Información */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
 
-    <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
-            <span class="icono-sol">☀️</span>
-            <span class="icono-luna">🌙</span>
-        </button>
+    @media (max-width: 480px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
-        {% if request.session.usuario_id %}
-        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
-            <span style="font-size:1.2rem;">🔔</span>
-            {% if notif_count > 0 %}
-            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
-            {% endif %}
-        </a>
-        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
-        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
-            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
-        </a>
-        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
-        {% endif %}
-    </div>
-</nav>
+    /* Encabezados Internos de las Tarjetas */
+    .panel-section-title {
+        margin: 0 0 1.25rem 0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #63b3ed;
+        font-weight: 700;
+        border-bottom: 1px solid rgba(74, 122, 181, 0.15);
+        padding-bottom: 0.5rem;
+    }
+
+    /* Estructura de Datos (Clave-Valor) */
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.85rem;
+        font-size: 0.95rem;
+        color: #e2e8f0;
+    }
+    .data-row:last-child {
+        margin-bottom: 0;
+    }
+    .data-label {
+        color: #a0aec0;
+        font-weight: 500;
+    }
+    .data-value {
+        font-weight: 600;
+        color: #fff;
+        text-align: right;
+    }
+
+    /* Badges de Estado Dinámicos */
+    .badge-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-disponible { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .status-activo { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+    .status-vencido { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .status-default { background: rgba(113, 128, 150, 0.15); color: #cbd5e0; border: 1px solid rgba(113, 128, 150, 0.2); }
+
+    /* Botonera Premium */
+    .btn-action-primary {
+        background: #4a7ab5;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-action-primary:hover { background: #3b659c; }
+    .btn-action-primary:active { transform: scale(0.98); }
+
+    .btn-action-secondary {
+        background: rgba(74, 122, 181, 0.1);
+        color: #63b3ed;
+        border: 1px solid rgba(74, 122, 181, 0.2);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+    .btn-action-secondary:hover { background: rgba(74, 122, 181, 0.2); color: #fff; }
+
+    .btn-action-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        height: 3rem;
+        padding: 0 1.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+    .btn-action-danger:hover { background: #ef4444; color: #fff; }
+</style>
 
 <div class="dashboard-page">
-    <div class="dashboard-contenido">
+    <div class="dashboard-container">
 
-        <div style="max-width:900px;margin:0 auto;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                <div>
-                    <a href="{% url 'contratos:listar' %}" style="color:#4a7ab5;text-decoration:none;font-size:0.9rem;">← Volver a Contratos</a>
-                    <h2 style="margin:0.5rem 0 0;">📋 Contrato <span style="color:#aaa;font-size:0.85em;">#{{ contrato.id_contrato }}</span></h2>
-                </div>
-                <a href="{% url 'contratos:descargar_pdf' contrato.id_contrato %}" class="btn-login" style="padding:0.5rem 1.2rem;">
-                    📄 Descargar PDF
+        <!-- Fila Superior de Navegación y Acciones -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <a href="{% url 'contratos:listar' %}" style="color: #63b3ed; text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    ← Volver a Contratos
                 </a>
+                <h2 style="margin: 0.5rem 0 0 0; font-size: 1.75rem; font-weight: 600; color: #fff; letter-spacing: -0.5px;">
+                    📋 Contrato <span style="color: rgba(255,255,255,0.35); font-family: monospace; font-size: 0.85em;">#{{ contrato.id_contrato }}</span>
+                </h2>
             </div>
+            <a href="{% url 'contratos:descargar_pdf' contrato.id_contrato %}" class="btn-action-primary">
+                📄 Descargar PDF
+            </a>
+        </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
-
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Información General</h3>
-                    <p style="margin:0 0 0.5rem;"><strong>Fecha:</strong> {{ contrato.fecha_contrato }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Tipo:</strong> {{ contrato.tipo_contrato|default:"—" }}</p>
-                    <p style="margin:0;">
-                        <strong>Estado:</strong>
-                        <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:600;
-                            {% if contrato.estado_contrato == 'Disponible' %}background:#d1fae5;color:#065f46;
-                            {% elif contrato.estado_contrato == 'Vencido' %}background:#fee2e2;color:#991b1b;
-                            {% else %}background:#f3f4f6;color:#6b7280;{% endif %}">
+        <!-- Malla de Información (Grid de Paneles de Cristal) -->
+        <div class="info-grid">
+            
+            <!-- Panel 1: Información General -->
+            <div class="glass-panel">
+                <h3 class="panel-section-title">Información General</h3>
+                <div class="data-row">
+                    <span class="data-label">Fecha de Registro</span>
+                    <span class="data-value">{{ contrato.fecha_contrato|date:"d/m/Y" }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Tipo de Contrato</span>
+                    <span class="data-value">
+                        <span style="background: rgba(74, 122, 181, 0.15); color: #90cdf4; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                            {{ contrato.tipo_contrato|default:"—" }}
+                        </span>
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Estado Actual</span>
+                    <span class="data-value">
+                        <span class="badge-status {% if contrato.estado_contrato == 'Disponible' %}status-disponible{% elif contrato.estado_contrato == 'Activo' %}status-activo{% elif contrato.estado_contrato == 'Vencido' %}status-vencido{% else %}status-default{% endif %}">
                             {{ contrato.estado_contrato|default:"—" }}
                         </span>
-                    </p>
+                    </span>
                 </div>
-
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Partes</h3>
-                    <p style="margin:0 0 0.5rem;"><strong>Cliente:</strong> {{ contrato.id_cliente }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Documento:</strong> {{ contrato.id_cliente.documento_id }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Teléfono:</strong> {{ contrato.id_cliente.telefono|default:"—" }}</p>
-                    <p style="margin:0;"><strong>Dirección:</strong> {{ contrato.id_cliente.direccion|default:"—" }}</p>
-                </div>
-
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Artículo</h3>
-                    <p style="margin:0 0 0.5rem;"><strong>Nombre:</strong> {{ contrato.id_articulo }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Categoría:</strong> {{ contrato.id_articulo.get_categoria_display }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Quilataje:</strong> {{ contrato.id_articulo.quilataje|default:"N/A" }}</p>
-                    <p style="margin:0;"><strong>Precio sugerido:</strong> ${{ contrato.id_articulo.precio_sugerido_venta }}</p>
-                </div>
-
-                {% if contrato.id_empeno %}
-                <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);">
-                    <h3 style="margin:0 0 1rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#4a7ab5;">Empeño Vinculado</h3>
-                    <p style="margin:0 0 0.5rem;"><strong>Empeño #:</strong> {{ contrato.id_empeno.id_empeno }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Monto prestado:</strong> ${{ contrato.id_empeno.monto_prestado }}</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Tasa interés:</strong> {{ contrato.id_empeno.tasa_interes }}%</p>
-                    <p style="margin:0 0 0.5rem;"><strong>Vencimiento:</strong> {{ contrato.id_empeno.fecha_vencimiento }}</p>
-                    <p style="margin:0;"><strong>Estado:</strong> {{ contrato.id_empeno.estado }}</p>
-                </div>
-                {% endif %}
-
             </div>
 
-            <div style="margin-top:1rem;display:flex;gap:1rem;">
-                <a href="{% url 'home' %}" class="btn-hero-secundario">← Volver al inicio</a>
-                <a href="{% url 'contratos:eliminar' contrato.id_contrato %}" style="padding:0.6rem 1.2rem;background:#fee2e2;color:#991b1b;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;">🗑️ Eliminar</a>
+            <!-- Panel 2: Partes -->
+            <div class="glass-panel">
+                <h3 class="panel-section-title">Información del Cliente</h3>
+                <div class="data-row">
+                    <span class="data-label">Cliente</span>
+                    <span class="data-value" style="color: #63b3ed;">{{ contrato.id_cliente }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Documento ID</span>
+                    <span class="data-value" style="font-family: monospace;">{{ contrato.id_cliente.documento_id }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Teléfono</span>
+                    <span class="data-value">{{ contrato.id_cliente.telefono|default:"—" }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Dirección</span>
+                    <span class="data-value">{{ contrato.id_cliente.direccion|default:"—" }}</span>
+                </div>
             </div>
+
+            <!-- Panel 3: Artículo -->
+            <div class="glass-panel">
+                <h3 class="panel-section-title">Detalles del Artículo</h3>
+                <div class="data-row">
+                    <span class="data-label">Nombre</span>
+                    <span class="data-value">{{ contrato.id_articulo }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Categoría</span>
+                    <span class="data-value">{{ contrato.id_articulo.get_categoria_display }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Quilataje</span>
+                    <span class="data-value">{{ contrato.id_articulo.quilataje|default:"N/A" }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Precio Sugerido Venta</span>
+                    <span class="data-value" style="color: #34d399;">${{ contrato.id_articulo.precio_sugerido_venta }}</span>
+                </div>
+            </div>
+
+            <!-- Panel 4: Empeño Vinculado (Opcional) -->
+            {% if contrato.id_empeno %}
+            <div class="glass-panel">
+                <h3 class="panel-section-title">Empeño Vinculado</h3>
+                <div class="data-row">
+                    <span class="data-label">Número de Empeño</span>
+                    <span class="data-value" style="font-family: monospace; color: #90cdf4;">#{{ contrato.id_empeno.id_empeno }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Monto Prestado</span>
+                    <span class="data-value" style="color: #34d399;">${{ contrato.id_empeno.monto_prestado }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Tasa de Interés</span>
+                    <span class="data-value">{{ contrato.id_empeno.tasa_interes }}%</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Fecha Vencimiento</span>
+                    <span class="data-value">{{ contrato.id_empeno.fecha_vencimiento|date:"d/m/Y" }}</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Estado de Prenda</span>
+                    <span class="data-value">{{ contrato.id_empeno.estado }}</span>
+                </div>
+            </div>
+            {% endif %}
 
         </div>
+
+        <!-- Fila de Controles Inferiores -->
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; align-items: center;">
+            <a href="{% url 'home' %}" class="btn-action-secondary">← Volver al Inicio</a>
+            {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
+            <a href="{% url 'contratos:eliminar' contrato.id_contrato %}" class="btn-action-danger">
+                🗑️ Eliminar Contrato
+            </a>
+            {% endif %}
+        </div>
+
     </div>
 </div>
-
-<script src="{% static 'js/landing.js' %}"></script>
-<script>
-// Actualizar badge de notificaciones cada 30 segundos
-    setInterval(() => {
-        fetch('/notificaciones/conteo/')
-            .then(r => r.json())
-            .then(data => {
-                let badge = document.getElementById('notif-badge');
-                if (data.count > 0) {
-                    if (badge) {
-                        badge.textContent = data.count;
-                    } else {
-                        location.reload();
-                    }
-                } else if (badge) {
-                    badge.remove();
-                }
-            }).catch(() => {});
-    }, 30000);
-</script>
-</body>
-</html>
+{% endblock %}
