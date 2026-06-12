@@ -1,0 +1,1 @@
+web: gunicorn diamant_azul.wsgi:application

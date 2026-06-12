@@ -38,9 +38,10 @@ db.sqlite3
 db.sqlite3-journal
 # Carpeta donde se suben archivos de usuario (fotos, PDFs, etc)
 media/
-# Carpeta donde se recolectan los estáticos para producción
+# Carpeta donde se recolectan los estáticos para producción (WhiteNoise la creará en Railway)
 staticfiles/
-static/
+
+# NOTA: La carpeta 'static/' original NO debe ir aquí para que tus CSS y JS suban a GitHub.
 
 # --- BASE DE DATOS (MySQL/Otros) ---
 # Si exportas tu base de datos MySQL a un .sql, no lo subas
