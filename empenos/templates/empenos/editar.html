@@ -9,40 +9,42 @@
     <link rel="stylesheet" href="{% static 'css/landing.css' %}">
     <style>
         /* ==========================================================================
-           RESTRUCTURACIÓN DE DISEÑO - VISTA EDICIÓN
+           RESTRUCTURACIÓN PREMIUM - DIAMANTE AZUL (MODO OSCURO TRASLÚCIDO)
            ========================================================================== */
         
-        /* Asegura que el body use flex para empujar el footer o centrar contenido si es necesario */
         body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            background-color: #f4f6f9;
+            background-color: #0b0f19; /* Fondo oscuro profundo característico */
             margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
 
-        /* Centrado absoluto de la tarjeta en pantalla */
+        /* Contenedor con margen superior de seguridad para el navbar fijo */
         .auth-container {
             display: flex;
             align-items: center;
             justify-content: center;
             flex: 1;
-            padding: 2rem 1rem;
+            padding: 120px 1rem 3rem 1rem; 
             box-sizing: border-box;
         }
 
-        /* Caja del formulario controlada y simétrica */
+        /* Caja del formulario con efecto Glassmorphism */
         .auth-box {
-            max-width: 600px;
+            max-width: 620px;
             width: 100%;
             padding: 2.5rem;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            background: rgba(20, 26, 40, 0.4);
+            border-radius: 20px;
+            border: 1px solid rgba(74, 122, 181, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
             box-sizing: border-box;
         }
 
-        /* Ajustes de campos e inputs individuales */
+        /* Campos e Inputs unificados */
         .auth-field {
             margin-bottom: 1.25rem;
             width: 100%;
@@ -54,32 +56,41 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            font-size: 0.9rem;
-            color: #343a40;
+            font-size: 0.85rem;
+            color: #a0aec0;
+            letter-spacing: 0.02em;
         }
 
         .auth-field input,
         .auth-field select,
+        .auth-field textarea,
         .auth-input {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            background-color: #fff;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(74, 122, 181, 0.25) !important;
+            border-radius: 10px !important;
+            background-color: rgba(0, 0, 0, 0.2) !important;
+            color: #fff !important;
             font-size: 0.95rem;
             height: 3rem;
             box-sizing: border-box;
             display: block;
-            transition: border-color 0.2s ease-in-out;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .auth-field textarea {
+            height: auto !important;
         }
 
         .auth-field input:focus,
-        .auth-field select:focus {
+        .auth-field select:focus,
+        .auth-input:focus {
             outline: none;
-            border-color: #4a7ab5;
+            border-color: #63b3ed !important;
+            box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
         }
 
-        /* Grilla simétrica de doble columna */
+        /* Grilla simétrica adaptativa */
         .auth-grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -93,60 +104,104 @@
             }
         }
 
-        /* Estilos Limpios para Modales AJAX */
+        /* Modales estilo Cristal de la Suite */
         .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(5, 8, 15, 0.8);
             z-index: 1000;
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            backdrop-filter: blur(4px);
         }
         .modal-overlay.activo { display: flex; }
+        
         .modal-box {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 2rem;
+            background: #111622;
+            border: 1px solid rgba(74, 122, 181, 0.2);
+            border-radius: 18px;
+            padding: 2.2rem;
             width: 100%;
-            max-width: 500px;
+            max-width: 520px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             position: relative;
             box-sizing: border-box;
+            color: #f3f4f6;
         }
+        
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.25rem;
-            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(74, 122, 181, 0.15);
             padding-bottom: 0.75rem;
         }
+        
         .modal-cerrar {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
-            color: #6c757d;
+            color: #a0aec0;
             line-height: 1;
+            transition: color 0.2s;
         }
-        .modal-cerrar:hover { color: #dc3545; }
+        .modal-cerrar:hover { color: #ff6b6b; }
         
+        /* Alertas de error estilizadas */
         .auth-error {
-            color: #dc3545;
+            color: #ff6b6b;
             font-size: 0.8rem;
             display: block;
-            margin-top: 4px;
+            margin-top: 5px;
             font-weight: 500;
+        }
+
+        /* Botonera de Acción Integrada */
+        .btn-submit-premium {
+            background: #4a7ab5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(74, 122, 181, 0.2);
+        }
+        .btn-submit-premium:hover {
+            background: #3b659c;
+        }
+        .btn-submit-premium:active {
+            transform: scale(0.98);
+        }
+
+        .btn-cancel-premium {
+            background: rgba(74, 122, 181, 0.1);
+            color: #a0aec0;
+            border: 1px solid rgba(74, 122, 181, 0.15);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-cancel-premium:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ff6b6b;
+            border-color: rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
 <body>
 
-<nav class="navbar">
+<!-- NAVBAR DE NAVEGACIÓN -->
+<nav class="navbar" style="position: fixed; top: 0; width: 100%; z-index: 999; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(74, 122, 181, 0.12); display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2rem; box-sizing: border-box;">
     <a href="{% url 'home' %}" class="navbar-logo" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
         <svg viewBox="0 0 36 36" fill="none" width="32" height="32" style="display: inline-block; vertical-align: middle;">
             <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="2"/>
@@ -155,24 +210,24 @@
             <line x1="18" y1="6" x2="18" y2="30" stroke="#4a7ab5" stroke-width="1.5"/>
             <line x1="8" y1="13" x2="28" y2="13" stroke="#4a7ab5" stroke-width="1.5"/>
         </svg>
-        <span style="font-weight: 700; font-size: 1.25rem; color: #2d3748; letter-spacing: -0.5px;">Diamante Azul</span>
+        <span style="font-weight: 700; font-size: 1.25rem; color: #fff; letter-spacing: -0.5px;">Diamante Azul</span>
     </a>
     <div class="navbar-links">
-        <a href="{% url 'empenos:listar' %}" class="btn-clear">Volver al Listado</a>
+        <a href="{% url 'empenos:listar' %}" class="btn-clear" style="color: #63b3ed; text-decoration: none; font-size: 0.9rem; font-weight: 600;">Volver al Listado</a>
     </div>
 </nav>
 
 <div class="auth-container">
     <div class="auth-box">
-        <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.65rem; color: #1a202c;">📝 Editar Empeño #{{ empeno.id_empeno }}</h2>
-        <p class="auth-subtitle" style="margin-top: 0; margin-bottom: 2rem; color: #718096; font-size: 0.9rem; line-height: 1.4;">
-            Modifica la información general del contrato sin alterar los valores financieros protegidos.
+        <h2 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.5rem; color: #fff; font-weight: 600;">📝 Editar Empeño #{{ empeno.id_empeno }}</h2>
+        <p class="auth-subtitle" style="margin-top: 0; margin-bottom: 2rem; color: #a0aec0; font-size: 0.88rem; line-height: 1.5;">
+            Modifica los parámetros contractuales y asignaciones operativas de este folio sin alterar los historiales de caja protegidos.
         </p>
 
         {% if messages %}
         <div class="auth-messages" style="margin-bottom: 1.25rem;">
             {% for msg in messages %}
-            <div class="auth-alert auth-alert-{{ msg.tags }}" style="padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.88rem; margin-bottom: 0.5rem;">{{ msg }}</div>
+            <div class="auth-alert auth-alert-{{ msg.tags }}" style="padding: 0.75rem 1rem; background: rgba(74, 122, 181, 0.1); border: 1px solid rgba(74, 122, 181, 0.2); color: #63b3ed; border-radius: 8px; font-size: 0.88rem; margin-bottom: 0.5rem;">{{ msg }}</div>
             {% endfor %}
         </div>
         {% endif %}
@@ -180,35 +235,39 @@
         <form method="POST" id="form-editar-empeno">
             {% csrf_token %}
 
+            <!-- SELECCIÓN CLIENTE -->
             <div class="auth-field">
-                <label class="auth-label">{{ form.id_cliente.label }} *</label>
+                <label class="auth-label">Cliente Asociado *</label>
                 {{ form.id_cliente }}
                 {% if form.id_cliente.errors %}<span class="auth-error">{{ form.id_cliente.errors|join:", " }}</span>{% endif %}
             </div>
 
+            <!-- ARTÍCULO CON MUTACIÓN AJAX -->
             <div class="auth-field">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                     <label class="auth-label" style="margin: 0;">📦 Artículo Vinculado *</label>
-                    <button type="button" onclick="abrirModal('modal-articulo')" style="background: none; border: none; color: #4a7ab5; font-size: 0.85rem; cursor: pointer; font-weight: 600; padding: 0;">🔄 Cambiar Artículo</button>
+                    <button type="button" onclick="abrirModal('modal-articulo')" style="background: none; border: none; color: #63b3ed; font-size: 0.82rem; cursor: pointer; font-weight: 600; padding: 0;">+ Registrar Nuevo Artículo</button>
                 </div>
                 {{ form.id_articulo }}
                 {% if form.id_articulo.errors %}<span class="auth-error">{{ form.id_articulo.errors|join:", " }}</span>{% endif %}
             </div>
 
+            <!-- MONTOS -->
             <div class="auth-grid-2">
                 <div class="auth-field">
-                    <label class="auth-label">{{ form.monto_prestado.label }}</label>
+                    <label class="auth-label">Monto Prestado ($)</label>
                     {{ form.monto_prestado }}
                 </div>
                 <div class="auth-field">
-                    <label class="auth-label">{{ form.monto_entregado.label }}</label>
+                    <label class="auth-label">Monto Entregado ($)</label>
                     {{ form.monto_entregado }}
                 </div>
             </div>
 
+            <!-- INTERÉS Y VENCIMIENTO -->
             <div class="auth-grid-2">
                 <div class="auth-field">
-                    <label class="auth-label">{{ form.tasa_interes.label }}</label>
+                    <label class="auth-label">Tasa Interés (%)</label>
                     {{ form.tasa_interes }}
                 </div>
                 <div class="auth-field">
@@ -218,31 +277,33 @@
                 </div>
             </div>
 
+            <!-- TIPOS Y ESTADOS -->
             <div class="auth-grid-2">
                 <div class="auth-field">
                     <label class="auth-label">Tipo de Contrato</label>
                     {{ form.tipo_contrato }}
                 </div>
                 <div class="auth-field">
-                    <label class="auth-label">Estado del Empeño *</label>
+                    <label class="auth-label">Estado de Operación *</label>
                     {{ form.estado }}
                     {% if form.estado.errors %}<span class="auth-error">{{ form.estado.errors|join:", " }}</span>{% endif %}
                 </div>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 1.75rem;">
-                <button type="submit" class="btn-login" style="flex: 1; padding: 0.7rem; height: 3rem; font-weight: 600; cursor: pointer;">Guardar Cambios</button>
-                <a href="{% url 'empenos:listar' %}" class="btn-hero-secundario" style="flex: 1; text-align: center; padding: 0.7rem; height: 3rem; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; font-weight: 600;">Cancelar</a>
+            <!-- CONTROLES DE ENVÍO -->
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-submit-premium" style="flex: 1; height: 3rem;">Guardar Cambios</button>
+                <a href="{% url 'empenos:listar' %}" class="btn-cancel-premium" style="flex: 1; height: 3rem; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
 
-{# ── MODAL NUEVO ARTÍCULO ── #}
+{# ── MODAL COMPLEMENTARIO: REGISTRO DE ARTÍCULO EXPRESS ── #}
 <div class="modal-overlay" id="modal-articulo">
     <div class="modal-box">
         <div class="modal-header">
-            <h3 style="margin:0; font-size:1.2rem; color:#2d3748;">📦 Registrar y Vincular Artículo</h3>
+            <h3 style="margin:0; font-size:1.15rem; color:#fff; font-weight: 600;">📦 Registrar y Vincular Artículo</h3>
             <button class="modal-cerrar" onclick="cerrarModal('modal-articulo')">✕</button>
         </div>
         <div id="modal-articulo-mensaje"></div>
@@ -252,14 +313,14 @@
             <input type="text" id="ma-nombre" class="auth-input">
         </div>
         <div class="auth-field">
-            <label class="auth-label">Descripción</label>
-            <textarea id="ma-descripcion" class="auth-input" rows="2" style="height:auto; padding:0.5rem; font-family:inherit;"></textarea>
+            <label class="auth-label">Descripción o Características</label>
+            <textarea id="ma-descripcion" class="auth-input" rows="2" style="font-family:inherit;"></textarea>
         </div>
         
         <div class="auth-grid-2">
             <div class="auth-field">
                 <label class="auth-label">Categoría *</label>
-                <select id="ma-categoria" class="auth-input">
+                <select id="ma-categoria" class="auth-input" onchange="evaluarQuilataje(this.value)">
                     <option value="">— Seleccionar —</option>
                     <option value="Bicicletas">Bicicletas</option>
                     <option value="Neveras">Neveras</option>
@@ -283,8 +344,8 @@
             </div>
             <div class="auth-field">
                 <label class="auth-label">Quilataje</label>
-                <select id="ma-quilataje" class="auth-input">
-                    <option value="">— N/A —</option>
+                <select id="ma-quilataje" class="auth-input" disabled>
+                    <option value="">— No Aplica —</option>
                     <option value="10">10k</option>
                     <option value="14">14k</option>
                     <option value="18">18k</option>
@@ -293,9 +354,9 @@
             </div>
         </div>
 
-        <div style="display:flex;gap:1rem;margin-top:1rem;">
-            <button type="button" onclick="guardarArticulo()" class="btn-login" style="flex:1;padding:0.7rem;height:3rem; cursor:pointer;">Guardar y Vincular</button>
-            <button type="button" onclick="cerrarModal('modal-articulo')" class="btn-hero-secundario" style="flex:1;padding:0.7rem;height:3rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">Cancelar</button>
+        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+            <button type="button" onclick="guardarArticulo()" class="btn-submit-premium" style="flex:1; height:3rem;">Registrar y Asignar</button>
+            <button type="button" onclick="cerrarModal('modal-articulo')" class="btn-cancel-premium" style="flex:1; height:3rem;">Cancelar</button>
         </div>
     </div>
 </div>
@@ -303,23 +364,37 @@
 <script src="{% static 'js/landing.js' %}"></script>
 <script>
     function abrirModal(id) { document.getElementById(id).classList.add('activo'); }
+    
     function cerrarModal(id) { 
         document.getElementById(id).classList.remove('activo'); 
         limpiarErroresModal(id);
+    }
+
+    /* Activa o desactiva de forma inteligente el selector de quilates */
+    function evaluarQuilataje(categoria) {
+        const selectQuilataje = document.getElementById('ma-quilataje');
+        if (categoria === 'Oro' || categoria === 'Plata') {
+            selectQuilataje.removeAttribute('disabled');
+            selectQuilataje.style.opacity = '1';
+        } else {
+            selectQuilataje.value = '';
+            selectQuilataje.setAttribute('disabled', 'true');
+            selectQuilataje.style.opacity = '0.5';
+        }
     }
 
     function limpiarErroresModal(idModal) {
         const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
         if (contenedorMensaje) contenedorMensaje.innerHTML = '';
         document.querySelectorAll(`#${idModal} .auth-input`).forEach(input => {
-            input.style.borderColor = '#ced4da';
+            input.style.borderColor = 'rgba(74, 122, 181, 0.25)';
         });
     }
 
     function mostrarErrorModal(idModal, mensaje) {
         const contenedorMensaje = document.getElementById(`${idModal}-mensaje`);
         if (contenedorMensaje) {
-            contenedorMensaje.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:0.75rem; border-radius:8px; margin-bottom:1rem; font-size:0.85rem; border:1px solid #fca5a5; text-align:left;">⚠️ ${mensaje}</div>`;
+            contenedorMensaje.innerHTML = `<div style="background:rgba(239, 68, 68, 0.15); color:#ff6b6b; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1.25rem; font-size:0.85rem; border:1px solid rgba(239, 68, 68, 0.25); text-align:left;">⚠️ ${mensaje}</div>`;
         }
     }
 
@@ -333,21 +408,22 @@
         const serie = document.getElementById('ma-serie').value.trim();
         const quilataje = document.getElementById('ma-quilataje').value;
 
+        // Validaciones UX nativas previas al fetch
         if (!nombre) {
-            document.getElementById('ma-nombre').style.borderColor = '#ef4444';
+            document.getElementById('ma-nombre').style.borderColor = '#ff6b6b';
             return mostrarErrorModal('modal-articulo', 'El nombre del artículo es obligatorio.');
         }
         if (!category) {
-            document.getElementById('ma-categoria').style.borderColor = '#ef4444';
+            document.getElementById('ma-categoria').style.borderColor = '#ff6b6b';
             return mostrarErrorModal('modal-articulo', 'Debes seleccionar una categoría válida.');
         }
         if (isNaN(precio) || precio <= 0) {
-            document.getElementById('ma-precio').style.borderColor = '#ef4444';
-            return mostrarErrorModal('modal-articulo', 'El precio sugerido debe ser un número mayor a cero.');
+            document.getElementById('ma-precio').style.borderColor = '#ff6b6b';
+            return mostrarErrorModal('modal-articulo', 'El precio sugerido de venta debe ser mayor a cero.');
         }
         if ((category === 'Oro' || category === 'Plata') && !quilataje) {
-            document.getElementById('ma-quilataje').style.borderColor = '#ef4444';
-            return mostrarErrorModal('modal-articulo', 'Para joyas de Oro o Plata el quilataje es obligatorio.');
+            document.getElementById('ma-quilataje').style.borderColor = '#ff6b6b';
+            return mostrarErrorModal('modal-articulo', 'El quilataje es obligatorio para metales preciosos (Oro/Plata).');
         }
 
         fetch('{% url "articulos:crear_ajax" %}', {
@@ -358,10 +434,14 @@
         .then(r => r.json())
         .then(data => {
             if(data.ok) {
+                // Resetear Formulario
                 document.querySelectorAll('#modal-articulo input, #modal-articulo textarea').forEach(input => input.value = '');
                 document.getElementById('ma-categoria').value = '';
-                document.getElementById('ma-quilataje').value = '';
+                const selectQuilataje = document.getElementById('ma-quilataje');
+                selectQuilataje.value = '';
+                selectQuilataje.setAttribute('disabled', 'true');
                 
+                // Inserción reactiva en el select principal de Django
                 const select = document.getElementById('id_id_articulo');
                 const opt = new Option(data.nombre, data.id, true, true);
                 select.add(opt);
@@ -372,7 +452,7 @@
                 for (const campo in data.error) {
                     errorMsg += `${data.error[campo]} `;
                 }
-                mostrarErrorModal('modal-articulo', errorMsg || "Error al registrar el artículo."); 
+                mostrarErrorModal('modal-articulo', errorMsg || "Error en los datos del servidor."); 
             }
         });
     }

@@ -5,52 +5,102 @@
 
 {% block extra_css %}
 <style>
-    .search-container {
-        background: #ffffff;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        margin-bottom: 30px;
-        border: 1px solid #e1e8ed;
+    /* Estructura base de inputs unificada al sistema de la suite */
+    .search-input-da {
+        padding: 10px 15px; 
+        border: 1px solid rgba(74, 122, 181, 0.2); 
+        border-radius: 8px; 
+        outline: none;
+        background: rgba(30, 41, 59, 0.5);
+        color: #fff;
+        font-size: 0.9rem;
+        transition: border-color 0.2s;
     }
-    .search-form { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
-    .search-group { display: flex; flex-direction: column; flex: 1; min-width: 200px; }
-    .search-group label { font-size: 0.9rem; font-weight: 600; color: #4a5568; margin-bottom: 8px; }
-    .search-group input, .search-group select { padding: 10px 15px; border: 2px solid #edf2f7; border-radius: 8px; outline: none; }
-    .btn-search { background-color: #3182ce; color: white; padding: 10px 25px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-clear { background-color: #edf2f7; color: #4a5568; padding: 10px 20px; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; }
+    .search-input-da:focus {
+        border-color: #3182ce;
+    }
+    .btn-search-da { 
+        background-color: #3182ce; 
+        color: white; 
+        padding: 0 25px; 
+        border: none; 
+        border-radius: 8px; 
+        font-weight: 600; 
+        cursor: pointer;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+    .btn-search-da:hover {
+        background-color: #2b6cb0;
+    }
+    .btn-clear-da { 
+        background-color: rgba(237, 242, 247, 0.1); 
+        color: #a0aec0; 
+        padding: 0 20px; 
+        border: 1px solid rgba(74, 122, 181, 0.2); 
+        border-radius: 8px; 
+        text-decoration: none; 
+        font-weight: 600; 
+        display: inline-flex; 
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        box-sizing: border-box;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-clear-da:hover {
+        background: rgba(237, 242, 247, 0.2);
+        color: #fff;
+    }
+    .tabla-da th, .tabla-da td {
+        padding: 15px;
+        border-bottom: 1px solid rgba(74, 122, 181, 0.1);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-page" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+<div class="dashboard-page" style="padding: 20px; padding-top: 90px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;">
     
-    <h2>📅 Control de Cuotas Generales</h2>
-    <p style="color: #718096; margin-bottom: 2rem;">Filtra, revisa y efectúa los cobros correspondientes a los rendimientos de empeños.</p>
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; color: #fff; font-weight: 600; letter-spacing: 0.03em;">📅 Control de Cuotas Generales</h2>
+        <p style="color: #a0aec0; margin-top: 0.4rem; font-size: 0.95rem;">Filtra, revisa y efectúa los cobros correspondientes a los rendimientos de empeños.</p>
+    </div>
 
-    <div class="search-container">
-        <form method="GET" class="search-form">
-            <div class="search-group">
-                <label>Buscar Cliente / ID</label>
-                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Ej: Juan Pérez o ID...">
+    <div style="background: rgba(74, 122, 181, 0.05); padding: 1.2rem; border-radius: 12px; border: 1px solid rgba(74, 122, 181, 0.15); margin-bottom: 2rem; width: 100%; box-sizing: border-box;">
+        <form method="GET" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            
+            <div style="display: flex; flex-direction: column; gap: 6px; flex: 2; min-width: 250px;">
+                <label style="font-size: 0.75rem; color: #4a7ab5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Buscar Cliente / ID</label>
+                <input type="text" name="q" class="search-input-da" value="{{ request.GET.q|default:'' }}" placeholder="Ej: Juan Pérez o ID del empeño...">
             </div>
-            <div class="search-group">
-                <label>Estado de Cuota</label>
-                <select name="estado">
-                    <option value="">Todos</option>
-                    <option value="Pendiente" {% if request.GET.estado == 'Pendiente' %}selected{% endif %}>Pendientes</option>
-                    <option value="Pagada" {% if request.GET.estado == 'Pagada' %}selected{% endif %}>Pagadas</option>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px;">
+                <label style="font-size: 0.75rem; color: #4a7ab5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Estado de Cuota</label>
+                <select name="estado" class="search-input-da" style="cursor: pointer; height: 40px;">
+                    <option value="" style="background: #1a202c;">Todos los Estados</option>
+                    <option value="Pendiente" {% if request.GET.estado == 'Pendiente' %}selected{% endif %} style="background: #1a202c;">Pendientes</option>
+                    <option value="Pagada" {% if request.GET.estado == 'Pagada' %}selected{% endif %} style="background: #1a202c;">Pagadas</option>
                 </select>
             </div>
-            <button type="submit" class="btn-search">🔍 Filtrar</button>
-            <a href="{% url 'cuotas:listar' %}" class="btn-clear">Limpiar</a>
+            
+            <div style="display: flex; gap: 0.5rem; height: 40px; align-items: flex-end;">
+                <button type="submit" class="btn-search-da">🔍 Filtrar</button>
+                
+                {% if request.GET.q or request.GET.estado %}
+                    <a href="{% url 'cuotas:listar' %}" class="btn-clear-da">Limpiar Filtros</a>
+                {% endif %}
+            </div>
         </form>
     </div>
 
-    <div style="background: white; border-radius:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid #e2e8f0;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <div style="background: rgba(20, 26, 40, 0.3); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); overflow-x: auto; border: 1px solid rgba(74, 122, 181, 0.15); width: 100%;">
+        <table class="tabla-da" style="width: 100%; border-collapse: collapse; text-align: left; color: #e2e8f0;">
             <thead>
-                <tr style="background: #f7fafc; border-bottom: 2px solid #edf2f7; color: #4a5568; font-size: 0.9rem;">
+                <tr style="background: rgba(74, 122, 181, 0.08); color: #4a7ab5; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
                     <th style="padding: 15px;">ID Cuota</th>
                     <th style="padding: 15px;">Cliente</th>
                     <th style="padding: 15px;">Artículo</th>
@@ -61,72 +111,99 @@
             </thead>
             <tbody>
                 {% for cuota in cuotas %}
-                <tr style="border-bottom: 1px solid #edf2f7; font-size: 0.95rem; color: #2d3748;">
-                    <td style="padding: 15px; font-weight: bold;">#{{ cuota.id_cuota }}</td>
-                    <td style="padding: 15px;">{{ cuota.id_empeno.id_cliente }}</td>
-                    <td style="padding: 15px; color: #718096;">{{ cuota.id_empeno.id_articulo }}</td>
+                <tr style="font-size: 0.95rem; background: rgba(255,255,255,0.01); transition: background 0.2s;" onmouseover="this.style.background='rgba(74, 122, 181, 0.03)'" onmouseout="this.style.background='rgba(255,255,255,0.01)'">
+                    <td style="padding: 15px; font-weight: 700; color: #cbd5e0;">#{{ cuota.id_cuota }}</td>
+                    <td style="padding: 15px; font-weight: 500;">{{ cuota.id_empeno.id_cliente }}</td>
+                    <td style="padding: 15px; color: #a0aec0;">{{ cuota.id_empeno.id_articulo }}</td>
                     
-                    <td style="padding: 15px; font-weight: bold; color: #2c5282;">
-                        ${{ cuota.total_cuota|floatformat:"0" }}
+                    <td style="padding: 15px; font-weight: 700; color: #63b3ed;">
+                        ${{ cuota.total_cuota|floatformat:"0" }} COP
                     </td>
                     
                     <td style="padding: 15px;">
                         {% if cuota.estado == 'Pagada' %}
-                            <span style="background: #c6f6d5; color: #22543d; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">Pagada</span>
+                            <span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(46, 204, 113, 0.3);">Pagada</span>
                         {% else %}
-                            <span style="background: #feebc8; color: #744210; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">Pendiente</span>
+                            <span style="background: rgba(246, 173, 85, 0.15); color: #f6ad55; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(246, 173, 85, 0.3);">Pendiente</span>
                         {% endif %}
                     </td>
-                    <td style="padding: 15px; text-align: center;">
+                    
+                    <td style="padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         {% if cuota.estado != 'Pagada' %}
-                            <button type="button" class="btn-search" style="padding: 6px 15px; font-size: 0.85rem;" 
+                            <button type="button" class="btn-search-da" style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
                                     onclick="abrirModalCobro('{{ cuota.id_cuota }}', '{{ cuota.id_empeno.id_cliente }}', '{{ cuota.id_empeno.id_articulo }}', '{{ cuota.total_cuota|floatformat:0 }}')">
                                 💷 Cobrar
                             </button>
                         {% else %}
-                            <span style="color: #cbd5e0; font-size: 0.85rem;">Completo</span>
+                            <span style="color: #718096; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">Completo</span>
                         {% endif %}
 
-                        <a href="{% url 'empenos:cuotas' cuota.id_empeno.id_empeno %}" title="Ver todas las cuotas" style="text-decoration:none; margin-left:10px; font-size:1.1rem;">💳</a>
+                        <a href="{% url 'empenos:cuotas' cuota.id_empeno.id_empeno %}" title="Ver historial del empeño" style="text-decoration: none; font-size: 1.1rem; filter: grayscale(30%); transition: filter 0.2s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(30%)'">💳</a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" style="padding: 40px; text-align: center; color: #a0aec0;">No se encontraron cuotas bajo estos criterios.</td>
+                    <td colspan="6" style="padding: 50px; text-align: center; color: #a0aec0; font-size: 0.95rem;">
+                        ❌ No se encontraron cuotas bajo estos criterios de búsqueda.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    {% if cuotas.has_other_pages %}
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 2rem; padding: 1rem 0;">
+        
+        {% if cuotas.has_previous %}
+            <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}" style="padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">« Primera</a>
+            <a href="?page={{ cuotas.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}" style="padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Anterior</a>
+        {% else %}
+            <span style="padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; color: #4a5568; font-size: 0.85rem; cursor: not-allowed;">Anterior</span>
+        {% endif %}
+
+        <span style="font-size: 0.9rem; color: #a0aec0; font-weight: 500; padding: 0 0.5rem;">
+            Página <strong style="color: #fff;">{{ cuotas.number }}</strong> de {{ cuotas.paginator.num_pages }}
+        </span>
+
+        {% if cuotas.has_next %}
+            <a href="?page={{ cuotas.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}" style="padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Siguiente</a>
+            <a href="?page={{ cuotas.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}" style="padding: 0.5rem 0.75rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(74,122,181,0.2); border-radius: 6px; color: #4a7ab5; text-decoration: none; font-weight: 600; font-size: 0.85rem;">Última »</a>
+        {% else %}
+            <span style="padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; color: #4a5568; font-size: 0.85rem; cursor: not-allowed;">Siguiente</span>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
-<div id="modal-contenedor-cobro" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; padding:1rem;">
-    <div style="background:#fff; border-radius:12px; padding:2rem; width:100%; max-width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.1); border-top: 4px solid #3182ce;">
-        <h3 style="margin-top:0; font-size:1.3rem;">💷 Confirmar Cobro de Cuota</h3>
-        <p style="color:#718096; font-size:0.9rem; margin-bottom:1.5rem;">Verifica la información antes de asentar el cobro definitivo en la caja general de Diamante Azul S.A.S.</p>
+<div id="modal-contenedor-cobro" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; align-items:center; justify-content:center; padding:1rem; backdrop-filter: blur(3px);">
+    <div style="background: #1e293b; border-radius:12px; padding:2rem; width:100%; max-width:450px; box-shadow:0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(74, 122, 181, 0.3); border-top: 4px solid #3182ce;">
+        <h3 style="margin-top:0; font-size:1.3rem; color: #fff; font-weight: 600;">💷 Confirmar Cobro de Cuota</h3>
+        <p style="color:#a0aec0; font-size:0.9rem; margin-bottom:1.5rem; line-height: 1.5;">Verifica la información antes de asentar el cobro definitivo en la caja general de Diamante Azul S.A.S.</p>
         
-        <div style="background:#f7fafc; padding:1rem; border-radius:8px; margin-bottom:1.5rem; text-align:left; border: 1px dashed #3182ce;">
-            <p style="margin: 4px 0;"><strong>Cliente:</strong> <span id="span-cliente-final"></span></p>
-            <p style="margin: 4px 0;"><strong>Artículo:</strong> <span id="span-articulo-final"></span></p>
-            <p style="margin: 4px 0;"><strong>Total a Recibir:</strong> <span id="span-total-final" style="font-weight:800; color:#3182ce;"></span></p>
+        <div style="background: rgba(74, 122, 181, 0.05); padding:1.2rem; border-radius:8px; margin-bottom:1.5rem; text-align:left; border: 1px dashed #3182ce; font-size: 0.95rem; color: #e2e8f0; line-height: 1.6;">
+            <p style="margin: 4px 0;"><strong>Cliente:</strong> <span id="span-cliente-final" style="color: #fff;"></span></p>
+            <p style="margin: 4px 0;"><strong>Artículo:</strong> <span id="span-articulo-final" style="color: #a0aec0;"></span></p>
+            <p style="margin: 4px 0;"><strong>Total a Recibir:</strong> <span id="span-total-final" style="font-weight:800; color:#63b3ed; font-size: 1.1rem;"></span></p>
         </div>
+        
         <form id="form-pago-definitivo" method="POST">
             {% csrf_token %}
-            <div style="display:flex; gap:1rem;">
-                <button type="submit" class="btn-search" style="flex:2;">✅ Confirmar</button>
-                <button type="button" onclick="cerrarModalCobro()" style="flex:1; background:#edf2f7; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Cerrar</button>
+            <div style="display:flex; gap:1rem; height: 42px;">
+                <button type="submit" class="btn-search-da" style="flex:2; height: 100%;">✅ Confirmar</button>
+                <button type="button" onclick="cerrarModalCobro()" style="flex:1; background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; font-weight:600; color: #cbd5e0; height: 100%;">Cerrar</button>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
     function abrirModalCobro(cuotaId, cliente, articulo, total) {
         document.getElementById('span-cliente-final').innerText = cliente;
         document.getElementById('span-articulo-final').innerText = articulo;
-        // Agrega formato de separación por miles colombiano de forma automática en la ventana flotante
-        document.getElementById('span-total-final').innerText = '$' + parseInt(total).toLocaleString('es-CO');
+        document.getElementById('span-total-final').innerText = '$' + parseInt(total).toLocaleString('es-CO') + ' COP';
         document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
         document.getElementById('modal-contenedor-cobro').style.display = 'flex';
     }
@@ -134,5 +211,4 @@
         document.getElementById('modal-contenedor-cobro').style.display = 'none';
     }
 </script>
-{% endblock %}
 {% endblock %}
