@@ -132,11 +132,13 @@
                         {% if cuota.estado != 'Pagada' %}
                             <button type="button" class="btn-search-da" 
                                     style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
-                                    data-id="{{ cuota.id_cuota }}"
-                                    data-cliente="{{ cuota.id_empeno.id_cliente }}"
-                                    data-articulo="{{ cuota.id_empeno.id_articulo }}"
-                                    data-total="{{ cuota.total_cuota|floatformat:0 }}"
-                                    onclick="manejarCobro(this)">
+                                    onclick="
+                                        document.getElementById('span-cliente-final').innerText = '{{ cuota.id_empeno.id_cliente }}';
+                                        document.getElementById('span-articulo-final').innerText = '{{ cuota.id_empeno.id_articulo }}';
+                                        document.getElementById('span-total-final').innerText = '${{ cuota.total_cuota|floatformat:0 }} COP';
+                                        document.getElementById('form-pago-definitivo').action = '/empenos/pagar/{{ cuota.id_cuota }}/';
+                                        document.getElementById('modal-contenedor-cobro').style.display = 'flex';
+                                    ">
                                 💷 Cobrar
                             </button>
                         {% else %}
