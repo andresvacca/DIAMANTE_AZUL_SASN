@@ -7,6 +7,7 @@ from django.utils.timezone import make_aware
 # Importaciones de modelos (es mejor tenerlas arriba si es posible)
 from empenos.models import Pago, Empeno
 from factura.models import Factura
+from datetime import datetime
 
 def cuadre_caja(request):
     # Verificación de permisos
@@ -15,7 +16,7 @@ def cuadre_caja(request):
         return redirect('usuarios:login')
 
     # 1. Obtener fechas del GET o usar hoy por defecto
-    hoy = timezone.now().date()
+    hoy = datetime.now().date()
     fecha_inicio_str = request.GET.get('fecha_inicio', str(hoy))
     fecha_fin_str    = request.GET.get('fecha_fin',    str(hoy))
 
