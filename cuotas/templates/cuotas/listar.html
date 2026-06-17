@@ -107,8 +107,8 @@
                     <th style="padding: 15px;">Monto Cuota</th>
                     <th style="padding: 15px;">Estado</th>
                     
-                    {# 🔑 Ocultar encabezado si el rol del usuario logueado es 'Cliente' #}
-                    {% if request.session.get.id_rol != 3 %}
+                    {# 🔑 Ocultar encabezado si el rol del usuario logueado es 'Cliente' (Rol 3) #}
+                    {% if request.session.usuario_rol_id != 3 %}
                         <th style="padding: 15px; text-align: center;">Acción</th>
                     {% endif %}
                 </tr>
@@ -132,19 +132,13 @@
                         {% endif %}
                     </td>
                     
-                    {# 🔑 Ocultar la celda con los botones si el rol del usuario logueado es 'Cliente' #}
-                    {% if request.session.get('id_rol') != 3 %}
+                    {# 🔑 Ocultar la celda completa con las acciones si el rol del usuario logueado es 'Cliente' (Rol 3) #}
+                    {% if request.session.usuario_rol_id != 3 %}
                         <td style="padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             {% if cuota.estado != 'Pagada' %}
                                 <button type="button" class="btn-search-da" 
                                         style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
-                                        onclick="
-                                            document.getElementById('span-cliente-final').innerText = '{{ cuota.id_empeno.id_cliente }}';
-                                            document.getElementById('span-articulo-final').innerText = '{{ cuota.id_empeno.id_articulo }}';
-                                            document.getElementById('span-total-final').innerText = '${{ cuota.total_cuota|floatformat:0 }} COP';
-                                            document.getElementById('form-pago-definitivo').action = '/empenos/pagar/{{ cuota.id_cuota }}/';
-                                            document.getElementById('modal-contenedor-cobro').style.display = 'flex';
-                                        ">
+                                        onclick="abrirModalCobro('{{ cuota.id_cuota }}', '{{ cuota.id_empeno.id_cliente }}', '{{ cuota.id_empeno.id_articulo }}', '{{ cuota.total_cuota }}')">
                                     💷 Cobrar
                                 </button>
                             {% else %}
@@ -225,7 +219,7 @@
             document.getElementById('span-total-final').innerText = '$' + totalFormateado + ' COP';
         }
 
-        document.getElementById('form-pago-definitivo').action = '/cuotas/pagar/' + cuotaId + '/';
+        document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
         
         let modal = document.getElementById('modal-contenedor-cobro');
         modal.style.setProperty('display', 'flex', 'important');
