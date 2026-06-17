@@ -169,3 +169,8 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'avacca853@gmail.com'
 EMAIL_HOST_PASSWORD = 'qivl rcrv pzoi mwbt'
+
+# Añade esto en tu settings.py
+CSRF_TRUSTED_ORIGINS = [
+    'https://diamanteazulsasn-production.up.railway.app',
+]
