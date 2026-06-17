@@ -16,4 +16,5 @@ urlpatterns = [
     path('panel-reportes/', views.pagina_reportes, name='pagina_reportes'),
     path('empeno/<int:id_empeno>/abono/', views.registrar_abono, name='registrar_abono'),
     path('retirar/<int:empeno_id>/', views.retirar_empeno, name='retirar'),
+    path('pagar-multiples/<int:id_empeno>/', views.pagar_multiples, name='pagar_multiples'),
 ]
