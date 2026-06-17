@@ -106,7 +106,11 @@
                     <th style="padding: 15px;">Artículo</th>
                     <th style="padding: 15px;">Monto Cuota</th>
                     <th style="padding: 15px;">Estado</th>
-                    <th style="padding: 15px; text-align: center;">Acción</th>
+                    
+                    {# 🔑 Ocultar encabezado si el rol del usuario logueado es 'Cliente' #}
+                    {% if request.user.id_rol.nombre != 'Cliente' %}
+                        <th style="padding: 15px; text-align: center;">Acción</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -128,25 +132,28 @@
                         {% endif %}
                     </td>
                     
-                    <td style="padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        {% if cuota.estado != 'Pagada' %}
-                            <button type="button" class="btn-search-da" 
-                                    style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
-                                    onclick="
-                                        document.getElementById('span-cliente-final').innerText = '{{ cuota.id_empeno.id_cliente }}';
-                                        document.getElementById('span-articulo-final').innerText = '{{ cuota.id_empeno.id_articulo }}';
-                                        document.getElementById('span-total-final').innerText = '${{ cuota.total_cuota|floatformat:0 }} COP';
-                                        document.getElementById('form-pago-definitivo').action = '/empenos/pagar/{{ cuota.id_cuota }}/';
-                                        document.getElementById('modal-contenedor-cobro').style.display = 'flex';
-                                    ">
-                                💷 Cobrar
-                            </button>
-                        {% else %}
-                            <span style="color: #718096; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">Completo</span>
-                        {% endif %}
+                    {# 🔑 Ocultar la celda con los botones si el rol del usuario logueado es 'Cliente' #}
+                    {% if request.user.id_rol.nombre != 'Cliente' %}
+                        <td style="padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            {% if cuota.estado != 'Pagada' %}
+                                <button type="button" class="btn-search-da" 
+                                        style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
+                                        onclick="
+                                            document.getElementById('span-cliente-final').innerText = '{{ cuota.id_empeno.id_cliente }}';
+                                            document.getElementById('span-articulo-final').innerText = '{{ cuota.id_empeno.id_articulo }}';
+                                            document.getElementById('span-total-final').innerText = '${{ cuota.total_cuota|floatformat:0 }} COP';
+                                            document.getElementById('form-pago-definitivo').action = '/empenos/pagar/{{ cuota.id_cuota }}/';
+                                            document.getElementById('modal-contenedor-cobro').style.display = 'flex';
+                                        ">
+                                    💷 Cobrar
+                                </button>
+                            {% else %}
+                                <span style="color: #718096; font-size: 0.85rem; font-weight: 500; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px;">Completo</span>
+                            {% endif %}
 
-                        <a href="{% url 'empenos:cuotas' cuota.id_empeno.id_empeno %}" title="Ver historial del empeño" style="text-decoration: none; font-size: 1.1rem; filter: grayscale(30%); transition: filter 0.2s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(30%)'">💳</a>
-                    </td>
+                            <a href="{% url 'empenos:cuotas' cuota.id_empeno.id_empeno %}" title="Ver historial del empeño" style="text-decoration: none; font-size: 1.1rem; filter: grayscale(30%); transition: filter 0.2s;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(30%)'">💳</a>
+                        </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
@@ -208,26 +215,18 @@
 {% block extra_js %}
 <script>
     function abrirModalCobro(cuotaId, cliente, articulo, total) {
-        console.log("Abriendo modal para cuota ID:", cuotaId); // Para verificar que el clic responde
+        console.log("Abriendo modal para cuota ID:", cuotaId);
         
-        // Asignamos los textos de forma segura
         document.getElementById('span-cliente-final').innerText = cliente;
         document.getElementById('span-articulo-final').innerText = articulo;
         
-        // Formatear el total a pesos colombianos de forma limpia
         if (total) {
             let totalFormateado = parseInt(total).toLocaleString('es-CO');
             document.getElementById('span-total-final').innerText = '$' + totalFormateado + ' COP';
         }
 
-        // ⚠️ VERIFICA AQUÍ: Cambia esta ruta si tu url de pagos pertenece a 'cuotas' o a 'empenos'
-        // Si en tus urls.py tienes path('pagar/<int:cuota_id>/', ... name='pagar') dentro de cuotas:
         document.getElementById('form-pago-definitivo').action = '/cuotas/pagar/' + cuotaId + '/';
         
-        // Si confirmas que la url de tu backend sí es de la app empenos, déjala así:
-        // document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
-
-        // Mostramos el modal usando flex de forma explícita
         let modal = document.getElementById('modal-contenedor-cobro');
         modal.style.setProperty('display', 'flex', 'important');
     }
@@ -236,7 +235,6 @@
         document.getElementById('modal-contenedor-cobro').style.display = 'none';
     }
 
-    // Cerrar el modal automáticamente si el usuario hace clic por fuera del cuadro oscuro
     window.onclick = function(event) {
         let modal = document.getElementById('modal-contenedor-cobro');
         if (event.target == modal) {
