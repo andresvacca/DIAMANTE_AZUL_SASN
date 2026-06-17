@@ -21,10 +21,10 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = 'django-insecure-+i(jck_*!wi@v+#fxj#x!!2q-30)x7r&-z=d)iuw6r6hqs&26z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.railway.app', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -104,7 +104,8 @@ INSTALLED_APPS += [
     'django_celery_results',
 ]
 
-CELERY_BROKER_URL = 'sqla+mysql://root:@localhost/diamante_azul'
+"""CELERY_BROKER_URL = 'sqla+mysql://root:@localhost/diamante_azul'"""
+CELERY_BROKER_URL = f"sqla+mysql://{os.getenv('MYSQLUSER')}:{os.getenv('MYSQLPASSWORD')}@{os.getenv('MYSQLHOST')}:{os.getenv('MYSQLPORT')}/{os.getenv('MYSQLDATABASE')}"
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
