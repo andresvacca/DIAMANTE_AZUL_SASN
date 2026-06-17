@@ -1,13 +1,11 @@
-import datetime
+import datetime  # Dejamos solo este para usar datetime.datetime, datetime.time, etc.
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.db.models import Sum
-from django.utils.timezone import make_aware
 
-# Importaciones de modelos (es mejor tenerlas arriba si es posible)
+# Importaciones de modelos
 from empenos.models import Pago, Empeno
 from factura.models import Factura
-from datetime import datetime
 
 def cuadre_caja(request):
     # Verificación de permisos
@@ -15,8 +13,8 @@ def cuadre_caja(request):
     if not (_requiere_admin(request) or _requiere_empleado(request)):
         return redirect('usuarios:login')
 
-    # 1. Obtener fechas del GET o usar hoy por defecto
-    hoy = datetime.now().date()
+    # 1. Obtener fechas del GET o usar hoy por defecto usando el módulo datetime
+    hoy = datetime.date.today()
     fecha_inicio_str = request.GET.get('fecha_inicio', str(hoy))
     fecha_fin_str    = request.GET.get('fecha_fin',    str(hoy))
 
@@ -26,12 +24,12 @@ def cuadre_caja(request):
     except ValueError:
         fecha_inicio_obj = fecha_fin_obj = hoy
 
-    # 2. Convertir fechas a Datetime "Aware" (con zona horaria)
-    # Esto asegura que capturemos desde las 00:00:00 del inicio hasta las 23:59:59 del fin
-    d_inicio = make_aware(datetime.datetime.combine(fecha_inicio_obj, datetime.time.min))
-    d_final  = make_aware(datetime.datetime.combine(fecha_fin_obj, datetime.time.max))
+    # 2. Convertir fechas a Datetime sin "make_aware" (Naive) para MySQL con USE_TZ = False
+    # Esto captura desde las 00:00:00 del inicio hasta las 23:59:59 del fin perfectamente
+    d_inicio = datetime.datetime.combine(fecha_inicio_obj, datetime.time.min)
+    d_final  = datetime.datetime.combine(fecha_fin_obj, datetime.time.max)
 
-    # 3. Consultas usando __range para evitar errores de zona horaria
+    # 3. Consultas usando __range 
     
     # Pagos recibidos (Entradas)
     pagos = Pago.objects.filter(fecha_pago__range=(d_inicio, d_final))
@@ -49,7 +47,6 @@ def cuadre_caja(request):
     cantidad_facturas = facturas_rango.count()
 
     # 4. Cálculos de Balance
-    # Convertimos a float para asegurar que la operación matemática sea correcta
     entradas = float(total_pagos) + float(total_facturas)
     salidas  = float(total_prestamos)
     balance  = entradas - salidas
@@ -59,7 +56,6 @@ def cuadre_caja(request):
 
     # 6. Renderizado
     return render(request, 'cuadre/index.html', {
-        # Enviamos las fechas formateadas para que los <input type="date"> las reconozcan
         'fecha_inicio':     fecha_inicio_obj.strftime('%Y-%m-%d'),
         'fecha_fin':        fecha_fin_obj.strftime('%Y-%m-%d'),
         
