@@ -20,6 +20,7 @@ urlpatterns = [
     path('cuotas/', include('cuotas.urls')),
     path('compras/', include('compras.urls')),
     path('notificaciones/', include('notificaciones.urls')),
+    path('cuadre/', include('cuadre.urls')),
     path('test-500/', views.error_500_view, name='test_500'),
 ]
 
