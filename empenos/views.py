@@ -313,10 +313,10 @@ def detalle_empeno(request, id_empeno):
 
 
 def registrar_pago(request, id_cuota):
+    # 🚨 BLOQUEO ABSOLUTO: Si no es Admin ni Empleado, o si es un Cliente (Rol 3), se le niega el acceso
     if not (_requiere_admin(request) or _requiere_empleado(request)):
-        usuario_rol_id = request.session.get('usuario_rol_id')
-        if usuario_rol_id != 3:
-            return redirect('usuarios:login')
+        messages.error(request, 'No tienes permisos para realizar cobros en el sistema.')
+        return redirect('cuotas:listar')
 
     cuota = get_object_or_404(Cuota, pk=id_cuota)
 
@@ -327,7 +327,7 @@ def registrar_pago(request, id_cuota):
     if request.method == 'POST':
         from decimal import Decimal
         
-        # 1. Registramos el objeto Pago de tu app de empeños
+        # Registramos el objeto Pago de tu app de empeños
         pago_objeto = Pago.objects.create(
             id_cuota   = cuota,
             id_cliente = cuota.id_empeno.id_cliente,
@@ -343,13 +343,10 @@ def registrar_pago(request, id_cuota):
         empeno.save()
         _sincronizar_articulo(empeno)
 
-        # ==========================================================================
-        # 🌟 EXTRACCIÓN SEGURA DEL USUARIO LOGUEADO MANUALMENTE
-        # ==========================================================================
+        # Extracción segura del usuario logueado manualmente
         from factura.views import generar_factura_automatica
-        from usuarios.models import Usuario  # Asegúrate de que apunte bien a tu modelo
+        from usuarios.models import Usuario
         
-        # Intentamos sacar el ID del usuario que guardaste en la sesión al loguearse
         usuario_id_sesion = request.session.get('usuario_id') or request.session.get('user_id')
         
         usuario_operador = None
@@ -359,17 +356,13 @@ def registrar_pago(request, id_cuota):
             except Usuario.DoesNotExist:
                 pass
         
-        # Plan de respaldo: Si request.user es válido lo usa, si no, agarra el primer usuario del sistema para no frenar la caja
         if not usuario_operador and not request.user.is_anonymous:
             usuario_operador = request.user
         elif not usuario_operador:
             usuario_operador = Usuario.objects.first() 
-        # ==========================================================================
 
-        # Calculamos el monto total recaudado
         monto_total_pago = cuota.capital + cuota.interes
         
-        # Disparamos la factura automática con el operador real verificado
         generar_factura_automatica(
             usuario=usuario_operador, 
             cliente=empeno.id_cliente,
