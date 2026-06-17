@@ -130,8 +130,13 @@
                     
                     <td style="padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         {% if cuota.estado != 'Pagada' %}
-                            <button type="button" class="btn-search-da" style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
-                                    onclick="abrirModalCobro('{{ cuota.id_cuota }}', '{{ cuota.id_empeno.id_cliente }}', '{{ cuota.id_empeno.id_articulo }}', '{{ cuota.total_cuota|floatformat:0 }}')">
+                            <button type="button" class="btn-search-da" 
+                                    style="padding: 0 15px; font-size: 0.8rem; height: 32px; border-radius: 6px;" 
+                                    data-id="{{ cuota.id_cuota }}"
+                                    data-cliente="{{ cuota.id_empeno.id_cliente }}"
+                                    data-articulo="{{ cuota.id_empeno.id_articulo }}"
+                                    data-total="{{ cuota.total_cuota|floatformat:0 }}"
+                                    onclick="manejarCobro(this)">
                                 💷 Cobrar
                             </button>
                         {% else %}
