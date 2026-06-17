@@ -201,14 +201,40 @@
 {% block extra_js %}
 <script>
     function abrirModalCobro(cuotaId, cliente, articulo, total) {
+        console.log("Abriendo modal para cuota ID:", cuotaId); // Para verificar que el clic responde
+        
+        // Asignamos los textos de forma segura
         document.getElementById('span-cliente-final').innerText = cliente;
         document.getElementById('span-articulo-final').innerText = articulo;
-        document.getElementById('span-total-final').innerText = '$' + parseInt(total).toLocaleString('es-CO') + ' COP';
-        document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
-        document.getElementById('modal-contenedor-cobro').style.display = 'flex';
+        
+        // Formatear el total a pesos colombianos de forma limpia
+        if (total) {
+            let totalFormateado = parseInt(total).toLocaleString('es-CO');
+            document.getElementById('span-total-final').innerText = '$' + totalFormateado + ' COP';
+        }
+
+        // ⚠️ VERIFICA AQUÍ: Cambia esta ruta si tu url de pagos pertenece a 'cuotas' o a 'empenos'
+        // Si en tus urls.py tienes path('pagar/<int:cuota_id>/', ... name='pagar') dentro de cuotas:
+        document.getElementById('form-pago-definitivo').action = '/cuotas/pagar/' + cuotaId + '/';
+        
+        // Si confirmas que la url de tu backend sí es de la app empenos, déjala así:
+        // document.getElementById('form-pago-definitivo').action = '/empenos/pagar/' + cuotaId + '/';
+
+        // Mostramos el modal usando flex de forma explícita
+        let modal = document.getElementById('modal-contenedor-cobro');
+        modal.style.setProperty('display', 'flex', 'important');
     }
+
     function cerrarModalCobro() {
         document.getElementById('modal-contenedor-cobro').style.display = 'none';
+    }
+
+    // Cerrar el modal automáticamente si el usuario hace clic por fuera del cuadro oscuro
+    window.onclick = function(event) {
+        let modal = document.getElementById('modal-contenedor-cobro');
+        if (event.target == modal) {
+            cerrarModalCobro();
+        }
     }
 </script>
 {% endblock %}
