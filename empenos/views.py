@@ -325,16 +325,23 @@ def registrar_pago(request, id_cuota):
         return redirect('cuotas:listar')
 
     if request.method == 'POST':
-        from decimal import Decimal
+        from decimal import Decimal  # Mantenemos la importación aquí o la subes al inicio del archivo
         
+        # 🔥 BLINDAJE: Convertimos explícitamente a Decimal para evitar el TypeError en la suma
+        capital_dec = Decimal(str(cuota.capital))
+        interes_dec = Decimal(str(cuota.interes))
+        monto_total_pago = capital_dec + interes_dec
+
         # Registramos el objeto Pago de tu app de empeños
         pago_objeto = Pago.objects.create(
             id_cuota   = cuota,
             id_cliente = cuota.id_empeno.id_cliente,
-            monto      = cuota.capital + cuota.interes,
+            monto      = monto_total_pago, # Usamos la variable blindada
             metodo_pago = 'Efectivo',
         )
         
+        # ⚠️ Nota: Asegúrate de aplicar el cambio de Decimal('0.05') en empenos/models.py (línea 123) 
+        # para que esta siguiente línea guarde sin estallar:
         cuota.estado = 'Pagada'
         cuota.save()
 
@@ -360,14 +367,13 @@ def registrar_pago(request, id_cuota):
             usuario_operador = request.user
         elif not usuario_operador:
             usuario_operador = Usuario.objects.first() 
-
-        monto_total_pago = cuota.capital + cuota.interes
         
+        # Generación de la factura con el monto unificado y limpio
         generar_factura_automatica(
             usuario=usuario_operador, 
             cliente=empeno.id_cliente,
             tipo_movimiento='Cuota', 
-            monto=monto_total_pago,
+            monto=monto_total_pago, # Usamos la variable blindada
             id_empeno=empeno.id_empeno,
             descripcion=f"Pago Interés/Cuota de Empeño #{empeno.id_empeno} - ID Cuota: {cuota.id_cuota}"
         )
@@ -604,61 +610,76 @@ def pagar_multiples(request, id_empeno):
         cuotas_ids = request.POST.getlist('cuotas_seleccionadas')
         cantidad_extra = int(request.POST.get('cantidad_extra', 0))
         
-        # 1. Procesar cuotas existentes
-        cuotas_seleccionadas = Cuota.objects.filter(id_empeno=empeno, id_cuota__in=cuotas_ids)
-        
-        # Obtenemos el valor del interés de la primera cuota para las cuotas extra
-        primera_cuota = Cuota.objects.filter(id_empeno=empeno).first()
-        valor_interes_fijo = primera_cuota.interes if primera_cuota else Decimal('0.00')
+        # Validación de seguridad por si envían el formulario vacío
+        if not cuotas_ids and cantidad_extra == 0:
+            return JsonResponse({'success': False, 'error': 'No seleccionaste ninguna cuota.'}, status=400)
 
-        for cuota in cuotas_seleccionadas:
-            if cuota.estado != 'Pagada':
-                # Sumamos capital, interes y mora para el total del pago
-                total_pago = cuota.capital + cuota.interes + cuota.mora
-                
-                Pago.objects.create(
-                    id_cuota=cuota,
-                    id_cliente=empeno.id_cliente,
-                    monto=total_pago,
-                    metodo_pago='Efectivo',
-                )
-                cuota.estado = 'Pagada'
-                cuota.save()
+        try:
+            # 1. Procesar cuotas existentes
+            cuotas_seleccionadas = Cuota.objects.filter(id_empeno=empeno, id_cuota__in=cuotas_ids)
+            
+            # Obtenemos el valor del interés de la primera cuota para las cuotas extra
+            primera_cuota = Cuota.objects.filter(id_empeno=empeno).first()
+            valor_interes_fijo = primera_cuota.interes if primera_cuota else Decimal('0.00')
 
-        # 2. Procesar cuotas excedentes (Extra)
-        if cantidad_extra > 0:
-            for _ in range(cantidad_extra):
-                ultima = Cuota.objects.filter(id_empeno=empeno).order_by('-numero_cuota').first()
-                nuevo_num = (ultima.numero_cuota + 1) if ultima else 1
-                
-                # Calculamos la fecha programada (30 días después de la última)
-                fecha_base = ultima.fecha_programada if ultima else timezone.now().date()
-                nueva_fecha = fecha_base + timedelta(days=30)
-                
-                nueva_cuota = Cuota.objects.create(
-                    id_empeno=empeno,
-                    id_cliente=empeno.id_cliente,
-                    numero_cuota=nuevo_num,
-                    fecha_programada=nueva_fecha,
-                    capital=Decimal('0.00'),
-                    interes=valor_interes_fijo,
-                    mora=Decimal('0.00'),
-                    estado='Pagada'
-                )
-                
-                Pago.objects.create(
-                    id_cuota=nueva_cuota,
-                    id_cliente=empeno.id_cliente,
-                    monto=valor_interes_fijo,
-                    metodo_pago='Efectivo',
-                )
+            for cuota in cuotas_seleccionadas:
+                if cuota.estado != 'Pagada':
+                    total_pago = cuota.capital + cuota.interes + cuota.mora
+                    
+                    Pago.objects.create(
+                        id_cuota=cuota,
+                        id_cliente=empeno.id_cliente,
+                        monto=total_pago,
+                        metodo_pago='Efectivo',
+                    )
+                    cuota.estado = 'Pagada'
+                    cuota.save()
 
-        empeno.estado = 'Activo'
-        empeno.save()
-        _sincronizar_articulo(empeno)
+            # 2. Procesar cuotas excedentes (Extra)
+            if cantidad_extra > 0:
+                for _ in range(cantidad_extra):
+                    ultima = Cuota.objects.filter(id_empeno=empeno).order_by('-numero_cuota').first()
+                    nuevo_num = (ultima.numero_cuota + 1) if ultima else 1
+                    
+                    fecha_base = ultima.fecha_programada if ultima else timezone.now().date()
+                    nueva_fecha = fecha_base + timedelta(days=30)
+                    
+                    nueva_cuota = Cuota.objects.create(
+                        id_empeno=empeno,
+                        id_cliente=empeno.id_cliente,
+                        numero_cuota=nuevo_num,
+                        fecha_programada=nueva_fecha,
+                        capital=Decimal('0.00'),
+                        interes=valor_interes_fijo,
+                        mora=Decimal('0.00'),
+                        estado='Pagada'
+                    )
+                    
+                    Pago.objects.create(
+                        id_cuota=nueva_cuota,
+                        id_cliente=empeno.id_cliente,
+                        monto=valor_interes_fijo,
+                        metodo_pago='Efectivo',
+                    )
 
-        messages.success(request, f"Pagos registrados exitosamente.")
+            empeno.estado = 'Activo'
+            empeno.save()
+            _sincronizar_articulo(empeno)
 
+            # 📢 NOTA DE INTEGRACIÓN: Opcional si quieres registrar un mensaje en el sistema
+            messages.success(request, f"Pagos registrados exitosamente.")
+
+            # 🔥 EL CAMBIO CLAVE: Retornamos JSON con éxito y la ruta de la factura para la ventana emergente
+            return JsonResponse({
+                'success': True,
+                'url_factura': f"/factura/generar/{empeno.id_empeno}/" # Ajusta esta ruta a las URLs de tu app 'factura'
+            })
+
+        except Exception as e:
+            # En caso de fallos imprevistos en la BD, respondemos el error al JavaScript
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    # Si por algún motivo entra por GET, redirigimos como antes de forma segura
     return redirect('cuotas:listar')
 
 def agregar_cuota_manual(request, id_empeno):

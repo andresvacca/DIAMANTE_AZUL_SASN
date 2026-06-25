@@ -4,6 +4,54 @@
 {% block title %}Cuotas Empeño #{{ empeno.id_empeno }}{% endblock %}
 
 {% block content %}
+<style>
+    /* MEJORA: Botón Principal "Registrar Pago Múltiple" */
+    .btn-custom-multiple {
+        background-color: #6366f1 !important; /* Azul índigo moderno */
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        padding: 10px 18px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        transition: all 0.2s ease-in-out !important;
+        text-decoration: none;
+    }
+
+    .btn-custom-multiple:hover {
+        background-color: #4f46e5 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px -1px rgba(99, 102, 241, 0.4) !important;
+    }
+
+    /* MEJORA: Botones de la tabla "Pagar individual" (Estilo Outline) */
+    .btn-custom-individual {
+        background: transparent !important;
+        color: #10b981 !important; /* Verde esmeralda */
+        border: 1px solid #10b981 !important;
+        font-weight: 500 !important;
+        font-size: 0.8rem !important;
+        padding: 6px 14px !important;
+        border-radius: 6px !important;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out !important;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-custom-individual:hover {
+        background-color: #10b981 !important;
+        color: #111827 !important; /* Texto oscuro para contraste sobre el verde */
+        font-weight: 600 !important;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
+    }
+</style>
+
 <div class="dashboard-page">
     <div style="max-width:1100px; margin: 0 auto; padding: 20px;">
         
@@ -15,11 +63,12 @@
                 <p style="color:var(--gris-oscuro); margin:0;">Cliente: <strong>{{ empeno.id_cliente }}</strong> | Artículo: {{ empeno.id_articulo }}</p>
             </div>
             
-            {# BOTÓN PARA EL MODAL DE PAGAR MÚLTIPLES #}
-            <button type="button" onclick="abrirModal()" class="btn-hero" style="margin-bottom: 20px;">
-                    <i class="fas fa-check-double"></i> 💷Registrar Pago Múltiple
+            {# BOTÓN PARA EL MODAL #}
+            <button type="button" onclick="abrirModal()" class="btn-custom-multiple" style="margin-bottom: 20px;">
+                <i class="fas fa-check-double"></i> Registrar Pago Múltiple
             </button>
         </div>
+        
 
         {# TABLA DE CUOTAS ORIGINAL #}
         <div style="background:var(--blanco); border-radius:12px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
@@ -52,7 +101,7 @@
                             </td>
                             <td style="padding:12px; text-align:center;">
                                 {% if cuota.estado != 'Pagada' %}
-                                    <a href="#" class="btn-hero-secundario" style="font-size:0.8rem; padding:5px 10px;">Pagar individual</a>
+                                    <a href="{% url 'empenos:pagar' cuota.id_cuota %}" class="btn-custom-individual">Pagos pendientes</a>
                                 {% else %}
                                     <span style="color:var(--verde); font-size:0.9rem;">✅</span>
                                 {% endif %}
@@ -66,7 +115,7 @@
     </div>
 </div>
 
-{# MODAL PARA EL PAGO DE CUOTAS (OCULTO POR DEFECTO) #}
+{# MODAL PARA EL PAGO DE CUOTAS #}
 <div id="modalPagos" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter: blur(3px);">
     <div style="background:white; margin:5% auto; padding:0; border-radius:15px; width:450px; box-shadow:0 10px 40px rgba(0,0,0,0.4); overflow:hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         
@@ -75,32 +124,36 @@
             <p style="margin: 5px 0 0; opacity: 0.8; font-size: 0.9rem;">Empeño #{{ empeno.id_empeno }}</p>
         </div>
 
-        {# 🌟 PARCHE AQUÍ: Se cambió el tag de url problemático por la ruta estática manual #}
-        <form id="formPagarCuotas" method="POST" action="/empenos/pagar-multiples/{{ empeno.id_empeno }}/" style="padding: 2rem;">
+        <form id="formPagarCuotas" method="POST" action="{% url 'cuotas:pagar_multiples' empeno.id_empeno %}" style="padding: 2rem;">
             {% csrf_token %}
             
             <label style="display:block; margin-bottom:1rem; font-weight:600; color: #333;">Seleccione las cuotas a pagar:</label>
             
             <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-bottom: 1.5rem; background: #fafafa;">
                 {% for cuota in cuotas %}
-                    {% if cuota.estado == 'Pendiente' %}
-                    <label style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" 
-                           onmouseover="this.style.background='#f0f7ff'" onmouseout="this.style.background='transparent'">
-                        <input type="checkbox" name="cuotas_seleccionadas" value="{{ cuota.id_cuota }}" 
-                            class="cuota-check" 
-                            data-valor="{{ cuota.capital|add:cuota.interes|add:cuota.mora }}" 
-                            onchange="actualizarTotalVisor()">
-                        <div style="margin-left: 15px;">
-                            <span style="display: block; font-weight: 600; color: #444;">Cuota {{ cuota.numero_cuota }}</span>
-                            <span style="font-size: 0.85rem; color: #888;">Vence: {{ cuota.fecha_vencimiento }}</span>
-                        </div>
-                        <span style="margin-left: auto; font-weight: bold; color: #28a745;">${{ cuota.valor_cuota }}</span>
-                    </label>
+                    {% if cuota.estado == 'Pendiente' or cuota.estado == 'Vencida' %}
+                        <label style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" 
+                            onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                            
+                            <input type="checkbox" name="cuotas_seleccionadas" value="{{ cuota.id_cuota }}" 
+                                class="cuota-check" 
+                                data-valor="{{ cuota.capital|add:cuota.interes|add:cuota.mora }}" 
+                                onchange="actualizarTotalVisor()">
+                                
+                            <div style="margin-left: 15px;">
+                                <span style="display: block; font-weight: 600; color: #333;">Cuota {{ cuota.numero_cuota }}</span>
+                            </div>
+                            
+                            <span style="margin-left: auto; font-weight: bold; color: #10b981;">
+                                ${% if cuota.valor_cuota %}{{ cuota.valor_cuota }}{% else %}{{ cuota.capital|add:cuota.interes|add:cuota.mora }}{% endif %}
+                            </span>
+                        </label>
                     {% endif %}
                 {% empty %}
                     <div style="padding: 20px; text-align: center; color: #999;">No hay cuotas pendientes.</div>
                 {% endfor %}
             </div>
+            
             <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
                 <label style="display:block; margin-bottom:5px; font-weight:600; color: #333;">¿Pagar cuotas extra (Excedente)?</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -117,17 +170,15 @@
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button type="submit" id="btnConfirmar" class="btn-hero" style="flex:2; padding: 12px; font-weight: bold; opacity: 0.5;" disabled>Confirmar Pago</button>
-                <button type="button" onclick="cerrarModal()" class="btn-hero-secundario" style="flex:1; padding: 12px;">Cancelar</button>
+                <button type="button" id="btnConfirmar" onclick="enviarPagoYFactura()" class="btn-custom-multiple" style="flex:2; padding: 12px; font-weight: bold; opacity: 0.5; justify-content: center;" disabled>Confirmar Pago</button>
+                <button type="button" onclick="cerrarModal()" class="btn-custom-individual" style="flex:1; padding: 12px; text-align: center;">Cancelar</button>
             </div>
         </form>
     </div>
 </div>
 
-{# PANEL DE CONTROL DE ENTREGA FÍSICA - DIAMANTE AZUL ORIGINAL #}
+{# PANEL DE CONTROL DE ENTREGA FÍSICA #}
 <div style="max-width:1100px; margin: 2.5rem auto 0; background: var(--blanco); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--gris-claro);">
-    
-    {# Encabezado del Panel #}
     <div style="background: #2c3e50; padding: 1.2rem 1.5rem; color: white; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px;">📦 CONTROL DE SALIDA DE BODEGA</h3>
         {% if tiene_cuotas_pendientes %}
@@ -139,7 +190,6 @@
 
     <div style="padding: 2.5rem; text-align: center;">
         {% if tiene_cuotas_pendientes %}
-            {# Caso: El cliente aún debe cuotas #}
             <div style="margin-bottom: 1.5rem;">
                 <div style="font-size: 3rem; margin-bottom: 10px;">🚫</div>
                 <h4 style="color: #34495e; font-weight: 700; margin-bottom: 10px;">Retiro No Permitido</h4>
@@ -151,7 +201,6 @@
                 Confirmar Entrega (Bloqueado)
             </button>
         {% else %}
-            {# Caso: Paz y Salvo total #}
             <div style="margin-bottom: 1.5rem;">
                 <div style="font-size: 3rem; margin-bottom: 10px;">🤝</div>
                 <h4 style="color: #2c3e50; font-weight: 700; margin-bottom: 10px;">Entrega Autorizada</h4>
@@ -160,22 +209,15 @@
                 </p>
             </div>
             
-            {# 🌟 PARCHE AQUÍ: Se cambió el tag de url por la ruta estática manual de retiro #}
             <form action="/empenos/retirar/{{ empeno.id_empeno }}/" method="POST">
                 {% csrf_token %}
                 <button type="submit" 
                         onclick="return confirm('¿Confirma que ya entregó el artículo físicamente? Al procesar, el estado cambiará a Retirado.')"
-                        class="btn-hero"
-                        style="background: #27ae60; border: none; padding: 16px 50px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 380px; font-size: 1rem; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);">
+                        style="background: #27ae60; color: white; border: none; padding: 16px 50px; border-radius: 8px; font-weight: bold; width: 100%; max-width: 380px; font-size: 1rem; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); cursor: pointer;">
                     CONFIRMAR ENTREGA FÍSICA
                 </button>
             </form>
         {% endif %}
-    </div>
-
-    {# Nota de seguridad #}
-    <div style="background: #f8f9fa; padding: 12px; border-top: 1px solid var(--gris-claro); text-align: center;">
-        <small style="color: #95a5a6; font-style: italic;">Solo personal con acceso a caja fuerte puede autorizar esta salida.</small>
     </div>
 </div>
 
@@ -187,6 +229,42 @@ function abrirModal() {
 
 function cerrarModal() {
     document.getElementById('modalPagos').style.display = 'none';
+}
+
+// CORRECCIÓN: Capturar y procesar la respuesta JSON del servidor
+function enviarPagoYFactura() {
+    const formulario = document.getElementById('formPagarCuotas');
+    const datos = new FormData(formulario);
+
+    fetch(formulario.action, {
+        method: 'POST',
+        body: datos,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Error en la respuesta del servidor');
+        }
+        return res.json(); // Convierte la respuesta HTTP en un objeto JavaScript legible
+    })
+    .then(data => {
+        if (data.success) {
+            // 1. Abre la URL real de la factura generada por el backend en una nueva pestaña
+            window.open(data.url_factura, '_blank');
+
+            // 2. Cierra el modal y refresca la interfaz para cambiar el estado de las cuotas
+            cerrarModal();
+            window.location.reload();
+        } else {
+            alert('Error al registrar el pago: ' + (data.error || 'Desconocido'));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error de red al procesar el pago.');
+    });
 }
 
 function actualizarTotalVisor() {
@@ -230,7 +308,6 @@ function actualizarTotalVisor() {
     }
 }
 
-// Cerrar modal si se hace clic fuera de la caja blanca
 window.onclick = function(event) {
     let modal = document.getElementById('modalPagos');
     if (event.target == modal) {

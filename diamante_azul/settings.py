@@ -53,13 +53,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+   'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- DEBE IR AQUÍ ARRIBA
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'diamante_azul.urls'
@@ -86,14 +86,15 @@ WSGI_APPLICATION = 'diamante_azul.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQLDATABASE', 'railway'),
-        'USER': os.getenv('MYSQLUSER', 'root'),
-        'PASSWORD': os.getenv('MYSQLPASSWORD', 'GhkjZBYJkSdOEozuFyQzYlAwoYEqIZWu'),
-        'HOST': os.getenv('MYSQLHOST', 'turntable.proxy.rlwy.net'), # <-- Valor por defecto si falla el .env
-        'PORT': os.getenv('MYSQLPORT', '51677'),
+        'NAME': os.environ.get('DB_INT_NAME'),
+        'USER': os.environ.get('DB_INT_USER'),
+        'PASSWORD': os.environ.get('DB_INT_PASSWORD'),
+        'HOST': os.environ.get('DB_INT_HOST'),
+        'PORT': os.environ.get('DB_INT_PORT'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
@@ -105,8 +106,8 @@ INSTALLED_APPS += [
     'django_celery_results',
 ]
 
-"""CELERY_BROKER_URL = 'sqla+mysql://root:@localhost/diamante_azul'"""
-CELERY_BROKER_URL = f"sqla+mysql://{os.getenv('MYSQLUSER')}:{os.getenv('MYSQLPASSWORD')}@{os.getenv('MYSQLHOST')}:{os.getenv('MYSQLPORT')}/{os.getenv('MYSQLDATABASE')}"
+# Corregido para usar exactamente las mismas variables de entorno que tu base de datos
+CELERY_BROKER_URL = f"sqla+mysql://{os.environ.get('DB_INT_USER')}:{os.environ.get('DB_INT_PASSWORD')}@{os.environ.get('DB_INT_HOST')}:{os.environ.get('DB_INT_PORT')}/{os.environ.get('DB_INT_NAME')}"
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 

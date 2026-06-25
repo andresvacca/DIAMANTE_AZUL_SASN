@@ -1,5 +1,6 @@
 from django import forms
 from .models import Factura, DetalleFactura
+from usuarios.models import Rol
 
 
 class FacturaForm(forms.ModelForm):
@@ -39,8 +40,6 @@ class DetalleFacturaForm(forms.ModelForm):
 
 
 class FiltroFactura(forms.Form):
-    q = forms.CharField(
-        required=False,
-        label='Buscar',
-        widget=forms.TextInput(attrs={'placeholder': 'Nombre de cliente o # Factura...'})
-    )
+    q = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'Ej: Juan o #16'}))
+    fecha = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    rol = forms.ModelChoiceField(queryset=Rol.objects.all(), required=False, empty_label="— Todos los Roles —")

@@ -197,11 +197,13 @@
                 <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #718096;">{{ cantidad_empenos }} contrato{{ cantidad_empenos|pluralize }} de empeño</p>
             </div>
             
-            <div class="card-stat" style="border-left: 4px solid #63b3ed;">
+            <a href="{% url 'factura:listar' %}" style=" text-decoration: none;">
+            <div class="card-stat" style="border-left: 4px solid #63b3ed;text-decoration: none;">
                 <p style="margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: #a0aec0; font-weight: 600; letter-spacing: 0.05em;">Facturación de Saldos</p>
                 <p style="margin: 0; font-size: 1.65rem; font-weight: 700; font-family: monospace; color: #63b3ed;">${{ total_facturas|floatformat:0 }}</p>
                 <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: #718096;">{{ cantidad_facturas }} folio{{ cantidad_facturas|pluralize }} emitido{{ cantidad_facturas|pluralize }}</p>
             </div>
+            </a>
         </div>
 
         <!-- Balance Integral Consolidador -->

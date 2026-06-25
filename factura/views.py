@@ -46,10 +46,15 @@ def listar_facturas(request):
         return redirect('usuarios:login')
 
     form = FiltroFactura(request.GET)
-    facturas = Factura.objects.select_related('id_cliente', 'id_usuario').order_by('-fecha_venta')
+    # 💡 Agregamos 'id_usuario__id_rol' en select_related para traer el rol eficientemente
+    facturas = Factura.objects.select_related('id_cliente', 'id_usuario__id_rol').order_by('-fecha_venta')
 
     if form.is_valid():
         q = form.cleaned_data.get('q')
+        fecha = form.cleaned_data.get('fecha')  # Campo fecha que añades al formulario
+        rol = form.cleaned_data.get('rol')      # Campo rol que añades al formulario
+
+        # 1. Tu filtro actual de Texto / ID (q)
         if q:
             filtro = Q(id_cliente__nombre__icontains=q) | Q(tipo_movimiento__icontains=q)
             try:
@@ -58,6 +63,16 @@ def listar_facturas(request):
                 pass
             facturas = facturas.filter(filtro)
 
+        # 2. 🔥 NUEVO: Filtro por Fecha de Creación/Venta
+        if fecha:
+            # .date asegura buscar solo por el día sin importar la hora exacta en el DateTimeField
+            facturas = facturas.filter(fecha_venta__date=fecha)
+
+        # 3. 🔥 NUEVO: Filtro por Rol del Usuario creador de la factura
+        if rol:
+            facturas = facturas.filter(id_usuario__id_rol__id_rol=rol)
+
+    # Paginación (Se mantiene intacta)
     paginator = Paginator(facturas, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
 

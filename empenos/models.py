@@ -3,6 +3,7 @@ from contratos.models import Contrato
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from datetime import date
+from decimal import Decimal
 
 class Empeno(models.Model):
     ESTADO_CHOICES = [
@@ -119,9 +120,12 @@ class Pago(models.Model):
         # 2. LÓGICA DE MORA: Si la fecha actual es mayor a la programada
         hoy = date.today()
         if hoy > self.id_cuota.fecha_programada:
-            # Se calcula un 10% de mora sobre el capital
-            self.id_cuota.mora = self.id_cuota.capital * 0.10
-            self.id_cuota.save()
+    # 1. 🔥 BLINDAJE: Multiplicamos usando Decimal para evitar el TypeError
+            self.id_cuota.mora = self.id_cuota.capital * Decimal('0.10')
+            
+            # 2. ⚠️ RECOMENDACIÓN: Si estás dentro del save() de Cuota, NO uses self.id_cuota.save()
+            # Si estás modificando la cuota desde otro modelo (ej. Pago), usa update_fields para evitar bucles:
+            self.id_cuota.save(update_fields=['mora'])
             
         # 3. GUARDADO DEL PAGO
         # Primero guardamos el registro del pago para que exista en la BD
