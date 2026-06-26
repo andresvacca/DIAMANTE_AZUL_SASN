@@ -90,11 +90,11 @@ WSGI_APPLICATION = 'diamante_azul.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_INT_NAME'),
-        'USER': os.environ.get('DB_INT_USER'),
-        'PASSWORD': os.environ.get('DB_INT_PASSWORD'),
-        'HOST': os.environ.get('DB_INT_HOST'),
-        'PORT': os.environ.get('DB_INT_PORT'),
+        'NAME': os.environ.get('DB_INT_NAME', 'railway'),
+        'USER': os.environ.get('DB_INT_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_INT_PASSWORD', 'GhkjZBYJkSdOEozuFyQzYlAwoYEqIZWu'),
+        'HOST': os.environ.get('DB_INT_HOST', 'turntable.proxy.rlwy.net'),
+        'PORT': os.environ.get('DB_INT_PORT', '51677'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         }
