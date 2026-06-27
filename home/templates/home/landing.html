@@ -1,4 +1,4 @@
- {% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,8 +6,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casa de Empeño Diamante Azul</title>
     <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Ajuste de comportamiento global UX */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Botón de WhatsApp flotante para urgencias financieras (Mejora drástica de UX) */
+        .btn-whatsapp-flotante {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25d366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.3s;
+            text-decoration: none;
+        }
+        .btn-whatsapp-flotante:hover {
+            transform: scale(1.1);
+        }
+    </style>
 </head>
 <body>
+
+<a href="https://wa.me/573026075362?text=Hola,%20me%20gustaría%20cotizar%20un%20empeño" class="btn-whatsapp-flotante" target="_blank" rel="noopener" title="Chatear por WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+</a>
 
 <nav class="navbar">
     <a href="#" class="navbar-logo">
@@ -30,19 +63,19 @@
     </ul>
 
     <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
+        <button class="btn-modo" id="btn-modo" title="Cambiar modo claro/oscuro">
             <span class="icono-sol">☀️</span>
             <span class="icono-luna">🌙</span>
         </button>
         {% if request.session.usuario_id %}
-        <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
+        <span class="navbar-usuario-info" style="font-weight: 600; color: #4a7ab5;">👤 {{ request.session.usuario_nombre }}</span>
         <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Mi Panel</a>
         <a href="{% url 'usuarios:logout' %}" class="btn-registro">Cerrar Sesión</a>
         {% else %}
         <a href="{% url 'usuarios:login' %}" class="btn-login">Iniciar Sesión</a>
-        <a href="{% url 'usuarios:registro' %}" class="btn-registro">Registrarse</a>
+        <a href="{% url 'usuarios:registro' %}" class="btn-registro" style="background-color: #4a7ab5; color: white;">Registrarse</a>
         {% endif %}
-        <button class="hamburger" id="hamburger" aria-label="Menú">
+        <button class="hamburger" id="hamburger" aria-label="Menú de Navegación">
             <span></span><span></span><span></span>
         </button>
     </div>
@@ -57,7 +90,7 @@
         <polygon points="180,135 230,162 230,198 180,225 130,198 130,162" fill="rgba(255,255,255,0.25)"/>
     </svg>
     <div class="hero-contenido">
-        <p class="hero-etiqueta">Bogotá, Colombia — Desde 2010</p>
+        <p class="hero-etiqueta">📍 Bogotá, Colombia — Desde 2010</p>
         <h1>Tu valor,<br><em>nuestra confianza</em></h1>
         <p class="hero-descripcion">
             En Casa de Empeño Diamante Azul ofrecemos préstamos rápidos y justos
@@ -65,7 +98,7 @@
         </p>
         <div class="hero-botones">
             <a href="#servicios" class="btn-hero-primario">Ver servicios</a>
-            <a href="#contacto" class="btn-hero-secundario">Cómo llegar →</a>
+            <a href="https://maps.google.com/?q=Calle+13+#+24-55,+Bogota,+Colombia" target="_blank" rel="noopener" class="btn-hero-secundario">Cómo llegar →</a>
         </div>
     </div>
     <div class="hero-stats">
@@ -195,31 +228,46 @@
         <div class="seccion-linea"></div>
     </div>
     <div class="contacto-grid">
-        <div class="contacto-card revelar">
+        <a href="https://maps.google.com/?q=Calle+13+#+24-55,+Bogota,+Colombia" target="_blank" rel="noopener" class="contacto-card revelar" style="text-decoration:none; color:inherit;">
             <span class="contacto-icono">📍</span>
             <h4>Dirección</h4>
             <p>Calle 13 # 24-55<br>Bogotá, Colombia</p>
-        </div>
+            <span style="font-size:0.75rem; color:#4a7ab5; font-weight:600;">Ver en Google Maps →</span>
+        </a>
+        
         <div class="contacto-card revelar">
             <span class="contacto-icono">📞</span>
             <h4>Teléfono</h4>
-            <p>+57 (601) 123 4567<br>+57 310 000 0000</p>
+            <p>
+                <a href="tel:+576011234567" style="text-decoration:none; color:inherit; font-weight:600;">+57 (601) 123 4567</a><br>
+                <a href="tel:+573100000000" style="text-decoration:none; color:inherit; font-weight:600;">+57 310 000 0000</a>
+            </p>
             <span class="contacto-icono">✉️</span>
             <h4>Correo</h4>
-            <p>info@diamanteazul.com.co</p>
+            <p><a href="mailto:info@diamanteazul.com.co" style="text-decoration:none; color:#4a7ab5; font-weight:600;">info@diamanteazul.com.co</a></p>
         </div>
         <div class="contacto-card revelar">
             <span class="contacto-icono">🕐</span>
             <h4>Horario</h4>
-            <p>Lunes a Sabado<br>9:00 am – 8:00 pm</p>
-            <p>Domingos y Festivos <br> 10:00 am - 5:00pm </p>
+            <p>Lunes a Sábado<br>9:00 am – 8:00 pm</p>
+            <p>Domingos y Festivos <br> 10:00 am - 5:00 pm </p>
         </div>
     </div>
 </section>
 
 <footer>
-    <span class="footer-logo">Diamante Azul</span>
-    <p>© 2025 Casa de Empeño Diamante Azul — Bogotá, Colombia</p>
+    <a href="#" class="navbar-logo">
+        <svg viewBox="0 0 36 36" fill="none">
+            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
+            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
+            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
+        </svg>
+        <div>
+            <span class="logo-nombre">Diamante Azul</span>
+            <span class="logo-subtitulo">Casa de Empeño</span>
+        </div>
+    </a>
+    <p>© 2026 Casa de Empeño Diamante Azul — Bogotá, Colombia</p>
     <p>Todos los derechos reservados</p>
 </footer>
 
