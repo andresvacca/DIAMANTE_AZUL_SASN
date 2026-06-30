@@ -1,168 +1,264 @@
+{% extends 'home/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle Factura — Diamante Azul</title>
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
-</head>
-<body>
 
-<nav class="navbar">
-    <a href="{% url 'home' %}" class="navbar-logo">
-        <svg viewBox="0 0 36 36" fill="none">
-            <polygon points="18,2 34,11 34,25 18,34 2,25 2,11" fill="none" stroke="#4a7ab5" stroke-width="1.5"/>
-            <polygon points="18,8 28,14 28,22 18,28 8,22 8,14" fill="rgba(74,122,181,0.12)" stroke="#4a7ab5" stroke-width="1"/>
-            <polygon points="18,13 23,17 18,23 13,17" fill="#4a7ab5"/>
-        </svg>
-        <div>
-            <span class="logo-nombre">Diamante Azul</span>
-            <span class="logo-subtitulo">Casa de Empeño</span>
-        </div>
-    </a>
+{% block title %}Factura #{{ factura.id_factura }} — Diamante Azul{% endblock %}
 
-    <ul class="navbar-links" id="navbar-links">
-        <li><a href="{% url 'home' %}">Inicio</a></li>
+{% block content %}
+<style>
+    /* Estilos del contenedor principal de la Factura */
+    .factura-container {
+        max-width: 800px;
+        margin: 30px auto;
+        background: #111827; /* Fondo oscuro elegante */
+        color: #e5e7eb;
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-        <li><a href="{% url 'clientes:listar' %}">Clientes</a></li>
-        <li><a href="{% url 'articulos:listar' %}">Artículos</a></li>
-        <li><a href="{% url 'empenos:listar' %}">Empeños</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Cuotas</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Contratos</a></li>
-        <li><a href="{% url 'factura:listar' %}">Facturas</a></li>
-        <li><a href="{% url 'cuadre_caja:index' %}">Caja</a></li>
-        {% endif %}
+    /* Encabezado y títulos */
+    .factura-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #374151;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
 
-        {% if request.session.usuario_rol_id == 1 %}
-        <li><a href="{% url 'usuarios:listar' %}">Usuarios</a></li>
-        {% endif %}
+    .factura-titulo {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #38bdf8; /* Azul claro llamativo para el número */
+        margin: 0;
+    }
 
-        {% if request.session.usuario_rol_id == 3 %}
-        <li><a href="{% url 'empenos:listar' %}">Mis Empeños</a></li>
-        <li><a href="{% url 'contratos:listar' %}">Mis Contratos</a></li>
-        <li><a href="{% url 'cuotas:listar' %}">Mis Cuotas</a></li>
-        {% endif %}
-    </ul>
+    .factura-tipo-badge {
+        background: #1e3a8a;
+        color: #3b82f6;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid #1d4ed8;
+    }
 
-    <div class="navbar-acciones">
-        <button class="btn-modo" id="btn-modo" title="Cambiar modo">
-            <span class="icono-sol">☀️</span>
-            <span class="icono-luna">🌙</span>
-        </button>
+    /* Sección de metadatos/información en grid */
+    .factura-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+        background: #1f2937;
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
 
-        {% if request.session.usuario_id %}
-        <a href="{% url 'notificaciones:listar' %}" style="position:relative;text-decoration:none;display:flex;align-items:center;padding:0.3rem;" title="Notificaciones">
-            <span style="font-size:1.2rem;">🔔</span>
-            {% if notif_count > 0 %}
-            <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:0.1rem 0.35rem;border-radius:20px;min-width:16px;text-align:center;line-height:1.4;">{{ notif_count }}</span>
-            {% endif %}
-        </a>
-        <a href="{% url 'usuarios:dashboard' %}" class="btn-login">Panel</a>
-        <a href="{% url 'usuarios:perfil' %}" style="text-decoration:none;" title="Mi Perfil">
-            <span class="navbar-usuario-info">{{ request.session.usuario_nombre }}</span>
-        </a>
-        <a href="{% url 'usuarios:logout' %}" class="btn-login">Logout</a>
-        {% endif %}
-    </div>
-</nav>
+    .info-grupo h4 {
+        margin: 0 0 0.5rem 0;
+        color: #9ca3af;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-grupo p {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #f3f4f6;
+    }
+
+    /* Tabla de Detalles */
+    .factura-tabla {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+
+    .factura-tabla th {
+        background: #374151;
+        color: #f3f4f6;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .factura-tabla td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #374151;
+        font-size: 1rem;
+        vertical-align: middle;
+    }
+
+    /* Totales al final */
+    .factura-totales {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #374151;
+    }
+
+    .total-fila {
+        display: flex;
+        justify-content: space-between;
+        width: 300px;
+        font-size: 1.1rem;
+    }
+
+    .total-fila.gran-total {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #10b981; /* Verde para destacar el total pagado */
+        border-top: 1px dashed #4b5563;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Botón de impresión */
+    .btn-imprimir {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-imprimir:hover {
+        background: #4338ca;
+    }
+
+    @media print {
+        /* Estilos optimizados si deciden mandar a imprimir a formato físico */
+        body * {
+            visibility: hidden;
+        }
+        .factura-container, .factura-container * {
+            visibility: visible;
+        }
+        .factura-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+            color: black !important;
+            box-shadow: none !important;
+            padding: 0;
+        }
+        .btn-imprimir, .no-print {
+            display: none !important;
+        }
+    }
+</style>
 
 <div class="dashboard-page">
-    <div class="dashboard-contenido">
-        <div style="max-width:700px;margin:0 auto;">
+    <div style="max-width: 800px; margin: 0 auto; padding: 10px 20px;" class="no-print">
+        <a href="javascript:history.back()" style="color: #9ca3af; text-decoration: none; font-size: 0.9rem;">← Volver al panel anterior</a>
+    </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-                <h2 style="margin:0;">🧾 Factura #{{ factura.id_factura }}</h2>
-                <span style="background:rgba(74,122,181,0.12);color:#4a7ab5;padding:0.3rem 0.9rem;border-radius:20px;font-size:0.85rem;font-weight:600;">
-                    {{ factura.metodo_pago }}
+    <div class="factura-container">
+        {# CABECERA DE LA FACTURA #}
+        <div class="factura-header">
+            <div>
+                <h2 class="factura-titulo">Factura #{{ factura.id_factura }}</h2>
+                <p style="margin: 5px 0 0; color: #9ca3af; font-size: 0.9rem;">Registrado en el sistema</p>
+            </div>
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <span class="factura-tipo-badge">
+                    {{ factura.get_tipo_movimiento_display }}
                 </span>
+                <button onclick="window.print()" class="btn-imprimir no-print">
+                    🖨️ Imprimir Factura
+                </button>
             </div>
+        </div>
 
-            <!-- Datos generales -->
-            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.2rem;">
-                <h3 style="margin:0 0 1rem;font-size:1rem;color:#4a7ab5;border-bottom:1px solid rgba(74,122,181,0.15);padding-bottom:0.5rem;">📋 Información General</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Cliente</p>
-                        <p style="margin:0;font-weight:600;">{{ factura.id_cliente }}</p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Atendido por</p>
-                        <p style="margin:0;">{{ factura.id_usuario }}</p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Fecha</p>
-                        <p style="margin:0;">{{ factura.fecha_venta|date:"d/m/Y H:i" }}</p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Método de Pago</p>
-                        <p style="margin:0;">{{ factura.metodo_pago }}</p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Total Neto</p>
-                        <p style="margin:0;font-family:monospace;font-size:1.2rem;font-weight:700;color:#4a7ab5;">
-                            {% if factura.total_neto %}${{ factura.total_neto }}{% else %}—{% endif %}
-                        </p>
-                    </div>
-                    <div>
-                        <p style="margin:0 0 0.2rem;font-size:0.78rem;color:#888;text-transform:uppercase;">Monto Pagado</p>
-                        <p style="margin:0;font-family:monospace;font-size:1.2rem;font-weight:700;color:#065f46;">${{ factura.monto_pagado }}</p>
-                    </div>
-                </div>
+        {# CUADRÍCULA DE INFORMACIÓN GENERAL #}
+        <div class="factura-info-grid">
+            <div class="info-grupo">
+                <h4>Cliente</h4>
+                <p><strong>{{ factura.id_cliente.nombre }} {{ factura.id_cliente.apellido }}</strong></p>
+                <p style="font-size: 0.9rem; color: #9ca3af;">Documento: {{ factura.id_cliente.cedula|default:"—" }}</p>
             </div>
+            <div class="info-grupo">
+                <h4>Fecha de Emisión</h4>
+                <p>{{ factura.fecha_venta|date:"d/m/Y h:i a" }}</p>
+            </div>
+            <div class="info-grupo">
+                <h4>Atendido Por</h4>
+                <p>{{ factura.id_usuario.username }}</p>
+            </div>
+            <div class="info-grupo">
+                <h4>Método de Pago</h4>
+                <p><span style="background: #374151; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem;">{{ factura.metodo_pago }}</span></p>
+            </div>
+        </div>
 
-            <!-- Detalle de artículos -->
-            {% if factura.detallefactura_set.all %}
-            <div style="background:var(--card-bg,#fff);border-radius:12px;padding:1.5rem;box-shadow:0 2px 12px rgba(74,122,181,0.08);margin-bottom:1.2rem;">
-                <h3 style="margin:0 0 1rem;font-size:1rem;color:#4a7ab5;border-bottom:1px solid rgba(74,122,181,0.15);padding-bottom:0.5rem;">📦 Artículos</h3>
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:rgba(74,122,181,0.06);">
-                            <th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Artículo</th>
-                            <th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.78rem;text-transform:uppercase;color:#4a7ab5;">Precio Venta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for detalle in factura.detallefactura_set.all %}
-                        <tr style="border-top:1px solid rgba(74,122,181,0.08);">
-                            <td style="padding:0.7rem 0.8rem;">{{ detalle.id_articulo }}</td>
-                            <td style="padding:0.7rem 0.8rem;text-align:right;font-family:monospace;font-weight:600;">${{ detalle.precio_venta }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {# TABLA CON EL BUCLE SOLICITADO #}
+        <table class="factura-tabla">
+            <thead>
+                <tr>
+                    <th>Descripción del Artículo / Servicio Financiado</th>
+                    <th style="text-align: right; width: 150px;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# 🌟 AQUÍ SE INTEGRA TU CÓDIGO SELECCIONADO 🌟 #}
+                {% for detalle in factura.detallefactura_set.all %}
+                <tr>
+                    <td>
+                        {% if detalle.id_articulo %}
+                            <strong>{{ detalle.id_articulo.nombre_articulo }}</strong> 
+                            {% if detalle.descripcion_servicio %}
+                                <br><small style="color:#9ca3af;">{{ detalle.descripcion_servicio }}</small>
+                            {% endif %}
+                        {% else %}
+                            {{ detalle.descripcion_servicio }}
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; font-weight: 600; color: #f3f4f6;">
+                        ${{ detalle.precio_venta }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" style="text-align: center; color: #9ca3af; padding: 20px;">
+                        No existen detalles registrados para esta factura.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {# DESGLOSE DE TOTALES FINALES #}
+        <div class="factura-totales">
+            <div class="total-fila">
+                <span style="color: #9ca3af;">Subtotal Neto:</span>
+                <span>${{ factura.total_neto }}</span>
+            </div>
+            <div class="total-fila gran-total">
+                <span>Monto Pagado:</span>
+                <span>${{ factura.monto_pagado }}</span>
+            </div>
+            
+            {% if factura.id_empeno_asociado %}
+            <div style="margin-top: 1rem; font-size: 0.85rem; color: #6b7280; text-align: right; width: 100%;">
+                * Vincualdo al Contrato de Empeño de referencia #{{ factura.id_empeno_asociado }}
             </div>
             {% endif %}
-
-            <div style="display:flex;gap:1rem;margin-top:0.5rem;">
-                <a href="{% url 'factura:listar' %}" class="btn-hero-secundario">← Volver a Facturas</a>
-            </div>
-
         </div>
     </div>
 </div>
-
-<script src="{% static 'js/landing.js' %}"></script>
-<script>
-// Actualizar badge de notificaciones cada 30 segundos
-    setInterval(() => {
-        fetch('/notificaciones/conteo/')
-            .then(r => r.json())
-            .then(data => {
-                let badge = document.getElementById('notif-badge');
-                if (data.count > 0) {
-                    if (badge) {
-                        badge.textContent = data.count;
-                    } else {
-                        location.reload();
-                    }
-                } else if (badge) {
-                    badge.remove();
-                }
-            }).catch(() => {});
-    }, 30000);
-</script>
-</body>
-</html>
+{% endblock %}

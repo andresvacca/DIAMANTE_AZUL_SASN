@@ -70,7 +70,7 @@
         </div>
         
 
-        {# TABLA DE CUOTAS ORIGINAL #}
+        {# TABLA DE CUOTAS #}
         <div style="background:var(--blanco); border-radius:12px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,0.05);">
             <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse;">
@@ -101,7 +101,9 @@
                             </td>
                             <td style="padding:12px; text-align:center;">
                                 {% if cuota.estado != 'Pagada' %}
-                                    <a href="{% url 'empenos:pagar' cuota.id_cuota %}" class="btn-custom-individual">Pagos pendientes</a>
+                                    <button type="button" onclick="abrirModalYMarcar('{{ cuota.id_cuota }}')" class="btn-custom-individual">
+                                        Pagar cuota
+                                    </button>
                                 {% else %}
                                     <span style="color:var(--verde); font-size:0.9rem;">✅</span>
                                 {% endif %}
@@ -231,7 +233,23 @@ function cerrarModal() {
     document.getElementById('modalPagos').style.display = 'none';
 }
 
-// CORRECCIÓN: Capturar y procesar la respuesta JSON del servidor
+// NUEVA FUNCIÓN: Abre el modal multicuota limpiando selecciones previas y marcando solo la cuota deseada
+function abrirModalYMarcar(idCuota) {
+    abrirModal(); 
+    
+    // Desmarcar checkboxes previos
+    document.querySelectorAll('.cuota-check').forEach(check => check.checked = false);
+    
+    // Buscar y activar el checkbox de la cuota seleccionada
+    const checkEspecifico = document.querySelector(`.cuota-check[value="${idCuota}"]`);
+    if (checkEspecifico) {
+        checkEspecifico.checked = true;
+    }
+    
+    // Forzar el recálculo financiero instantáneamente
+    actualizarTotalVisor(); 
+}
+
 function enviarPagoYFactura() {
     const formulario = document.getElementById('formPagarCuotas');
     const datos = new FormData(formulario);
@@ -244,17 +262,15 @@ function enviarPagoYFactura() {
         }
     })
     .then(res => {
+        // Si el estado HTTP no es 200, extraemos el error para leerlo en el catch
         if (!res.ok) {
-            throw new Error('Error en la respuesta del servidor');
+            return res.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
         }
-        return res.json(); // Convierte la respuesta HTTP en un objeto JavaScript legible
+        return res.json();
     })
     .then(data => {
         if (data.success) {
-            // 1. Abre la URL real de la factura generada por el backend en una nueva pestaña
-            window.open(data.url_factura, '_blank');
-
-            // 2. Cierra el modal y refresca la interfaz para cambiar el estado de las cuotas
+            // Cierra el modal y recarga la página para ver las cuotas en verde (Pagadas)
             cerrarModal();
             window.location.reload();
         } else {
@@ -263,10 +279,9 @@ function enviarPagoYFactura() {
     })
     .catch(err => {
         console.error(err);
-        alert('Error de red al procesar el pago.');
+        alert('Error al procesar el pago: ' + err.message);
     });
 }
-
 function actualizarTotalVisor() {
     const checks = document.querySelectorAll('.cuota-check');
     const inputExtra = document.getElementById('cantidad_extra');
