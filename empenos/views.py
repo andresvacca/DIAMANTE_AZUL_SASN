@@ -22,6 +22,7 @@ from factura.views import generar_factura_automatica
 from factura.models import Factura
 from factura.forms import DetalleFactura
 from django.urls import reverse
+from usuarios.models import Usuario
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -500,7 +501,7 @@ def editar_empeno(request, id_empeno):
 def registrar_abono(request, id_empeno):
     # Validaciones de seguridad (tus funciones de rol)
     if not (_requiere_admin(request) or _requiere_empleado(request)):
-        if request.session.get('usuario_rol_id') != 3:
+        if request.session.get('usuario_role_id') != 3:
             return redirect('usuarios:login')
 
     empeno = get_object_or_404(Empeno, pk=id_empeno)
@@ -511,29 +512,65 @@ def registrar_abono(request, id_empeno):
             monto_abonado = form.cleaned_data['abonoCap']
             tipo_elegido = form.cleaned_data['tipo_contrato']
 
-            # Ejecutar la resta y guardar
-            empeno.monto_prestado -= monto_abonado
+            try:
+                # Envolvemos todo en una transacción atómica para asegurar consistencia
+                with transaction.atomic():
+                    # 1. Reducir el saldo del empeño
+                    empeno.monto_prestado -= monto_abonado
 
-            # Crear el nuevo contrato asociado
-            nuevo_contrato = Contrato.objects.create(
-                id_empeno=empeno,
-                id_cliente=empeno.id_cliente,
-                id_articulo=empeno.id_articulo,
-                fecha_contrato=timezone.now().date(),
-                tipo_contrato=tipo_elegido,
-                estado_contrato='Disponible'
-            )
+                    # 2. Crear el nuevo contrato asociado al abono
+                    nuevo_contrato = Contrato.objects.create(
+                        id_empeno=empeno,
+                        id_cliente=empeno.id_cliente,
+                        id_articulo=empeno.id_articulo,
+                        fecha_contrato=timezone.now().date(),
+                        tipo_contrato=tipo_elegido,
+                        estado_contrato='Disponible'
+                    )
 
-            # Actualizar el empeño con el nuevo contrato y guardar todo
-            empeno.id_contrato = nuevo_contrato
-            empeno.save()
+                    # 3. Vincular el nuevo contrato al empeño y guardar cambios
+                    empeno.id_contrato = nuevo_contrato
+                    empeno.save()
 
-            # Tus funciones automáticas
-            _sincronizar_articulo(empeno)
-            _generar_cuota(empeno)
+                    # 🌟 4. CREAR LA FACTURA DE FORMA SILENCIOSA (SEGUNDO PLANO)
+                    usuario_id = request.session.get('usuario_id')
+                    usuario_operador = Usuario.objects.filter(pk=usuario_id).first() if usuario_id else Usuario.objects.first()
 
-            messages.success(request, f'Abono de ${monto_abonado} procesado correctamente.')
-            return redirect('empenos:detalle', id_empeno=empeno.id_empeno)
+                    factura = Factura.objects.create(
+                        id_cliente=empeno.id_cliente,
+                        id_usuario=usuario_operador,
+                        total_neto=monto_abonado,
+                        monto_pagado=monto_abonado,
+                        metodo_pago='Efectivo',
+                        tipo_movimiento='Abono',
+                        id_empeno_asociado=empeno.id_empeno
+                    )
+
+                    # 5. Registrar el desglose del artículo
+                    DetalleFactura.objects.create(
+                        id_factura=factura,
+                        id_articulo=empeno.id_articulo,
+                        descripcion_servicio=f"Abono parcial a capital — Contrato #{empeno.id_empeno}",
+                        precio_venta=monto_abonado
+                    )
+
+                    # 6. Ejecutar tus rutinas automáticas originales
+                    _sincronizar_articulo(empeno)
+                    _generar_cuota(empeno)
+
+                    # Notificación en pantalla indicando que todo se creó correctamente
+                    messages.success(
+                        request, 
+                        f'Abono de ${monto_abonado} procesado con éxito. Se generó la Factura #{factura.id_factura}.'
+                    )
+                    
+                    # 🚀 REDIRECCIÓN SEGURA A LA LISTA DE EMPEÑOS (Evita el 404 por completo)
+                    # Cambia 'empenos:listar' por el nombre exacto de la ruta de tu lista general
+                    return redirect(f"/factura/detalle/{factura.id_factura}/")
+
+            except Exception as e:
+                messages.error(request, f"Error interno al procesar el abono: {str(e)}")
+                return redirect('empenos:detalle', id_empeno=empeno.id_empeno)
     else:
         form = AbonoForm(saldo_actual=empeno.monto_prestado)
 
@@ -665,20 +702,65 @@ def retirar_empeno(request, empeno_id):
     empeno = get_object_or_404(Empeno, pk=empeno_id)
     
     if request.method == 'POST':
-        # Seguridad final: no dejar retirar si hay deuda (aunque el botón se viera verde)
+        # Seguridad final: no dejar retirar si hay deudas (aunque el botón se viera verde)
         if Cuota.objects.filter(id_empeno=empeno, estado='Pendiente').exists(): 
             messages.error(request, "Error: Hay deudas pendientes.")
             return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)
 
-        # Actualizamos estados
-        empeno.estado = 'Retirado'
-        empeno.save()
-        
-        articulo = empeno.id_articulo
-        articulo.estado = 'Retirado'
-        articulo.save()
-        
-        messages.success(request, f"¡Éxito! {articulo.nombre} retirado de bodega.")
-        return redirect('empenos:listar')
+        try:
+            with transaction.atomic():
+                # 1. Determinar el valor de liquidación (lo que quedaba en monto prestado)
+                valor_liquidacion = Decimal(str(empeno.monto_prestado))
+
+                # 2. Actualizamos estados del empeño y del artículo físico
+                empeno.estado = 'Retirado'
+                empeno.save()
+                
+                articulo = empeno.id_articulo
+                articulo.estado = 'Retirado'
+                articulo.save()
+                
+                # 3. Obtener el operador de la sesión de Diamante Azul de forma segura
+                usuario_id = request.session.get('usuario_id')
+                usuario_operador = Usuario.objects.filter(pk=usuario_id).first() if usuario_id else Usuario.objects.first()
+                
+                if not usuario_operador:
+                    messages.error(request, "No se encontró un operador válido en el sistema para facturar.")
+                    return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)
+
+                # 4. Crear la Factura de Liquidación ('Retiro')
+                factura = Factura.objects.create(
+                    id_cliente=empeno.id_cliente,
+                    id_usuario=usuario_operador,
+                    total_neto=valor_liquidacion,
+                    monto_pagado=valor_liquidacion,
+                    metodo_pago='Efectivo',
+                    tipo_movimiento='Retiro',
+                    id_empeno_asociado=empeno.id_empeno
+                )
+                
+                # 5. Crear el Detalle desglosado vinculado al artículo
+                # Nota: Usamos el campo correcto de tu modelo 'articulo.nombre_articulo' 
+                # (o 'articulo.nombre' según como esté mapeado en tu base de datos)
+                nombre_art = getattr(articulo, 'nombre_articulo', getattr(articulo, 'nombre', 'Artículo'))
+                
+                DetalleFactura.objects.create(
+                    id_factura=factura,
+                    id_articulo=articulo,
+                    descripcion_servicio=f"Liquidación final y Retiro de: {nombre_art} (Contrato #{empeno.id_empeno})",
+                    precio_venta=valor_liquidacion
+                )
+                
+                messages.success(
+                    request, 
+                    f"¡Éxito! {nombre_art} retirado de bodega. Se generó la Factura #{factura.id_factura}."
+                )
+                
+                # 🚀 REDIRECCIÓN EXACTA A TU URL (Singular, sin la 'f' interna rota)
+                return redirect(f"/factura/detalle/{factura.id_factura}/")
+
+        except Exception as e:
+            messages.error(request, f"Error crítico al procesar el retiro y la factura: {str(e)}")
+            return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)
 
     return redirect('empenos:cuotas', id_empeno=empeno.id_empeno)
