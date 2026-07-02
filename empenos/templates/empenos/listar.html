@@ -160,20 +160,26 @@
                             <a href="{% url 'empenos:detalle' empeno.id_empeno %}" class="btn-accion-icono" title="Ver Detalle">🔍</a>
                             
                             {% if request.session.usuario_rol_id == 1 or request.session.usuario_rol_id == 2 %}
-                                <a href="{% url 'empenos:editar' empeno.id_empeno %}" class="btn-accion-icono" title="Editar">✏️</a>                            
-                                <a href="{% url 'empenos:registrar_abono' empeno.id_empeno %}" class="btn-accion-icono" title="Registrar Abono a Capital">💳</a>
-                                
-                                {% if tiene_cuotas_pendientes %}
-                                    <span style="font-size: 0.8rem; color: #718096; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);" title="Debe saldar las cuotas del rendimiento primero">
-                                        🚫 Cuotas Pendientes
-                                    </span>
+                                {% if empeno.estado != 'Retirado'%}
+                                    <a href="{% url 'empenos:editar' empeno.id_empeno %}" class="btn-accion-icono" title="Editar">✏️</a>                            
+                                    <a href="{% url 'empenos:registrar_abono' empeno.id_empeno %}" class="btn-accion-icono" title="Registrar Abono a Capital">💳</a>
+                                    
+                                    {% if tiene_cuotas_pendientes %}
+                                        <span style="font-size: 0.8rem; color: #718096; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);" title="Debe saldar las cuotas del rendimiento primero">
+                                            🚫 Cuotas Pendientes
+                                        </span>
+                                    {% else %}
+                                        <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST" style="margin: 0; display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(46, 204, 113, 0.25)'" onmouseout="this.style.background='rgba(46, 204, 113, 0.15)'">
+                                                ✅ Retirar
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% else %}
-                                    <form action="{% url 'empenos:retirar' empeno.id_empeno %}" method="POST" style="margin: 0; display: inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(46, 204, 113, 0.25)'" onmouseout="this.style.background='rgba(46, 204, 113, 0.15)'">
-                                            ✅ Retirar
-                                        </button>
-                                    </form>
+                                    <span style="font-size: 0.8rem; color: #718096; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);" title="Debe saldar las cuotas del rendimiento primero">
+                                        🚫 Empeno Retirado
+                                    </span>
                                 {% endif %}
                             {% endif %}
                             
