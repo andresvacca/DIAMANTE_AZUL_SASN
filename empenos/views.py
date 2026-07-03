@@ -513,10 +513,26 @@ def registrar_abono(request, id_empeno):
             tipo_elegido = form.cleaned_data['tipo_contrato']
 
             try:
-                # Envolvemos todo en una transacción atómica para asegurar consistencia
                 with transaction.atomic():
-                    # 1. Reducir el saldo del empeño
+                    # 1. Aplicar la reducción del capital prestado
                     empeno.monto_prestado -= monto_abonado
+                    
+                    es_liquidacion_total = False
+                    
+                    # DETECCIÓN AUTOMÁTICA DE SALDO EN CERO
+                    if empeno.monto_prestado <= 0:
+                        empeno.monto_prestado = Decimal('0.00')
+                        empeno.estado = 'Retirado'
+                        
+                        # Actualizar estado del artículo físico a Retirado
+                        articulo = empeno.id_articulo
+                        articulo.estado = 'Retirado'
+                        articulo.save()
+                        
+                        # 🌟 NUEVO: Eliminar todas las cuotas existentes de este empeño de inmediato
+                        Cuota.objects.filter(id_empeno=empeno, estado__in=['Pendiente', 'Vencida']).delete()
+                        
+                        es_liquidacion_total = True
 
                     # 2. Crear el nuevo contrato asociado al abono
                     nuevo_contrato = Contrato.objects.create(
@@ -528,48 +544,64 @@ def registrar_abono(request, id_empeno):
                         estado_contrato='Disponible'
                     )
 
-                    # 3. Vincular el nuevo contrato al empeño y guardar cambios
+                    # 3. Vincular el contrato y guardar el empeño
                     empeno.id_contrato = nuevo_contrato
                     empeno.save()
 
-                    # 🌟 4. CREAR LA FACTURA DE FORMA SILENCIOSA (SEGUNDO PLANO)
+                    # 4. Operador de la sesión
                     usuario_id = request.session.get('usuario_id')
                     usuario_operador = Usuario.objects.filter(pk=usuario_id).first() if usuario_id else Usuario.objects.first()
 
+                    # Configurar textos de la factura
+                    tipo_mov = 'Retiro' if es_liquidacion_total else 'Abono'
+                    desc_serv = (
+                        f"Liquidación Total por Abono a Capital — Contrato #{empeno.id_empeno}" 
+                        if es_liquidacion_total else 
+                        f"Abono parcial a capital — Contrato #{empeno.id_empeno}"
+                    )
+
+                    # 5. Crear la Factura Automática
                     factura = Factura.objects.create(
                         id_cliente=empeno.id_cliente,
                         id_usuario=usuario_operador,
                         total_neto=monto_abonado,
                         monto_pagado=monto_abonado,
                         metodo_pago='Efectivo',
-                        tipo_movimiento='Abono',
+                        tipo_movimiento=tipo_mov,
                         id_empeno_asociado=empeno.id_empeno
                     )
 
-                    # 5. Registrar el desglose del artículo
+                    # 6. Crear el Detalle
                     DetalleFactura.objects.create(
                         id_factura=factura,
                         id_articulo=empeno.id_articulo,
-                        descripcion_servicio=f"Abono parcial a capital — Contrato #{empeno.id_empeno}",
+                        descripcion_servicio=desc_serv,
                         precio_venta=monto_abonado
                     )
 
-                    # 6. Ejecutar tus rutinas automáticas originales
+                    # 7. Ejecutar tus rutinas automáticas originales
                     _sincronizar_articulo(empeno)
-                    _generar_cuota(empeno)
-
-                    # Notificación en pantalla indicando que todo se creó correctamente
-                    messages.success(
-                        request, 
-                        f'Abono de ${monto_abonado} procesado con éxito. Se generó la Factura #{factura.id_factura}.'
-                    )
                     
-                    # 🚀 REDIRECCIÓN SEGURA A LA LISTA DE EMPEÑOS (Evita el 404 por completo)
-                    # Cambia 'empenos:listar' por el nombre exacto de la ruta de tu lista general
+                    # 🌟 NUEVO: Solo generar la siguiente cuota si NO es una liquidación total
+                    if not es_liquidacion_total:
+                        _generar_cuota(empeno)
+
+                    # Mensajes flotantes personalizados
+                    if es_liquidacion_total:
+                        messages.success(
+                            request, 
+                            f'¡Empeño Liquidado por Completo! El saldo llegó a $0, se eliminaron sus cuotas y el artículo quedó libre en bodega. Factura #{factura.id_factura}.'
+                        )
+                    else:
+                        messages.success(
+                            request, 
+                            f'Abono de ${monto_abonado} procesado con éxito. Se generó la Factura #{factura.id_factura}.'
+                        )
+                    
                     return redirect(f"/factura/detalle/{factura.id_factura}/")
 
             except Exception as e:
-                messages.error(request, f"Error interno al procesar el abono: {str(e)}")
+                messages.error(request, f"Error interno al procesar el abono y limpiar cuotas: {str(e)}")
                 return redirect('empenos:detalle', id_empeno=empeno.id_empeno)
     else:
         form = AbonoForm(saldo_actual=empeno.monto_prestado)
