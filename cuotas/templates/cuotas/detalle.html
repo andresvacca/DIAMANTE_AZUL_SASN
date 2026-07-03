@@ -137,9 +137,10 @@
                         <label style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;" 
                             onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                             
+                            {# CORRECCIÓN: data-valor purificado con formato string entero para evitar problemas en JavaScript #}
                             <input type="checkbox" name="cuotas_seleccionadas" value="{{ cuota.id_cuota }}" 
                                 class="cuota-check" 
-                                data-valor="{{ cuota.capital|add:cuota.interes|add:cuota.mora }}" 
+                                data-valor="{% if cuota.valor_cuota %}{{ cuota.valor_cuota|stringformat:'d' }}{% else %}{{ cuota.capital|add:cuota.interes|add:cuota.mora|stringformat:'d' }}{% endif %}" 
                                 onchange="actualizarTotalVisor()">
                                 
                             <div style="margin-left: 15px;">
@@ -223,7 +224,6 @@ function cerrarModal() {
     document.getElementById('modalPagos').style.display = 'none';
 }
 
-// NUEVA FUNCIÓN: Abre el modal multicuota limpiando selecciones previas y marcando solo la cuota deseada
 function abrirModalYMarcar(idCuota) {
     abrirModal(); 
     
@@ -236,7 +236,6 @@ function abrirModalYMarcar(idCuota) {
         checkEspecifico.checked = true;
     }
     
-    // Forzar el recálculo financiero instantáneamente
     actualizarTotalVisor(); 
 }
 
@@ -252,7 +251,6 @@ function enviarPagoYFactura() {
         }
     })
     .then(res => {
-        // Si el estado HTTP no es 200, extraemos el error para leerlo en el catch
         if (!res.ok) {
             return res.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
         }
@@ -260,7 +258,6 @@ function enviarPagoYFactura() {
     })
     .then(data => {
         if (data.success) {
-            // Cierra el modal y recarga la página para ver las cuotas en verde (Pagadas)
             cerrarModal();
             window.location.reload();
         } else {
@@ -272,32 +269,29 @@ function enviarPagoYFactura() {
         alert('Error al procesar el pago: ' + err.message);
     });
 }
+
+// CORRECCIÓN COMPLETA DE LA FUNCIÓN DE CÁLCULO
 function actualizarTotalVisor() {
     const checks = document.querySelectorAll('.cuota-check');
-    const inputExtra = document.getElementById('cantidad_extra');
     const visor = document.getElementById('total_visor');
     const btn = document.getElementById('btnConfirmar');
     
-    let interesBase = parseFloat("{{ cuotas.0.interes|default:'0' }}".replace(',', '.'));
     let total = 0;
     let haySeleccion = false;
 
     checks.forEach(check => {
         if (check.checked) {
-            let v = check.getAttribute('data-valor').replace(/[$.]/g, '').replace(',', '.');
-            total += parseFloat(v) || 0;
+            // Extrae el valor numérico puro directamente del atributo
+            let valorAtributo = check.getAttribute('data-valor');
+            let v = parseFloat(valorAtributo) || 0;
+            total += v;
             haySeleccion = true;
         }
     });
 
-    let extraCount = parseInt(inputExtra.value) || 0;
-    if (extraCount > 0) {
-        total += (extraCount * interesBase);
-        haySeleccion = true;
-    }
-
     if (visor) {
-        visor.innerText = '$' + Math.round(total).toLocaleString('es-CO');
+        // Formato de moneda para Colombia (sin decimales)
+        visor.innerText = '$' + Math.round(total).toLocaleString('es-CO', { maximumFractionDigits: 0 });
     }
 
     if (btn) {
