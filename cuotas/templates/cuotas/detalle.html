@@ -218,6 +218,7 @@
 <script>
 function abrirModal() {
     document.getElementById('modalPagos').style.display = 'block';
+    actualizarTotalVisor(); // Forzar cálculo inicial al abrir
 }
 
 function cerrarModal() {
@@ -225,7 +226,7 @@ function cerrarModal() {
 }
 
 function abrirModalYMarcar(idCuota) {
-    abrirModal(); 
+    document.getElementById('modalPagos').style.display = 'block';
     
     // Desmarcar checkboxes previos
     document.querySelectorAll('.cuota-check').forEach(check => check.checked = false);
@@ -241,6 +242,11 @@ function abrirModalYMarcar(idCuota) {
 
 function enviarPagoYFactura() {
     const formulario = document.getElementById('formPagarCuotas');
+    const btn = document.getElementById('btnConfirmar');
+    
+    // Deshabilitar temporalmente para evitar doble clic
+    if (btn) btn.disabled = true;
+
     const datos = new FormData(formulario);
 
     fetch(formulario.action, {
@@ -262,15 +268,17 @@ function enviarPagoYFactura() {
             window.location.reload();
         } else {
             alert('Error al registrar el pago: ' + (data.error || 'Desconocido'));
+            if (btn) btn.disabled = false;
         }
     })
     .catch(err => {
         console.error(err);
         alert('Error al procesar el pago: ' + err.message);
+        if (btn) btn.disabled = false;
     });
 }
 
-// CORRECCIÓN COMPLETA DE LA FUNCIÓN DE CÁLCULO
+// 🛡️ FUNCIÓN ULTRA REFORZADA CONTRA ERRORES DE FORMATO
 function actualizarTotalVisor() {
     const checks = document.querySelectorAll('.cuota-check');
     const visor = document.getElementById('total_visor');
@@ -281,32 +289,39 @@ function actualizarTotalVisor() {
 
     checks.forEach(check => {
         if (check.checked) {
-            // Extrae el valor numérico puro directamente del atributo
-            let valorAtributo = check.getAttribute('data-valor');
-            let v = parseFloat(valorAtributo) || 0;
+            let valorAtributo = check.getAttribute('data-valor') || "0";
+            
+            // 🔥 LIMPIEZA ABSOLUTA: Quita $, espacios y puntos de miles para que sea un número puro
+            let valorLimpio = valorAtributo.replace(/[$\s]/g, '').replace(/\./g, '').replace(',', '.');
+            
+            let v = parseFloat(valorLimpio) || 0;
             total += v;
             haySeleccion = true;
         }
     });
 
+    // Actualizar el texto visual
     if (visor) {
-        // Formato de moneda para Colombia (sin decimales)
         visor.innerText = '$' + Math.round(total).toLocaleString('es-CO', { maximumFractionDigits: 0 });
     }
 
+    // Control estricto de activación del botón
     if (btn) {
         if (haySeleccion && total > 0) {
-            btn.disabled = false;
+            btn.removeAttribute('disabled');
             btn.style.opacity = "1";
             btn.style.cursor = "pointer";
+            btn.style.pointerEvents = "auto"; // Asegurar que reciba clics
         } else {
-            btn.disabled = true;
+            btn.setAttribute('disabled', 'disabled');
             btn.style.opacity = "0.5";
             btn.style.cursor = "not-allowed";
+            btn.style.pointerEvents = "none"; // Bloquear clics fantasmas
         }
     }
 }
 
+// Escuchar clics fuera del modal para cerrar
 window.onclick = function(event) {
     let modal = document.getElementById('modalPagos');
     if (event.target == modal) {
